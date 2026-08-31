@@ -1,0 +1,26 @@
+# ── Datos del estudio ─────────────────────────────────────────────────────────
+# Las respuestas crudas del panel y las etiquetas de la codificadora.
+# Están excluidas por defecto porque con cuenta gratuita GitHub Pages exige que el
+# repositorio sea PÚBLICO, y esto no debería estarlo antes de publicar el estudio.
+#   -> Si el repositorio es privado y prefieres versionarlas, comenta estas dos líneas.
+datos/*.xlsx
+datos/*.csv
+
+# ── Salidas del pipeline ──────────────────────────────────────────────────────
+# Se regeneran con ./run.sh, pesan, y contienen las respuestas del panel.
+Resultados/
+Resultados_smoke/
+Resultados_v1_*/
+Resultados_2*/
+
+# Lo que SÍ se publica: el sitio ya generado. Pages sirve archivos, no ejecuta nada.
+!sitio/index.html
+!sitio/figuras/
+!sitio/figuras/*.svg
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store
+.venv/
