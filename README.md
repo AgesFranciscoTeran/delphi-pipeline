@@ -88,7 +88,9 @@ Si cambiaron, actualizar `MODEL_LLM` en `pipeline/config.py` y `MODELS` en
 
 ### `sitio/`
 
-Genera la página de resultados desde `Resultados/*.csv`. **Ningún número está escrito a mano.**
+Genera el sitio desde `Resultados/*.csv`: una portada y **una página por panel**. Los cuatro
+paneles son estudios independientes —sin panelistas ni preguntas en común—, así que no se
+agregan ni se comparan entre sí. **Ningún número está escrito a mano.**
 Ver `sitio/README.md` para el detalle y las instrucciones de publicación.
 
 ---

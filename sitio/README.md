@@ -11,10 +11,15 @@ Analysis of Delphi Rounds*.
 ## Cómo funciona
 
 ```
-Resultados/*.csv   →   datos.py    →  tablas
-        │              figuras.py  →  figuras/*.svg
-        └──────────────────────────→  build.py  →  index.html
+Resultados/*.csv  →  datos.py     →  tablas por panel
+       │             figuras.py   →  figuras/*.svg (una tanda por panel)
+       │             contenido.py →  texto editorial
+       └───────────────────────────→ build.py →  index.html + panel1..4.html
 ```
+
+**Una página por panel.** Los cuatro paneles son estudios independientes: ningún panelista
+participa en más de uno y, de las 32 preguntas, sólo una se repite entre paneles. Por eso no se
+agregan resultados ni se comparan entre sí. `index.html` es la portada que enlaza los cuatro.
 
 **Ningún número está escrito a mano.** Todas las tablas y todas las cifras del texto salen de
 `Resultados/*.csv` a través de `datos.py`. Lo único editorial son los textos de las decisiones
@@ -29,11 +34,12 @@ inconsistencia.
 |---|---|
 | `datos.py` | Lee `Resultados/*.csv` y devuelve las tablas. Importa `stance_map.py` del pipeline para la capa de posturas. |
 | `figuras.py` | Genera las figuras en SVG (y en PNG a 300 dpi con `--png`, para el manuscrito). Sustituye a `pipeline/visualize.py`. |
-| `cabecera.py` | Prepara lo que interpola la plantilla; contiene el texto editorial. |
-| `build.py` | Ensambla `index.html`. |
+| `contenido.py` | El texto editorial: las decisiones de taxonomía y qué panel afecta cada una. Lo único no derivado de los CSV. |
+| `estilos.py` | La hoja de estilos, compartida por la portada y las páginas de panel. |
+| `build.py` | Ensambla la portada y las cuatro páginas de panel. |
 
 | `figuras/` | SVG generados. Se versionan para que GitHub Pages funcione sin ejecutar nada. |
-| `index.html` | El sitio. Autocontenido: los SVG van incrustados, no enlazados. |
+| `index.html`, `panel1–4.html` | El sitio. Autocontenidos: los SVG van incrustados, no enlazados. |
 
 ### Rutas
 

@@ -268,132 +268,94 @@ def fig_red(panel, png=False, umbral=.50, fuerte=.75):
 
 # ── 3. Trayectoria del consenso por pregunta ──────────────────────────────────
 
-def fig_trayectoria(png=False):
+def fig_trayectoria(panel, png=False):
     """
-    Cuánto se concentra el panel en su opción mayoritaria, ronda a ronda.
+    Cuánto se concentra el panel en su opción mayoritaria, ronda a ronda, para las preguntas
+    de ESTE panel. Una línea por pregunta, con su id al final y coloreada según lo que le pasó.
 
-    Un panel por clase de evolución en vez de las 20 preguntas en un solo eje: veinte líneas
-    cruzándose son ilegibles y las etiquetas se pisan. Cada faceta muestra sus preguntas en
-    color y el resto en gris de fondo, así que se mantiene la referencia sin el enredo.
+    Es por panel a propósito: los cuatro paneles son estudios independientes —distintos
+    panelistas, distintas preguntas— así que ponerlos en un eje común invitaría a comparaciones
+    que los datos no sostienen.
     """
     c = pd.read_csv(datos._ruta("03_categorical_consensus.csv"))
     c["qid"] = [datos.qid(p_, q) for p_, q in zip(c.Panel, c.Question)]
+    c = c[c.Panel == panel]
     conv = datos.convergencia().set_index("qid")["convergence"].to_dict()
 
-    CLASES = [("Convergió", AZUL), ("Se dispersó", ROJO),
-              ("Estable en acuerdo", "#1b9e77"), ("Estable sin acuerdo", GRIS)]
-    series = {}
+    COL = {"Convergió": AZUL, "Se dispersó": ROJO,
+           "Estable en acuerdo": "#1b9e77", "Estable sin acuerdo": GRIS}
+    rondas = sorted(c.Round.unique())
+    fig, ax = plt.subplots(figsize=(6.4, 3.9))
+
+    finales = []
     for q, g in c.groupby("qid"):
         g = g.sort_values("Round")
         if g.modal_share.isna().all():
             continue
-        series[q] = (list(g.Round), list(g.modal_share * 100))
+        col = COL.get(conv.get(q), GRIS)
+        ax.plot(g.Round, g.modal_share * 100, color=col, lw=2.0, marker="o", markersize=5,
+                markerfacecolor=PANEL, markeredgewidth=1.6, markeredgecolor=col, zorder=3)
+        fin = g[g.Round == g.Round.max()]
+        if not fin.empty and pd.notna(fin.modal_share.iloc[0]):
+            finales.append((float(fin.modal_share.iloc[0] * 100), q))
 
-    rondas = sorted(c.Round.unique())
-    fig, axes = plt.subplots(1, len(CLASES), figsize=(3.5 * len(CLASES), 4.0), sharey=True)
+    finales.sort()
+    ultimo = -99
+    for y, q in finales:
+        yy = max(y, ultimo + 5.0)
+        ax.annotate(q, (rondas[-1], yy), xytext=(8, 0), textcoords="offset points",
+                    fontsize=8, color=TINTA2, va="center", annotation_clip=False)
+        ultimo = yy
 
-    for ax, (clase, col) in zip(np.atleast_1d(axes), CLASES):
-        for q, (xs, ys) in series.items():          # fondo: todas, muy tenues
-            ax.plot(xs, ys, color=LINEA, lw=1.0, zorder=1)
-        propias = [q for q in series if conv.get(q) == clase]
-        finales = []
-        for q in propias:
-            xs, ys = series[q]
-            ax.plot(xs, ys, color=col, lw=1.9, marker="o", markersize=4.6,
-                    markerfacecolor=PANEL, markeredgewidth=1.5, markeredgecolor=col, zorder=3)
-            finales.append((ys[-1], q))
-        # etiquetas al final, separadas para que no se pisen
-        finales.sort()
-        ultimo = -99
-        for y, q in finales:
-            yy = max(y, ultimo + 4.6)
-            ax.annotate(q, (rondas[-1], yy), xytext=(7, 0), textcoords="offset points",
-                        fontsize=7.4, color=TINTA2, va="center",
-                        xycoords="data", annotation_clip=False)
-            ultimo = yy
-        for y in (75, 60):
-            ax.axhline(y, color=LINEA, lw=1, zorder=0)
-        ax.set_title(f"{clase}  ({len(propias)})", fontsize=9.5, color=col, pad=8)
-        ax.set_xticks(rondas)
-        ax.set_xticklabels([f"R{r}" for r in rondas])
-        ax.set_xlim(rondas[0] - .12, rondas[-1] + .72)
-        ax.set_ylim(20, 106)
-        ax.grid(axis="y", color=LINEA, lw=.6, zorder=0)
-        ax.set_axisbelow(True)
-        ax.spines["left"].set_visible(False)
-        ax.tick_params(length=0)
+    for y, txt in ((75, "consenso fuerte"), (60, "mayoría clara")):
+        ax.axhline(y, color=LINEA, lw=1, zorder=0)
+        ax.text(rondas[0] - .04, y + 1.6, txt, fontsize=7.4, color=TINTA3, ha="left")
 
-    a0 = np.atleast_1d(axes)[0]
-    a0.set_ylabel("Panelistas en la opción mayoritaria (%)")
-    fig.tight_layout()
-    return _guardar(fig, "fig_trayectoria", png)
-
-
-# ── 4. Movimiento frente a convergencia ───────────────────────────────────────
-
-def fig_movimiento(png=False):
-    """
-    Un punto por panel: cuánto se mueve su gente (eje x) contra cuánto se acerca entre sí
-    (eje y, cambio del acuerdo medio entre la primera ronda y la última). Si moverse llevara
-    a acordar, los puntos subirían hacia la derecha. Van al revés.
-    """
-    _, por_panel = datos.movimiento()
-    d = datos.clasificadas()
-    fig, ax = plt.subplots(figsize=(6.4, 4.5))
-
-    xs, ys = [], []
-    for panel in sorted(d.Panel.unique()):
-        g = d[d.Panel == panel]
-        rondas = sorted(g.Round.unique())
-        panelistas = sorted(g.Panelist.unique())
-        medios = []
-        for r in rondas:
-            p = g[g.Round == r].pivot_table(index="Panelist", columns="qid",
-                                            values="selected_option", aggfunc="first")
-            v = list(_acuerdos(p.reindex(panelistas)).values())
-            medios.append(sum(v) / len(v) if v else 0)
-        x = por_panel[int(panel)]["pct"]
-        y = (medios[-1] - medios[0]) * 100
-        xs.append(x)
-        ys.append(y)
-        col = AZUL if y > 5 else (ROJO if y < -5 else GRIS)
-        ax.scatter([x], [y], s=190, color=col, zorder=3, alpha=.9)
-        ax.annotate(f"Panel {panel}\n{len(panelistas)} personas",
-                    (x, y), xytext=(0, -30), textcoords="offset points",
-                    ha="center", fontsize=8.4, color=TINTA2)
-
-    if len(xs) > 2:
-        m, b = np.polyfit(xs, ys, 1)
-        xx = np.linspace(min(xs) - 4, max(xs) + 4, 10)
-        ax.plot(xx, m * xx + b, color=LINEA, lw=1.4, ls=(0, (5, 4)), zorder=1)
-        ax.text(.98, .97, "Con 4 paneles esto es una señal, no una correlación medible",
-                transform=ax.transAxes, ha="right", va="top",
-                fontsize=8.2, color=TINTA3, style="italic")
-
-    ax.axhline(0, color=LINEA, lw=1.2, zorder=0)
-    ax.set_xlabel("Respuestas que cambian de opción entre la primera y la última ronda (%)")
-    ax.set_ylabel("Cambio del acuerdo\nmedio del panel (puntos)")
-    ax.grid(axis="y", color=LINEA, lw=.7, zorder=0)
+    ax.set_xticks(rondas)
+    ax.set_xticklabels([f"Ronda {r}" for r in rondas])
+    ax.set_xlim(rondas[0] - .06, rondas[-1] + .55)
+    ax.set_ylim(20, 106)
+    ax.set_ylabel("Panelistas en la opción mayoritaria (%)")
+    ax.grid(axis="y", color=LINEA, lw=.6, zorder=0)
     ax.set_axisbelow(True)
-    ax.margins(x=.20, y=.34)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(length=0)
+    usadas = {conv.get(q) for _, q in finales}
+    manijas = [plt.Line2D([], [], color=v, lw=2.2, label=k) for k, v in COL.items() if k in usadas]
+    if manijas:
+        ax.legend(handles=manijas, frameon=False, fontsize=8, ncol=2,
+                  loc="lower center", bbox_to_anchor=(.5, -.26))
     fig.tight_layout()
-    return _guardar(fig, "fig_movimiento", png)
+    return _guardar(fig, f"fig_trayectoria_panel{panel}", png)
+
+
+# NOTA: aquí vivía fig_movimiento, que ponía los cuatro paneles en un mismo eje
+# (cuánto se mueve su gente frente a cuánto converge) y de ahí salía el hallazgo
+# "moverse no es converger". Se retiró: los paneles son estudios independientes, con
+# distintos panelistas y distintos conjuntos de preguntas, así que la variación entre
+# ellos está confundida con la dificultad de sus preguntas. Con n=4 estudios no
+# comparables, esa figura no sostenía ninguna conclusión.
 
 
 def construir_todo(png=False):
+    """Genera las figuras de cada panel por separado. No hay figuras entre paneles."""
     d = datos.clasificadas()
-    mov = (d.pivot_table(index=["qid", "Panelist"], columns="Round",
-                         values="selected_option", aggfunc="first"))
-    ri, rf = min(mov.columns), max(mov.columns)
-    mov = mov.dropna(subset=[ri, rf])
-    top = (mov.assign(c=mov[ri] != mov[rf]).groupby("qid").c.sum()
-           .sort_values(ascending=False))
-    elegidas = list(top.head(3).index)
-
-    salida = {"flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
-              "flujo_qids": elegidas,
-              "trayectoria": fig_trayectoria(png), "movimiento": fig_movimiento(png),
-              "redes": {int(p): fig_red(int(p), png) for p in sorted(d.Panel.unique())}}
+    salida = {}
+    for panel in sorted(d.Panel.unique()):
+        panel = int(panel)
+        g = d[d.Panel == panel]
+        mov = g.pivot_table(index=["qid", "Panelist"], columns="Round",
+                            values="selected_option", aggfunc="first")
+        ri, rf = min(mov.columns), max(mov.columns)
+        mov = mov.dropna(subset=[ri, rf])
+        top = (mov.assign(c=mov[ri] != mov[rf]).groupby("qid").c.sum()
+               .sort_values(ascending=False))
+        elegidas = [q for q in top.head(2).index if top[q] > 0]
+        salida[panel] = {
+            "red": fig_red(panel, png),
+            "trayectoria": fig_trayectoria(panel, png),
+            "flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
+        }
     return salida
 
 
@@ -401,5 +363,5 @@ if __name__ == "__main__":
     import sys
     r = construir_todo(png="--png" in sys.argv)
     print("Figuras generadas en", SALIDA + "/")
-    for k, v in r.items():
-        print(" ", k, v if not isinstance(v, dict) else list(v.values()))
+    for panel, v in r.items():
+        print(f"  Panel {panel}: red + trayectoria + {len(v['flujos'])} aluvial(es)")

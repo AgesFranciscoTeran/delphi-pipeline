@@ -121,6 +121,10 @@ def cuantitativas_ronda_final():
 
     return [{"qid": r.qid, "texto": texto(r.qid, r["Question Text"]),
              "unidad": r.question_unit, "asumida": bool(r.unit_assumed),
+             # cuántas de las respuestas contadas descansan en un supuesto de unidad:
+             # el panelista dijo "8 horas" sin periodo y se tomó la unidad de la pregunta.
+             # Es la fuente principal de inestabilidad entre corridas.
+             "n_asumidas": int(r.get("n_unit_assumed", 0) or 0),
              "mediana": num(r["median"]),
              "iqr": "—" if pd.isna(r.q1) or pd.isna(r.q3) else f"{num(r.q1)}–{num(r.q3)}",
              "n": int(r.n_numeric), "total": int(r.n_responses),
@@ -134,6 +138,13 @@ def posturas_ronda_final():
         from stance_map import stance_of, STANCE_MAP
     except ImportError:
         return []
+    # OJO con el denominador: `n` son las respuestas con postura asignable y `total` son
+    # los panelistas que contestaron esa pregunta, clasificables o no. Contar `total` sobre
+    # las clasificadas haría que una pregunta con 5 de 8 respuestas se leyera como 5/5,
+    # es decir, como unanimidad.
+    todas = cargar_extraidas()
+    todas = todas[todas.is_valid_response & (todas.Round == todas.Round.max())]
+    n_panel = todas.groupby("qid").size().to_dict()
     d = clasificadas()
     d = d[d.Round == d.Round.max()]
     filas = []
@@ -146,7 +157,7 @@ def posturas_ronda_final():
             if p:
                 c[p] += 1
         n = sum(c.values())
-        tot = len(g)
+        tot = n_panel.get(q, len(g))
         f, co, ag = c.get("favor", 0), c.get("conditional", 0), c.get("against", 0)
         mx = max(f, co, ag)
         share = mx / n if n else 0
@@ -200,6 +211,46 @@ def movimiento():
                           "pct": round(g.cambio.mean() * 100)}
                  for p, g in piv.groupby("Panel")}
     return total, por_panel
+
+
+def panel_de(qid_):
+    """P3_Q7 -> 3"""
+    return int(qid_.split("_")[0][1:])
+
+
+def por_panel(filas, panel):
+    """Filtra una lista de filas (dicts con 'qid') a un solo panel."""
+    return [r for r in filas if panel_de(r["qid"]) == panel]
+
+
+def paneles():
+    d = cargar_extraidas()
+    return sorted(int(p) for p in d.Panel.unique())
+
+
+def contexto_panel(panel):
+    """
+    Cifras de un panel. Cada panel es un ESTUDIO INDEPENDIENTE: distintos panelistas
+    (no hay ninguno repetido) y distintas preguntas (de 32, sólo una se repite entre
+    paneles). Por eso no se agregan ni se comparan entre sí.
+    """
+    d = cargar_extraidas()
+    g = d[d.Panel == panel]
+    cat = por_panel(categoricas_ronda_final(), panel)
+    cua = por_panel(cuantitativas_ronda_final(), panel)
+    pos = por_panel(posturas_ronda_final(), panel)
+    c = convergencia()
+    cv = c[(c.qid.map(panel_de) == panel) & (c.type == "categorical")]
+    resueltas = sum(1 for r in cat if r["etiqueta"] in ("Consenso fuerte", "Mayoría clara"))
+    return {"panel": panel,
+            "n_panelistas": g.Panelist.nunique(), "n_preguntas": g.qid.nunique(),
+            "n_respuestas": len(g), "n_rondas": g.Round.nunique(),
+            "cat": cat, "cuant": cua, "postura": pos,
+            "n_cat": len(cat), "n_cuant": len(cua), "n_pos": len(pos),
+            "resueltas": resueltas,
+            "convergieron": int((cv.convergence == "Convergió").sum()),
+            "dispersaron": int((cv.convergence == "Se dispersó").sum()),
+            "n_asumidas": sum(r["n_asumidas"] for r in cua)}
 
 
 def contexto():

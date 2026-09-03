@@ -410,6 +410,8 @@ esto explícitamente** y apoyar la reproducibilidad en los artefactos archivados
 `temperature=0`. Afirmar determinismo es una objeción regalada a un revisor que sepa cómo
 funciona vLLM.
 
+Y esto es sólo la parte categórica; la numérica es bastante peor (ver más abajo).
+
 Y hay una consecuencia práctica para la Fase 3, no sólo de redacción: con 44 ítems, 3 cambios
 mueven el κ 0,07 puntos — más que la diferencia entre los dos modelos (0,02). **La variación
 entre corridas es hoy mayor que el efecto que se quería medir.** El diseño de la validación
@@ -425,6 +427,93 @@ tiene que quedarse en infraestructura institucional, cosa que ya se cumple, pero
 confirmarla formalmente con Jonathan antes de empezar y no después.
 
 ---
+
+### La capa numérica no es reproducible, y la categórica sí (31-08-2026)
+
+Dos corridas completas del mismo código sobre los mismos datos, con `temperature=0` y `seed`:
+
+| Capa | Entre corridas |
+|---|---|
+| 20 preguntas categóricas | **idénticas**, etiqueta por etiqueta |
+| 13 posturas | **idénticas** |
+| 12 preguntas numéricas | **4 cambiaron de etiqueta** |
+
+Los cambios: P1_Q6 y P1_Q7 cayeron a «Insuficiente» al perder una respuesta cada una; P3_Q2 pasó
+de «Sin consenso» a «Convergencia moderada»; P3_Q6 al revés.
+
+**El mecanismo, y no es azar.** El vocabulario de unidades tiene `hours/?` para «horas sin
+periodo declarado», y `to_question_unit` lo resuelve asumiendo la unidad de la pregunta:
+
+```python
+if unit == UNIT_HOURS_ANY:
+    return (float(value), "assumed") if str(question_unit).startswith("hours/") else (None, "other")
+```
+
+Así, «8 horas al día» en una pregunta medida por semana se declara `hours/day` y se convierte
+(**×5** → 40), mientras que «8 horas» a secas cae en `hours/?` y se toma como 8 semanales. Un
+factor de cinco decidido por si el periodo aparece declarado o no. Entre las dos corridas, las
+respuestas clasificadas como `hours/?` pasaron de **0 a 60**: el modelo cambió de criterio sobre
+cuándo el panelista había declarado el periodo, y con él cambiaron las medianas y los rangos.
+
+**Por qué no se arregla con código.** Se probó resolver la unidad leyendo la respuesta completa
+en vez del campo extraído: introduce unidades falsas («10 patients per week» → `hours/week`) y
+sólo recupera cuatro casos. La ambigüedad está en el dato: cuando un panelista escribe «8 horas»
+y la pregunta no dice en qué periodo están definidas sus bandas, **no hay regla correcta que
+inferir**. Excluir `hours/?` del consenso —el tratamiento honesto, igual que se hizo con `other`—
+dejaría a P4_Q2 con n=2 y a la mitad de las preguntas bajo el mínimo.
+
+**Consecuencias.**
+
+1. **Los resultados numéricos no son reportables** hasta cerrar el punto 5 de la agenda. Los
+   categóricos y los de postura sí: son estables entre corridas y están validados.
+2. **El punto 5 sube a prioridad máxima** entre las ocho decisiones de Emily. Deja de ser «hacer
+   los bordes de banda contiguos» y pasa a ser la causa de que un tercio de las preguntas
+   numéricas cambie de conclusión según la corrida.
+3. **Para el paper**, esto es un resultado metodológico, no sólo una limitación: en codificación
+   asistida por LLM, la parte que depende de que el modelo *interprete* una magnitud es
+   sustancialmente menos estable que la que sólo requiere que *elija* entre opciones cerradas.
+   Merece decirse, con estas cifras.
+4. El sitio muestra ahora una columna «unidad asumida» por pregunta, para que el lector vea de
+   cuánto supuesto depende cada fila.
+
+### Los cuatro paneles son estudios independientes (31-08-2026)
+
+Comprobado en los datos, no supuesto:
+
+- **32 preguntas, 31 textos únicos.** Sólo una se repite entre paneles: «How many students
+  should be accepted in first year?» (P3_Q2 y P4_Q7).
+- **Cero panelistas compartidos.** Los 32 participan cada uno en un solo panel (7, 7, 10 y 8).
+
+Es decir: cuatro estudios disjuntos, con distintas personas y distintas preguntas, que además
+van a artículos separados. **Nada que agregue o compare paneles entre sí es válido**, y varias
+cosas que se habían construido lo hacían.
+
+**Lo que se retiró.** `fig_movimiento` ponía los cuatro paneles en un mismo eje —cuánto se mueve
+su gente contra cuánto convergen— y de ahí salía el hallazgo «moverse no es converger», que se
+había promocionado como el principal. No sobrevive: con conjuntos de preguntas distintos, la
+variación entre paneles está confundida con la dificultad de las preguntas. Que el Panel 1
+tenga acuerdo medio 0,37 y el Panel 4 0,75 puede deberse enteramente a que las preguntas del
+Panel 1 son más abiertas. Con n=4 estudios no comparables, la figura no sostenía nada.
+
+**Lo que se degrada.** Los conteos agregados (9 de 13 posturas, 18 de 20 categóricas, 36 % de
+movimiento) sirven como descriptivos del comportamiento *del método* sobre 32 preguntas, no como
+resultados sustantivos: no existe «el panel».
+
+**Lo que sobrevive intacto.** Las redes de acuerdo son intra-panel por construcción; los
+aluviales son de una pregunta de un panel; cada fila de las tablas es autocontenida; y la
+validación contra Emily mide la precisión del método, no compara paneles.
+
+**Consecuencia para la Fase 3, y no es menor.** Si cada panel es un artículo, la fiabilidad hay
+que reportarla por panel. Los 44 ítems etiquetados repartidos entre cuatro paneles son unos
+once por panel: insuficiente para un κ por separado. **La muestra de validación se multiplica
+por cuatro**, no se mantiene.
+
+**Anécdota reveladora.** La única pregunta compartida da resultados distintos según el panel:
+P3_Q2 mediana 70 sin consenso, P4_Q7 mediana 50 con consenso fuerte. Con n=1 no es un hallazgo,
+pero ilustra por qué agregarlos no tiene sentido.
+
+**Estado del sitio.** Reestructurado en una portada más una página por panel, sin ninguna vista
+transversal.
 
 ## 10. Plan y criterios de salida
 

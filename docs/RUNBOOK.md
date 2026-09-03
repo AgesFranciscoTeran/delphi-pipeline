@@ -13,7 +13,7 @@ scripts resuelven sus rutas solos, así que da igual desde dónde se llamen.
 ## 0. Antes de correr
 
 ```bash
-cd Delphi
+cd ~/Delphi
 
 # VPN activa; verificar qué modelos sirve hoy (la universidad los cambia sin aviso)
 for port in 12555 12559; do echo -n "  $port -> "; \
@@ -43,9 +43,9 @@ pedírselo a Emily. Sin él no se puede correr el paso 4.
 ## 1. La corrida
 
 ```bash
- bash ./run.sh                # todo: preprocesamiento + extracción con LLM + métricas + sitio
- bash ./run.sh --sin-llm      # recalcula métricas y sitio sobre la extracción que ya existe
- bash ./run.sh --solo-sitio   # sólo figuras e index.html
+./run.sh                # todo: preprocesamiento + extracción con LLM + métricas + sitio
+./run.sh --sin-llm      # recalcula métricas y sitio sobre la extracción que ya existe
+./run.sh --solo-sitio   # sólo figuras e index.html
 ```
 
 Antes de una corrida nueva, conservar la anterior — es la evidencia de lo que se reportó:
