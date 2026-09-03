@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-09-03T04:54:22.896430</dc:date>
+    <dc:date>2026-09-03T04:58:04.120013</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -43,7 +43,7 @@ C 175.844348 248.638474 175.844348 248.638474 234.103304 248.638474
 L 234.103304 130.871429 
 C 175.844348 130.871429 175.844348 114.047565 117.585391 114.047565 
 z
-" clip-path="url(#p44778f059a)" style="fill: #2a78d6; opacity: 0.22"/>
+" clip-path="url(#p10373440aa)" style="fill: #2a78d6; opacity: 0.22"/>
    </g>
    <g id="patch_4">
     <path d="M 117.585391 102.020293 
@@ -51,7 +51,7 @@ C 175.844348 102.020293 175.844348 130.871429 234.103304 130.871429
 L 234.103304 107.31802 
 C 175.844348 107.31802 175.844348 75.102111 117.585391 75.102111 
 z
-" clip-path="url(#p44778f059a)" style="fill: #e34948; opacity: 0.6"/>
+" clip-path="url(#p10373440aa)" style="fill: #e34948; opacity: 0.6"/>
    </g>
    <g id="patch_5">
     <path d="M 117.585391 75.102111 
@@ -59,7 +59,7 @@ C 175.844348 75.102111 175.844348 71.737338 234.103304 71.737338
 L 234.103304 48.183929 
 C 175.844348 48.183929 175.844348 48.183929 117.585391 48.183929 
 z
-" clip-path="url(#p44778f059a)" style="fill: #e34948; opacity: 0.22"/>
+" clip-path="url(#p10373440aa)" style="fill: #e34948; opacity: 0.22"/>
    </g>
    <g id="patch_6">
     <path d="M 250.456696 248.638474 
@@ -67,7 +67,7 @@ C 308.715652 248.638474 308.715652 248.638474 366.974609 248.638474
 L 366.974609 73.240747 
 C 308.715652 73.240747 308.715652 83.764611 250.456696 83.764611 
 z
-" clip-path="url(#p44778f059a)" style="fill: #2a78d6; opacity: 0.22"/>
+" clip-path="url(#p10373440aa)" style="fill: #2a78d6; opacity: 0.22"/>
    </g>
    <g id="patch_7">
     <path d="M 250.456696 71.737338 
@@ -75,7 +75,7 @@ C 308.715652 71.737338 308.715652 73.240747 366.974609 73.240747
 L 366.974609 48.183929 
 C 308.715652 48.183929 308.715652 48.183929 250.456696 48.183929 
 z
-" clip-path="url(#p44778f059a)" style="fill: #e34948; opacity: 0.6"/>
+" clip-path="url(#p10373440aa)" style="fill: #e34948; opacity: 0.6"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
@@ -104,7 +104,7 @@ L 117.585391 248.638474
 L 117.585391 114.047565 
 L 101.232 114.047565 
 z
-" clip-path="url(#p44778f059a)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p10373440aa)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_9">
     <path d="M 101.232 102.020293 
@@ -112,7 +112,7 @@ L 117.585391 102.020293
 L 117.585391 48.183929 
 L 101.232 48.183929 
 z
-" clip-path="url(#p44778f059a)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p10373440aa)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_10">
     <path d="M 234.103304 248.638474 
@@ -120,7 +120,7 @@ L 250.456696 248.638474
 L 250.456696 83.764611 
 L 234.103304 83.764611 
 z
-" clip-path="url(#p44778f059a)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p10373440aa)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_11">
     <path d="M 234.103304 71.737338 
@@ -128,7 +128,7 @@ L 250.456696 71.737338
 L 250.456696 48.183929 
 L 234.103304 48.183929 
 z
-" clip-path="url(#p44778f059a)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p10373440aa)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="patch_12">
     <path d="M 366.974609 248.638474 
@@ -136,7 +136,7 @@ L 383.328 248.638474
 L 383.328 48.183929 
 L 366.974609 48.183929 
 z
-" clip-path="url(#p44778f059a)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
+" clip-path="url(#p10373440aa)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.2; stroke-linejoin: miter"/>
    </g>
    <g id="text_4">
     <text style="font-size: 9.5px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; fill: #0b0b0b" transform="translate(7.2 14.798516)">P4_Q3 — ¿Debería aprobarse el NBME para graduarse?</text>
@@ -169,7 +169,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p44778f059a">
+  <clipPath id="p10373440aa">
    <rect x="7.2" y="36.156656" width="470.16" height="220.5"/>
   </clipPath>
  </defs>

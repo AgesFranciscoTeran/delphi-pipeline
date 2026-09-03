@@ -224,15 +224,16 @@ def pagina_panel(panel):
   <p class="lead">Las tablas de arriba son la foto final. Esto es el proceso: cómo se movió la
   gente entre rondas y cómo se fueron formando (o no) los acuerdos.</p>
 
-  <h3>Quién coincide con quién, ronda por ronda</h3>
-  <p>Cada círculo es un panelista y cada línea, cuánto coinciden sus respuestas en esa ronda:
-  tenue si coinciden en más de la mitad de las preguntas, marcada si en tres cuartos o más. El
-  tamaño del círculo son sus vínculos fuertes. <b>La posición de cada panelista se calcula una
-  sola vez sobre las tres rondas</b>, así que lo que cambia entre los tres dibujos es el
-  acuerdo, no el diagrama.</p>
-  <figure class="fig">{figuras.inline(f['red'])}
+  <h3>Quién respondió qué</h3>
+  <p>Una fila por panelista, una columna por pregunta, un color por opción elegida. Las filas
+  están ordenadas por parecido, así que los bloques de color contiguos son grupos que responden
+  igual. Los huecos con una raya son respuestas que no se pudieron clasificar.
+  <b>Los colores sólo se comparan dentro de su columna</b>: cada pregunta tiene sus propias
+  opciones, y el azul de una no es el azul de la otra.</p>
+  <figure class="fig">{figuras.inline(f['cuadricula'])}
     <figcaption>{contenido.LECTURA_RED.get(panel, '')}</figcaption>
   </figure>
+  {figuras.leyenda_opciones(panel)}
 
   <h3>Concentración por pregunta</h3>
   <p>Cuánta gente está en la opción mayoritaria de cada pregunta, ronda a ronda.</p>

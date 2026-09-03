@@ -35,6 +35,9 @@ TINTA, TINTA2, TINTA3 = "#0b0b0b", "#52514e", "#84827c"
 LINEA, PANEL = "#e5e3dd", "#ffffff"
 # Escala categórica para opciones: orden fijo, nunca ciclada.
 CATEG = ["#2a78d6", "#e34948", "#8a8880", "#1b9e77", "#8b5cf6", "#d97706", "#0891b2"]
+# Para la cuadrícula, sin el gris neutro: ahí el gris claro significa "sin clasificar" y
+# tener además un gris de opción hace que se confundan.
+CATEG_GRID = ["#2a78d6", "#e34948", "#1b9e77", "#d97706", "#8b5cf6", "#0891b2", "#be185d"]
 
 plt.rcParams.update({
     "figure.facecolor": PANEL, "axes.facecolor": PANEL,
@@ -184,86 +187,99 @@ def fig_flujo(qids, png=False, nombre="fig_flujo"):
     return _guardar(fig, nombre, png)
 
 
-# ── 2. Red de panelistas por ronda ────────────────────────────────────────────
+# ── 2. Cuadrícula panelista × pregunta ────────────────────────────────────────
 
-def _acuerdos(piv, min_comun=3):
-    out = {}
-    for a, b in itertools.combinations(piv.index, 2):
-        amb = piv.loc[a].notna() & piv.loc[b].notna()
-        if amb.sum() < min_comun:
-            continue
-        out[(a, b)] = float((piv.loc[a][amb] == piv.loc[b][amb]).mean())
-    return out
-
-
-def fig_red(panel, png=False, umbral=.50, fuerte=.75):
+def fig_cuadricula(panel, png=False):
     """
-    Nodos = panelistas, aristas = cuánto coinciden en esa ronda.
+    Quién respondió qué, panelista por panelista y pregunta por pregunta, en cada ronda.
 
-    El layout se calcula UNA vez sobre el grafo acumulado de las tres rondas y se reutiliza:
-    si se recalculara por ronda, el lector vería moverse los nodos y atribuiría al panel un
-    cambio que en realidad es del algoritmo de dibujo. Es el error más común de estas figuras.
-    El tamaño del nodo es su número de vínculos fuertes en esa ronda.
+    Sustituye a la red de acuerdo entre panelistas que había antes. Aquella promediaba el
+    acuerdo sobre todas las preguntas del panel, y con 4–6 preguntas categóricas cada arista
+    descansaba en una mediana de 2 a 5 preguntas: un "acuerdo del 50 %" quería decir
+    "coincidieron en 1 de 2", y el movimiento entre rondas era una persona cambiando una
+    respuesta. Esto no promedia nada: se ve en QUÉ preguntas coincide cada grupo y en cuáles
+    se parte, y las respuestas sin clasificar quedan como huecos en vez de desaparecer.
+
+    Las filas se ordenan por parecido, así que los bloques de color contiguos son coaliciones.
     """
-    d = datos.clasificadas()
-    g = d[d.Panel == panel]
+    d = datos.cargar_extraidas()
+    g = d[(d.Panel == panel) & d.is_valid_response &
+          d.question_type.isin(["nominal", "binary"])]
     rondas = sorted(g.Round.unique())
+    preguntas = sorted(g.qid.unique(), key=lambda q: int(q.split("_Q")[1]))
     panelistas = sorted(g.Panelist.unique())
 
-    pivs, acs = {}, {}
-    for r in rondas:
-        p = g[g.Round == r].pivot_table(index="Panelist", columns="qid",
-                                        values="selected_option", aggfunc="first")
-        pivs[r] = p.reindex(panelistas)
-        acs[r] = _acuerdos(pivs[r])
+    # una paleta por pregunta: los colores sólo se comparan DENTRO de su columna
+    pal = {}
+    for q in preguntas:
+        opts = sorted(x for x in g[g.qid == q].selected_option.dropna().unique()
+                      if x != "Unclassified")
+        pal[q] = {o: CATEG_GRID[i % len(CATEG_GRID)] for i, o in enumerate(opts)}
 
-    G = nx.Graph()
-    G.add_nodes_from(panelistas)
-    acum = collections.defaultdict(list)
-    for r in rondas:
-        for par, v in acs[r].items():
-            acum[par].append(v)
-    # El layout usa TODOS los pares con su peso, no sólo los que superan el umbral: si se
-    # filtrara, un panel con poco acuerdo daría un grafo casi vacío y spring_layout colapsaría
-    # los nodos unos sobre otros. El umbral es sólo para decidir qué aristas se DIBUJAN.
-    for (a, b), vs in acum.items():
-        G.add_edge(a, b, weight=max(sum(vs) / len(vs), 1e-3))
-    pos = nx.spring_layout(G, weight="weight", seed=7, k=2.2 / math.sqrt(len(panelistas)),
-                           iterations=600)
+    # orden de filas por parecido, usando la última ronda como referencia
+    ref = g[g.Round == rondas[-1]].pivot_table(index="Panelist", columns="qid",
+                                               values="selected_option", aggfunc="first")
+    ref = ref.reindex(index=panelistas, columns=preguntas)
+    orden, restantes = [], list(panelistas)
+    actual = restantes.pop(0)
+    orden.append(actual)
+    while restantes:
+        def parecido(p_):
+            amb = ref.loc[actual].notna() & ref.loc[p_].notna()
+            return (ref.loc[actual][amb] == ref.loc[p_][amb]).sum() if amb.any() else -1
+        actual = max(restantes, key=parecido)
+        restantes.remove(actual)
+        orden.append(actual)
 
-    fig, axes = plt.subplots(1, len(rondas), figsize=(3.05 * len(rondas), 3.35))
+    fig, axes = plt.subplots(1, len(rondas), figsize=(2.5 * len(rondas) + 1.6,
+                                                      0.42 * len(orden) + 1.9),
+                             sharey=True)
     axes = np.atleast_1d(axes)
     for ax, r in zip(axes, rondas):
-        ac = acs[r]
-        grado = collections.Counter()
-        for (a, b), v in ac.items():
-            if v >= fuerte:
-                grado[a] += 1
-                grado[b] += 1
-        for (a, b), v in sorted(ac.items(), key=lambda kv: kv[1]):
-            if v < umbral:
-                continue
-            es_f = v >= fuerte
-            ax.plot([pos[a][0], pos[b][0]], [pos[a][1], pos[b][1]],
-                    color=AZUL, lw=2.2 if es_f else 1.0,
-                    alpha=.85 if es_f else .28, zorder=1, solid_capstyle="round")
-        for p in panelistas:
-            x, y = pos[p]
-            s = 120 + 46 * grado.get(p, 0)
-            ax.scatter([x], [y], s=s, facecolor=PANEL, edgecolor=GRIS,
-                       linewidth=1.1, zorder=3)
-            ax.text(x, y, str(p)[-2:], ha="center", va="center",
-                    fontsize=7.2, color=TINTA2, zorder=4)
-        vals = list(ac.values())
-        medio = sum(vals) / len(vals) if vals else 0
-        ax.set_title(f"Ronda {r}", fontsize=9.5, color=TINTA, pad=6)
-        ax.text(.5, -.06, f"acuerdo medio {medio:.2f}".replace(".", ","),
-                transform=ax.transAxes, ha="center", va="top",
-                fontsize=8.5, color=TINTA3)
-        ax.set_axis_off()
-        ax.margins(.20)
+        piv = g[g.Round == r].pivot_table(index="Panelist", columns="qid",
+                                          values="selected_option", aggfunc="first")
+        piv = piv.reindex(index=orden, columns=preguntas)
+        for i, p_ in enumerate(orden):
+            for j, q in enumerate(preguntas):
+                v = piv.loc[p_, q]
+                sin = pd.isna(v) or v == "Unclassified"
+                ax.add_patch(plt.Rectangle(
+                    (j + .06, i + .06), .88, .88,
+                    facecolor="#f4f2ee" if sin else pal[q].get(v, GRIS),
+                    edgecolor=PANEL, linewidth=1.4))
+                if sin:
+                    ax.plot([j + .35, j + .65], [i + .5, i + .5], color="#cfcbc3", lw=1.2)
+        ax.set_xlim(0, len(preguntas)); ax.set_ylim(len(orden), 0)
+        ax.set_xticks([j + .5 for j in range(len(preguntas))])
+        ax.set_xticklabels([q.split("_")[1] for q in preguntas], fontsize=8)
+        ax.set_yticks([i + .5 for i in range(len(orden))])
+        ax.set_yticklabels([str(p_)[-2:] for p_ in orden], fontsize=8)
+        ax.set_title(f"Ronda {r}", fontsize=9.5, color=TINTA, pad=8)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        ax.tick_params(length=0)
+    axes[0].set_ylabel("Panelista", fontsize=8.5)
     fig.tight_layout()
-    return _guardar(fig, f"fig_red_panel{panel}", png)
+    return _guardar(fig, f"fig_cuadricula_panel{panel}", png)
+
+
+def leyenda_opciones(panel):
+    """Leyenda HTML de la cuadrícula: qué color es qué opción, por pregunta."""
+    d = datos.cargar_extraidas()
+    g = d[(d.Panel == panel) & d.is_valid_response &
+          d.question_type.isin(["nominal", "binary"])]
+    preguntas = sorted(g.qid.unique(), key=lambda q: int(q.split("_Q")[1]))
+    bloques = []
+    for q in preguntas:
+        opts = sorted(x for x in g[g.qid == q].selected_option.dropna().unique()
+                      if x != "Unclassified")
+        chips = "".join(
+            f'<span class="chip"><i style="background:{CATEG_GRID[i % len(CATEG_GRID)]}"></i>'
+            f'{_corta(o, 30)}</span>'
+            for i, o in enumerate(opts))
+        bloques.append(f'<div class="legq"><b>{q.split("_")[1]}</b> '
+                       f'<span class="legqt">{_corta(datos.texto(q), 52)}</span>{chips}</div>')
+    return '<div class="leygrid">' + "".join(bloques) + "</div>"
 
 
 # ── 3. Trayectoria del consenso por pregunta ──────────────────────────────────
@@ -352,7 +368,7 @@ def construir_todo(png=False):
                .sort_values(ascending=False))
         elegidas = [q for q in top.head(2).index if top[q] > 0]
         salida[panel] = {
-            "red": fig_red(panel, png),
+            "cuadricula": fig_cuadricula(panel, png),
             "trayectoria": fig_trayectoria(panel, png),
             "flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
         }
@@ -364,4 +380,4 @@ if __name__ == "__main__":
     r = construir_todo(png="--png" in sys.argv)
     print("Figuras generadas en", SALIDA + "/")
     for panel, v in r.items():
-        print(f"  Panel {panel}: red + trayectoria + {len(v['flujos'])} aluvial(es)")
+        print(f"  Panel {panel}: cuadrícula + trayectoria + {len(v['flujos'])} aluvial(es)")

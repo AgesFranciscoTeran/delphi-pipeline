@@ -24,3 +24,6 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 .venv/
+
+# Zips que llegan por descarga y acaban dentro del repo sin querer
+*.zip

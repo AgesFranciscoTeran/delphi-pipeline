@@ -99,18 +99,23 @@ CAPAS = [
   "<b>Jonathan</b>"),
 ]
 
-# Lectura de la red de cada panel. Descripciones internas: no comparan un panel con otro,
-# porque son estudios distintos con distintas preguntas.
+# Lectura de la cuadrícula de cada panel. Descripciones internas: no comparan un panel con
+# otro, porque son estudios distintos con distintas preguntas. Sustituyeron a las lecturas de
+# la red de acuerdo, que se retiró (promediaba el acuerdo sobre 2–5 preguntas por par).
 LECTURA_RED = {
- 1: "El grafo se mantiene ralo las tres rondas: los acuerdos fuertes no llegan a formarse. "
-    "Conviene leerlo con cautela, porque es el panel donde más respuestas quedan sin "
-    "clasificar (P1_Q3 al 86 %), así que parte de la falta de vínculos es de la taxonomía.",
- 2: "El grafo pierde densidad entre la primera ronda y la última: el panel termina algo más "
-    "repartido de lo que empezó.",
- 3: "Se rompe y se rehace. En la ronda 2 el grupo inicial se deshace y en la 3 se reconstruye "
-    "más denso que al principio. Esa forma no aparece en la tabla por pregunta.",
- 4: "De un grafo casi vacío a uno denso: los vínculos fuertes aparecen ronda a ronda y los "
-    "pares en desacuerdo desaparecen.",
+ 1: "Lo primero que salta es la columna de Q3, casi entera en blanco: el 86 % de esas "
+    "respuestas no encaja en ninguna opción de la taxonomía. Con las otras tres preguntas, "
+    "las filas no llegan a parecerse: el parecido medio entre panelistas se queda entre 0,32 "
+    "y 0,43 y no crece con las rondas.",
+ 2: "Es el panel con la taxonomía más limpia: casi no hay huecos y todas las preguntas se "
+    "clasifican. Las filas se parecen entre sí de forma estable (0,45 → 0,46) sin acercarse "
+    "ni separarse a lo largo de las tres rondas.",
+ 3: "Dos columnas con muchos huecos —Q7 al 55 % y Q3 al 45 % sin clasificar— y tres limpias. "
+    "En las limpias las filas se van pareciendo: el parecido cae en la ronda 2 y termina más "
+    "alto que al principio (0,49 → 0,40 → 0,54).",
+ 4: "El caso más claro de convergencia: las filas se parecen cada vez más entre rondas "
+    "(0,36 → 0,55 → 0,61) y en la última varias columnas quedan de un solo color. Q5 y Q6 "
+    "conservan un cuarto de huecos, que es lo que recogen las decisiones 4 y 1.",
 }
 
 NOTA_PANELES = (
