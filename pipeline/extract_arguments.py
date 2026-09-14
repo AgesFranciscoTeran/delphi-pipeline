@@ -290,7 +290,36 @@ def call_llm(client, prompt, tax, model=None, max_tokens=None):
     if USE_GUIDED_JSON:
         kwargs["extra_body"] = {"guided_json": guided_schema_for(tax)}
     resp = client.chat.completions.create(**kwargs)
-    return resp.choices[0].message.content
+    return texto_de(resp)
+
+
+def texto_de(resp):
+    """Texto de la respuesta, mirando también el canal de razonamiento.
+
+    Los modelos de razonamiento servidos por vLLM devuelven DOS canales: `content` con la
+    respuesta y `reasoning_content` con el pensamiento. Cuando el presupuesto de tokens se
+    acaba mientras el modelo todavía piensa, `content` llega **None** y todo lo escrito está
+    en `reasoning_content`.
+
+    Antes eso caía como «json: no JSON object found», que suena a que el modelo contestó mal
+    cuando en realidad no llegó a contestar. Aquí se distingue: si el JSON está en el canal de
+    razonamiento se usa, y si no hay nada en ninguno se dice que faltó presupuesto, que es
+    accionable (subir DELPHI_MAX_TOKENS).
+    """
+    eleccion = resp.choices[0]
+    msg = eleccion.message
+    texto = getattr(msg, "content", None)
+    if texto and texto.strip():
+        return texto
+    razonamiento = getattr(msg, "reasoning_content", None)
+    if razonamiento and razonamiento.strip():
+        return razonamiento
+    motivo = getattr(eleccion, "finish_reason", None)
+    if motivo == "length":
+        raise ValueError(
+            f"sin presupuesto: el modelo agotó max_tokens razonando y no emitió respuesta "
+            f"(subir DELPHI_MAX_TOKENS, ahora {MAX_TOKENS})")
+    raise ValueError(f"respuesta vacía en content y reasoning_content (finish_reason={motivo})")
 
 
 def postprocess(parsed, tax):
@@ -416,9 +445,43 @@ def plan_jobs(ind):
     return jobs
 
 
+def preflight(client):
+    """Comprueba que el endpoint sirve el modelo configurado ANTES de mandar nada.
+
+    Sin esto, un modelo mal configurado no da error: da 706 extracciones "failed" una por una,
+    tarda minutos y al final sobrescribe 02_extracted.csv con filas vacías. Ha pasado tres
+    veces. El síntoma es difícil de leer porque las respuestas que sí están en caché sí se
+    resuelven, así que la corrida parece medio funcionar.
+
+    Devuelve (ok, mensaje). No lanza: quien llama decide si aborta.
+    """
+    try:
+        servidos = [m.id for m in client.models.list().data]
+    except Exception as e:
+        return False, (f"El endpoint {URL_LLM} no responde ({type(e).__name__}). "
+                       f"¿Está levantado vLLM? ¿La VPN está activa?")
+    if MODEL_LLM in servidos:
+        return True, f"{MODEL_LLM} disponible en {URL_LLM}"
+    return False, (
+        f"El endpoint {URL_LLM} NO sirve el modelo configurado.\n"
+        f"     configurado: {MODEL_LLM}\n"
+        f"     disponible:  {', '.join(servidos) if servidos else '(ninguno)'}\n\n"
+        f"  Para una corrida puntual:\n"
+        f"     DELPHI_MODELO=\"{servidos[0] if servidos else '<id>'}\" ./run.sh\n"
+        f"  Si el cambio es permanente, actualizar MODEL_LLM en pipeline/config.py.\n"
+        f"  OJO: el modelo entra en la clave del caché, así que cambiarlo vuelve a extraer\n"
+        f"  las 775 respuestas con un solo modelo (no mezcla corridas).")
+
+
 def run_extraction(ind, client=None):
     from openai import OpenAI
+    propio = client is None          # con cliente inyectado (tests, smoke) no hay que sondear
     client = client or OpenAI(base_url=URL_LLM, api_key=API_KEY)
+    if propio and os.environ.get("DELPHI_SIN_PREFLIGHT") != "1":
+        ok, msg = preflight(client)
+        print(f"   Preflight: {msg}\n")
+        if not ok:
+            raise SystemExit("\nAbortado antes de tocar el caché o los CSV.\n")
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     cache_path = os.path.join(OUTPUT_DIR, "02_extraction_cache.json")
     cache = load_cache(cache_path)
@@ -492,6 +555,39 @@ def build_extraction_df(ind, cache, jobs):
     return pd.DataFrame(records)
 
 
+def guardia_de_fallos(df):
+    """No sobrescribe 02_extracted.csv si la extracción falló demasiado.
+
+    Una corrida con el 28 % de fallos no da un error: da tablas que parecen resultados pero
+    están calculadas sobre la mitad del panel, con preguntas enteras marcadas «Insuficiente»
+    por falta de datos y no por falta de acuerdo. Es peor que no tener nada, porque se lee
+    igual que un resultado.
+
+    Las extracciones buenas quedan en el caché, así que al volver a correr sólo se reintentan
+    las que fallaron. Para saltárselo a propósito: DELPHI_IGNORA_FALLOS=1.
+    """
+    validas = int(df["is_valid_response"].sum())
+    fallidas = int((df["extraction_status"] == "failed").sum())
+    if not validas:
+        return
+    pct = fallidas / validas * 100
+    if pct <= MAX_FALLOS_PCT or os.environ.get("DELPHI_IGNORA_FALLOS") == "1":
+        return
+    raise SystemExit(
+        f"\n  EXTRACCIÓN INCOMPLETA: {fallidas} de {validas} fallaron ({pct:.0f} %).\n"
+        f"  No se sobrescribe 02_extracted.csv — la corrida anterior queda intacta.\n\n"
+        f"  Qué falló, agrupado:\n"
+        f"     python3 -c \"import pandas as pd,collections;\\\n"
+        f"       d=pd.read_csv('{os.path.join(OUTPUT_DIR, '02_extraction_errors.csv')}');\\\n"
+        f"       print(d.error.str.slice(0,60).value_counts().head())\"\n\n"
+        f"  Causa más común: MAX_TOKENS corto para un modelo de razonamiento — gasta el\n"
+        f"  presupuesto pensando y trunca el JSON. Probar:\n"
+        f"     DELPHI_MAX_TOKENS=4000 ./run.sh\n\n"
+        f"  Las {int((df['extraction_status'] == 'ok').sum())} buenas están en el caché: al\n"
+        f"  volver a correr sólo se reintentan las que fallaron.\n"
+        f"  Para aceptar esta corrida igual: DELPHI_IGNORA_FALLOS=1 ./run.sh\n")
+
+
 def print_summary(df):
     ok = df[df["extraction_status"] == "ok"]
     print("\n── Extraction Summary ──────────────────────────────")
@@ -525,6 +621,7 @@ def main():
     print(f"Loaded {len(ind)} individual responses")
     cache, jobs = run_extraction(ind)
     df = build_extraction_df(ind, cache, jobs)
+    guardia_de_fallos(df)
     out_path = os.path.join(OUTPUT_DIR, "02_extracted.csv")
     df.to_csv(out_path, index=False)
     print_summary(df)

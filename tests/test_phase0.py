@@ -109,7 +109,12 @@ def test_quantitative_prompt_forbids_unit_conversion():
 
 def test_postprocess_categorical_and_quantitative():
     tax = get_taxonomy(2, 4)
-    out = ea.postprocess({"option_letter": "B", "option_text": "No", "core_argument": "x", "key_phrases": []}, tax)
+    # La letra se busca por posición, no se fija a mano: el orden de las opciones lo decide
+    # el documento de Emily y cambia con cada versión suya.
+    i = tax["options"].index("No")
+    letra = ea.LETTERS[i]
+    out = ea.postprocess({"option_letter": letra, "option_text": "No",
+                          "core_argument": "x", "key_phrases": []}, tax)
     assert out["selected_option"] == "No" and out["classification_status"] == "classified"
     taxq = get_taxonomy(3, 1)
     out = ea.postprocess({"value": "5", "unit": "hours per day", "value_type": "exact", "value_raw": "5 hours per day",
@@ -203,31 +208,61 @@ def test_tie_is_not_a_dominant_option():
     assert r["modal_option"] == "Empate: No / Yes"
 
 
+def test_parse_band_range_admits_the_equal_operators():
+    """Regresión: la v2 de Emily usa >= y <=, que la versión anterior no parseaba.
+
+    El fallo era mudo — la banda no parseada se descartaba y sus valores caían en la vecina
+    por el criterio de borde más cercano — así que vale la pena fijarlo aquí.
+    """
+    assert cm._parse_band_range(">=6") == (6.0, float("inf"), False, False)
+    assert cm._parse_band_range(">6") == (6.0, float("inf"), True, False)
+    assert cm._parse_band_range("<=5") == (float("-inf"), 5.0, False, False)
+    assert cm._parse_band_range("<5") == (float("-inf"), 5.0, False, True)
+    assert cm._parse_band_range("≥9") == (9.0, float("inf"), False, False)
+    assert cm._parse_band_range("3-5") == (3.0, 5.0, False, False)
+    assert cm._parse_band_range("depending on the student") is None
+    # El borde cerrado pertenece a su banda, no a la siguiente.
+    b = {"Minimal": "<=5", "Moderate": "6-8", "Intensive": ">=9"}
+    assert cm.derive_band(5, b) == "Minimal" and cm.derive_band.last_gap is False
+    assert cm.derive_band(9, b) == "Intensive" and cm.derive_band.last_gap is False
+
+
 def test_derive_band_from_converted_value():
-    b = get_taxonomy(1, 6)["bands"]          # Minimal 1-2 / Moderate 3-5 / Intensive >6 (por semana)
+    b = get_taxonomy(1, 6)["bands"]          # Minimal 1-2 / Moderate 3-5 / Intensive >=6 (por semana)
     assert cm.derive_band(7.5, b) == "Intensive"        # "30 h/módulo" -> 7.5 h/semana (Emily: Intensive)
-    b7 = get_taxonomy(1, 7)["bands"]         # Minimal 3-5 / Moderate 6-8 / Intensive >9 (por día)
-    assert cm.derive_band(4, b7) == "Minimal"           # "20 h/semana" -> 4 h/día (Emily: Minimal)
+    b7 = get_taxonomy(1, 7)["bands"]         # Minimal 3-5 / Moderate 6-8 / Intensive >=9
+    assert cm.derive_band(4, b7) == "Minimal"
     assert cm.derive_band(5.5, b7) == "Minimal" and cm.derive_band.last_gap is True
-    bh = get_taxonomy(3, 2)["bands"]         # <50 / 50 / >50
-    assert cm.derive_band(40, bh) == "Low"
-    assert cm.derive_band(50, bh) == "Medium"
-    assert cm.derive_band(70, bh) == "High"
+    # El piso de banda de la v2 empieza en 3: 1 y 2 horas no caen en ninguna banda.
+    assert cm.derive_band(2, b7) == "Minimal" and cm.derive_band.last_gap is True
+    bh = get_taxonomy(3, 2)["bands"]         # v2: Few <50 / More >=50
+    assert cm.derive_band(40, bh) == "Few"
+    assert cm.derive_band(50, bh) == "More"
+    assert cm.derive_band(70, bh) == "More"
     assert cm.derive_band(None, bh) is None
 
 
-def test_stance_map_covers_exactly_the_taxonomy_options():
+def test_stance_map_is_a_subset_of_the_taxonomy_options():
+    """Ya no es igualdad: la v2 añade ejes en paralelo (numéricos, calificadores sueltos) que
+    son opciones válidas sin postura. Lo que sí debe cumplirse es que no haya claves huérfanas:
+    toda opción del mapa tiene que existir en la taxonomía, o el aplanado se desincronizó."""
     from stance_map import STANCE_MAP
     for qid, m in STANCE_MAP.items():
-        assert set(m) == set(EMILY_TAXONOMY[qid]["options"]), qid
+        opciones = set(EMILY_TAXONOMY[qid]["options"])
+        assert set(m) <= opciones, (qid, set(m) - opciones)
+        assert "Yes" in m or "No" in m, qid
 
 
 def test_stance_of_recovers_the_nested_structure():
     from stance_map import stance_of
-    assert stance_of("P1_Q5", "With student representation") == ("favor", "with student representation")
-    assert stance_of("P2_Q4", "According to the subject")[0] == "conditional"
+    # La postura viaja en el texto de la opción, que es lo que cambia respecto de la v1.
+    assert stance_of("P1_Q5", "Yes, with student representation") == ("favor", "With student representation")
     assert stance_of("P4_Q3", "No") == ("against", None)
     assert stance_of("P4_Q5", "Pass/Fail") == (None, None)     # pregunta sin posturas
+    # "Depends on ..." fuera de rama se lee como condicional (regla del generador).
+    assert stance_of("P3_Q9", "Depends on the course content")[0] == "conditional"
+    # En la v2 este calificador cuelga de No, no de Depends: es un cambio del documento.
+    assert stance_of("P2_Q4", "No, according to the subject")[0] == "against"
 
 
 def test_unstated_unit_rule_is_in_the_prompt():
@@ -285,3 +320,156 @@ def test_max_tokens_is_per_call_not_global():
     assert c.calls[0]["max_tokens"] == 2500
     c = _FakeClient([ok]); ea.extract_single(c, "r", "Yes", tax["text"], 1, tax)
     assert c.calls[0]["max_tokens"] == ea.MAX_TOKENS
+
+
+# ── la taxonomía es generada, no escrita ──────────────────────────────────────
+
+def test_taxonomy_is_in_sync_with_emilys_document():
+    """taxonomy.py y stance_map.py se generan con tools/build_taxonomy.py desde el JSON del
+    documento de Emily. Si alguien los edita a mano, la próxima regeneración se lo lleva por
+    delante en silencio. Este test regenera en un directorio aparte y compara."""
+    import subprocess, shutil, tempfile, pathlib
+    raiz = pathlib.Path(__file__).resolve().parent.parent
+    with tempfile.TemporaryDirectory() as tmp:
+        copia = pathlib.Path(tmp) / "Delphi"
+        for sub in ("docs", "pipeline", "tools"):
+            shutil.copytree(raiz / sub, copia / sub)
+        r = subprocess.run([sys.executable, str(copia / "tools" / "build_taxonomy.py")],
+                           capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        for nombre in ("taxonomy.py", "stance_map.py"):
+            generado = (copia / "pipeline" / nombre).read_text(encoding="utf-8")
+            actual = (raiz / "pipeline" / nombre).read_text(encoding="utf-8")
+            assert generado == actual, (
+                "%s no coincide con lo que genera tools/build_taxonomy.py. "
+                "Edita el documento de Emily y regenera; no edites el .py a mano." % nombre)
+
+
+def test_generated_stance_map_keeps_its_public_interface():
+    """Regresión: al generar stance_map.py se perdió STANCE_ES y stance_view.py dejó de
+    importar. run.sh se lo traga ('stance_view falló; sigo'), así que el fallo era invisible:
+    la capa de posturas simplemente no se calculaba. Lo que el resto del código importa de
+    este módulo se fija aquí."""
+    import stance_map
+    for nombre in ("STANCE_MAP", "STANCE_ES", "stance_of"):
+        assert hasattr(stance_map, nombre), nombre
+    assert set(stance_map.STANCE_ES) == {"favor", "against", "conditional"}
+    import stance_view  # noqa: F401  — importarlo es la prueba
+
+
+def test_manifiesto_ausente_no_tumba_el_sitio():
+    """Regresión: datos.manifiesto() pasaba por _ruta(), que aborta el proceso cuando falta el
+    archivo. El manifiesto es opcional, así que una carpeta de resultados sin él hacía fallar
+    la generación entera del sitio en vez de omitir la banda de la corrida."""
+    import tempfile, importlib, pathlib
+    raiz = pathlib.Path(__file__).resolve().parent.parent
+    sys.path.insert(0, str(raiz / "sitio"))
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["DELPHI_RESULTADOS"] = tmp
+        import datos as _d
+        importlib.reload(_d)
+        assert _d.manifiesto() == {}          # antes: SystemExit
+        json.dump([{"step": "extract_arguments", "model": "m", "taxonomy_hash": "h",
+                    "timestamp": "2026-09-14T00:00:00", "n_failed": 0}],
+                  open(os.path.join(tmp, "run_manifest.json"), "w"))
+        assert _d.manifiesto()[0]["model"] == "m"
+    os.environ.pop("DELPHI_RESULTADOS", None)
+
+
+# ── preflight del modelo ──────────────────────────────────────────────────────
+
+class _ClienteModelos:
+    """Cliente falso que sólo responde models.list()."""
+    def __init__(self, ids, revienta=False):
+        self.revienta = revienta
+        self.models = self
+        self._ids = ids
+
+    def list(self):
+        if self.revienta:
+            raise ConnectionError("connection refused")
+        datos_ = [type("M", (), {"id": i}) for i in self._ids]
+        return type("R", (), {"data": datos_})
+
+
+def test_preflight_detecta_el_modelo_cambiado():
+    """Regresión: cuando la universidad cambió el modelo servido, la corrida no fallaba —
+    devolvía 706 extracciones 'failed' una por una y al final sobrescribía 02_extracted.csv
+    con filas vacías. Ahora se corta antes de tocar nada."""
+    ok, msg = ea.preflight(_ClienteModelos([ea.MODEL_LLM]))
+    assert ok and ea.MODEL_LLM in msg
+
+    ok, msg = ea.preflight(_ClienteModelos(["otro-org/otro-modelo"]))
+    assert not ok
+    assert "otro-org/otro-modelo" in msg          # dice qué SÍ hay
+    assert ea.MODEL_LLM in msg                    # y qué se pidió
+    assert "DELPHI_MODELO" in msg                 # y cómo arreglarlo
+
+    ok, msg = ea.preflight(_ClienteModelos([], revienta=True))
+    assert not ok and "no responde" in msg
+
+
+def test_preflight_no_se_ejecuta_con_cliente_inyectado():
+    """Los tests y run_smoke_offline.py pasan su propio cliente y no deben sondear la red."""
+    import inspect
+    src = inspect.getsource(ea.run_extraction)
+    assert "propio = client is None" in src and "if propio" in src
+
+
+def test_guardia_de_fallos_protege_la_corrida_anterior():
+    """Regresión: la primera corrida con GLM falló el 28 % y aun así sobrescribió
+    02_extracted.csv. El resultado no es un error, es una tabla que parece resultado pero está
+    calculada sobre media muestra, con preguntas marcadas «Insuficiente» por falta de datos y
+    no por falta de acuerdo."""
+    def marco(n_ok, n_fail):
+        return pd.DataFrame({
+            "is_valid_response": [True] * (n_ok + n_fail),
+            "extraction_status": ["ok"] * n_ok + ["failed"] * n_fail})
+
+    ea.guardia_de_fallos(marco(100, 0))          # sin fallos: pasa
+    ea.guardia_de_fallos(marco(96, 4))           # 4 %: por debajo del umbral, pasa
+    with pytest.raises(SystemExit) as exc:
+        ea.guardia_de_fallos(marco(72, 28))      # 28 %: el caso real
+    msg = str(exc.value)
+    assert "28 %" in msg and "No se sobrescribe" in msg
+    assert "DELPHI_MAX_TOKENS" in msg            # dice la causa más probable
+    assert "caché" in msg                        # y que no se pierde lo bueno
+
+    os.environ["DELPHI_IGNORA_FALLOS"] = "1"     # escape explícito
+    try:
+        ea.guardia_de_fallos(marco(72, 28))
+    finally:
+        os.environ.pop("DELPHI_IGNORA_FALLOS", None)
+
+
+def test_max_tokens_alcanza_para_un_modelo_de_razonamiento():
+    """512 era un ajuste específico de Gemma. Con modelos de razonamiento trunca el JSON."""
+    assert ea.MAX_TOKENS >= 2000
+
+
+# ── canal de razonamiento (modelos que "piensan") ─────────────────────────────
+
+def _respuesta(content=None, reasoning=None, finish="stop"):
+    msg = type("M", (), {"content": content, "reasoning_content": reasoning})()
+    return type("R", (), {"choices": [type("C", (), {"message": msg, "finish_reason": finish})()]})()
+
+
+def test_texto_de_usa_el_canal_de_razonamiento_cuando_content_viene_vacio():
+    """Regresión: GLM devuelve content=None cuando gasta el presupuesto pensando, y todo lo
+    escrito queda en reasoning_content. Eso caía como 'json: no JSON object found', que suena
+    a que el modelo contestó mal — no a que no llegó a contestar."""
+    assert ea.texto_de(_respuesta(content='{"option_letter":"A"}')) == '{"option_letter":"A"}'
+    # content vacío -> se lee el razonamiento, donde sí está el JSON
+    assert ea.texto_de(_respuesta(content=None, reasoning='{"option_letter":"B"}')) \
+        == '{"option_letter":"B"}'
+    assert ea.texto_de(_respuesta(content="   ", reasoning='{"x":1}')) == '{"x":1}'
+
+
+def test_texto_de_distingue_falta_de_presupuesto_de_respuesta_mala():
+    with pytest.raises(ValueError) as e:
+        ea.texto_de(_respuesta(content=None, reasoning=None, finish="length"))
+    assert "sin presupuesto" in str(e.value) and "DELPHI_MAX_TOKENS" in str(e.value)
+
+    with pytest.raises(ValueError) as e:
+        ea.texto_de(_respuesta(content=None, reasoning=None, finish="stop"))
+    assert "vacía" in str(e.value)

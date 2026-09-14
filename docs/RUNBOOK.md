@@ -15,19 +15,33 @@ scripts resuelven sus rutas solos, así que da igual desde dónde se llamen.
 ```bash
 cd ~/Delphi
 
-# VPN activa; verificar qué modelos sirve hoy (la universidad los cambia sin aviso)
-for port in 12555 12559; do echo -n "  $port -> "; \
-  curl -s --max-time 5 http://172.28.230.10:$port/v1/models \
-  | python3 -c "import sys,json; print(', '.join(m['id'] for m in json.load(sys.stdin)['data']))"; done
+# VPN activa; preguntar al servidor qué sirve hoy (la universidad los cambia sin aviso)
+python3 tools/escanear_endpoints.py           # barre 12550-12570 y sugiere la línea de config.py
+python3 tools/escanear_endpoints.py --probar  # además comprueba que genera, y mide latencia
 
 pip install -r requirements.txt
-python3 -m pytest tests -q                    # 32 passed
+python3 -m pytest tests -q                    # 42 passed
 python3 pipeline/run_smoke_offline.py         # corrida completa con LLM simulado -> Resultados_smoke/
 ```
 
-Si un modelo cambió, actualizar `MODEL_LLM` en `pipeline/config.py` y `MODELS` en
-`pipeline/compare_models.py`. Ha pasado dos veces; la segunda costó una corrida entera de
-respuestas vacías antes de que el `preflight` lo detectara.
+**Los puertos y modelos no se escriben en la documentación.** Se escribieron a mano en tres
+sitios —`config.py`, `compare_models.py` y una página de Notion— y los tres se desactualizaron;
+la última vez costó 706 extracciones fallidas contra un modelo que el servidor ya no tenía.
+`escanear_endpoints.py` lo pregunta en el momento, así que no puede quedar viejo.
+
+Si un modelo cambió, no hace falta editar nada para una corrida puntual:
+
+```bash
+DELPHI_MODELO="<el id exacto que devuelva el endpoint>" ./run.sh
+```
+
+Si el cambio es permanente, actualizar el valor por defecto de `MODEL_LLM` en
+`pipeline/config.py` y `MODELS` en `pipeline/compare_models.py`. Ha pasado tres veces; una
+costó una corrida entera de respuestas vacías antes de que se detectara.
+
+El modelo entra en la clave del caché (`rid|modelo|hash`), así que cambiarlo **no mezcla
+corridas**: invalida todo el caché y vuelve a extraer con un solo modelo. Cuál se usó queda en
+`Resultados/run_manifest.json` y sale impreso en el sitio.
 
 **Comprobar que están las entradas:**
 
@@ -128,9 +142,14 @@ de la corrida que los produjo.
 
 ## 5. Comparación de modelos (no hace falta repetirla)
 
-Ya está decidido: **Gemma**, por lo operativo (9× más rápido, latencia estable, 0 fallos de
-formato) con exactitud indistinguible de DeepSeek. Sólo hay que rehacerla si cambia el modelo
-servido o antes de la Fase 3.
+**Desactualizada desde el 14-09-2026.** La comparación se hizo entre Gemma y DeepSeek y
+concluyó a favor de Gemma por lo operativo (9× más rápido, latencia estable, 0 fallos de
+formato) con exactitud indistinguible. La universidad dejó de servir Gemma y el modelo de
+trabajo pasó a ser `zai-org/GLM-5.3-Flash`, así que esa decisión ya no describe lo que corre.
+
+Rehacerla es parte de lo pendiente, pero **primero hay que cerrar la taxonomía**: el modo (a)
+puntúa contra las 44 etiquetas de Emily, que están hechas contra las opciones anteriores y
+dejan de ser un patrón válido con la v2.
 
 ```bash
 # (a) DECIDE: los dos modelos sobre los MISMOS ítems que etiquetó Emily

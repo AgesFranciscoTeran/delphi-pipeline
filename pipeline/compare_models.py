@@ -16,6 +16,7 @@ El primer modo mide acuerdo entre modelos (sin gold): sirve para encontrar dónd
 sembrar la muestra grande de la Fase 3. El segundo mide acierto contra la codificadora.
 """
 import os
+import os as _os
 import sys
 import time
 import json
@@ -26,17 +27,36 @@ from taxonomy import get_taxonomy
 from extract_arguments import extract_single
 from consensus_metrics import unit_from_raw, to_question_unit, derive_band
 
-MODELS = {
-    # max_tokens por modelo: DeepSeek es de razonamiento y con 512 se queda sin presupuesto
-    # antes de emitir el JSON (la v1 ya usaba 2000 por esto mismo). Gemma responde directo.
-    "gemma":    {"url": "http://172.28.230.10:12559/v1", "model": "google/gemma-4-12B-it",
-                 "max_tokens": 512},
-    # OJO: el id cambió el 30-08-2026 (era "DeepSeek-V4-Flash"). Es un snapshot distinto al que
-    # se usó en la comparación v1, así que el kappa de DeepSeek v1 (0.79) NO es directamente
-    # comparable con lo que salga ahora. El id queda registrado en model_comparison_raw.json.
-    "deepseek": {"url": "http://172.28.230.10:12555/v1", "model": "deepseek-ai/DeepSeek-V4-Flash-0731",
-                 "max_tokens": 2500},
-}
+# Los modelos NO se escriben a mano: se descubren preguntándole a cada puerto qué sirve.
+# La lista escrita a mano quedó desactualizada tres veces —la universidad cambia los modelos sin
+# aviso— y cada vez costó una corrida entera de fallos antes de que alguien lo notara. Lo único
+# fijo son los puertos donde la universidad levanta vLLM.
+PUERTOS = [int(p) for p in _os.environ.get("DELPHI_PUERTOS", "12555,12559").split(",")]
+HOST = _os.environ.get("DELPHI_HOST", "172.28.230.10")
+
+# max_tokens: el de config.py sirve para todos. Antes se fijaba por modelo (512 para Gemma, que
+# respondía directo) y eso fue justo lo que rompió la primera corrida con GLM: los modelos de
+# razonamiento gastan el presupuesto pensando y truncan el JSON. Un tope alto no cuesta nada en
+# las respuestas cortas — se paga por token generado, no por el tope.
+
+
+def descubrir_modelos():
+    """Pregunta a cada puerto qué modelo sirve. Devuelve {nombre_corto: cfg}."""
+    import urllib.request
+    encontrados = {}
+    for puerto in PUERTOS:
+        url = f"http://{HOST}:{puerto}/v1"
+        try:
+            with urllib.request.urlopen(url.rstrip("/") + "/models", timeout=5) as r:
+                servidos = [m["id"] for m in json.load(r)["data"]]
+        except Exception as e:
+            print(f"  puerto {puerto}: no responde ({type(e).__name__})")
+            continue
+        for mid in servidos:
+            corto = mid.split("/")[-1]
+            encontrados[corto] = {"url": url, "model": mid, "max_tokens": MAX_TOKENS}
+            print(f"  puerto {puerto}: {mid}")
+    return encontrados
 N_PER_QUESTION = 4
 MAX_FALLOS_SEGUIDOS = 3     # aborta en vez de moler 44 respuestas contra un endpoint caído
 RANDOM_STATE = 42
@@ -148,19 +168,13 @@ def sample_from_labels(ind, path):
 def main(labels_path=None):
     ind = pd.read_csv(os.path.join(OUTPUT_DIR, "01_individual_clean.csv"))
     sample = sample_from_labels(ind, labels_path) if labels_path else build_sample(ind)
-    print("\n── Comprobando endpoints ──")
-    vivos = {}
-    for name, cfg in MODELS.items():
-        ok, msg = preflight(name, cfg)
-        print(f"  {name:9s} {cfg['url']}  {msg}")
-        if ok:
-            vivos[name] = cfg
+    print("\n── Qué sirve la universidad ahora mismo ──")
+    vivos = descubrir_modelos()
     if not vivos:
         raise SystemExit("\nNingún endpoint disponible: no hay nada que comparar.")
-    if len(vivos) < len(MODELS):
-        faltan = [n for n in MODELS if n not in vivos]
-        print(f"\n⚠ Sigo sólo con {list(vivos)}; sin {faltan} esto NO decide el modelo, "
-              f"sólo puntúa a los que respondieron.")
+    print(f"\n  A comparar: {', '.join(vivos)}")
+    if len(vivos) < 2:
+        print("\n⚠ Sólo hay un modelo disponible: esto no compara nada, sólo lo puntúa.")
 
     results, lats = {}, {}
     for name, cfg in vivos.items():

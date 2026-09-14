@@ -21,8 +21,16 @@ FIGURES_DIR = _os.path.join(OUTPUT_DIR, "figures")
 API_KEY = "local"
 
 # ── Endpoints (verificar antes de cada corrida; la universidad cambia modelos sin aviso) ──
-URL_LLM = "http://172.28.230.10:12559/v1"
-MODEL_LLM = "google/gemma-4-12B-it"
+# Se pueden sobrescribir por entorno para no tener que editar (ni versionar) este archivo
+# cuando la universidad cambia el modelo servido:
+#     DELPHI_MODELO="zai-org/GLM-5.3-Flash" ./run.sh
+# El modelo entra en la clave del caché, así que cambiarlo NO mezcla corridas: invalida todo
+# y vuelve a extraer con un solo modelo. Anotar cuál se usó: sale en run_manifest.json.
+# 14-09-2026: la universidad dejó de servir google/gemma-4-12B-it en este puerto y no lo va a
+# reponer. GLM pasa a ser el modelo de trabajo. Todo lo anterior a esta fecha —incluida la
+# validación contra las etiquetas de Emily, κ = 0,72— se midió con Gemma y no es comparable.
+URL_LLM = _os.environ.get("DELPHI_LLM_URL", "http://172.28.230.10:12559/v1")
+MODEL_LLM = _os.environ.get("DELPHI_MODELO", "zai-org/GLM-5.3-Flash")
 
 URL_EMBEDDINGS = "http://172.28.230.10:12556/v1"
 MODEL_EMBEDDINGS = "BAAI/bge-m3"
@@ -30,10 +38,20 @@ MODEL_EMBEDDINGS = "BAAI/bge-m3"
 # ── Determinismo y rendimiento de la extracción ──
 TEMPERATURE = 0.0          # reproducibilidad: la misma respuesta -> la misma etiqueta
 SEED = 42                  # vLLM acepta `seed`; si el servidor lo ignora no pasa nada
-MAX_TOKENS = 512
+# 2500 y no 512: los modelos de razonamiento gastan presupuesto "pensando" antes de emitir el
+# JSON, y con 512 lo truncan a media respuesta. El síntoma no es un error claro sino una tasa
+# alta de extracciones "failed" repartidas al azar. Gemma respondía directo y con 512 le bastaba;
+# GLM no. Subirlo no cuesta nada en las respuestas cortas: se paga por token generado, no por
+# el tope.
+MAX_TOKENS = int(_os.environ.get("DELPHI_MAX_TOKENS", "2500"))
 MAX_WORKERS = 8            # peticiones concurrentes al LLM (vLLM batchea; 8-16 es razonable)
 REQUEST_TIMEOUT = 120      # segundos por petición
 RETRIES = 3
+
+# Tasa de fallos por encima de la cual la extracción se considera rota y NO se sobrescribe
+# 02_extracted.csv. Una corrida con 28 % de fallos produce tablas que parecen resultados pero
+# están hechas sobre la mitad del panel. Para saltárselo a propósito: DELPHI_IGNORA_FALLOS=1.
+MAX_FALLOS_PCT = 5.0
 
 # Decodificación guiada (vLLM): si el servidor la soporta, el JSON y las opciones
 # quedan restringidos por esquema y desaparecen los errores de formato. Si el

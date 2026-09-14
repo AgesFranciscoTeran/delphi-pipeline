@@ -12,6 +12,13 @@ CSS = """
   margin-right:.28rem;vertical-align:0}
 .panelgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
   gap:.9rem;margin:1.4rem 0 1.6rem}
+.corrida{background:#fdf8ef;border:1px solid #ecdcc0;border-left:3px solid #d97706;
+  border-radius:5px;padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.85rem;color:var(--ink-2);
+  line-height:1.6}
+.corrida b{color:var(--ink)}
+.corrida code{font-family:var(--mono,ui-monospace,monospace);font-size:.82rem;
+  background:#fff;border:1px solid #ecdcc0;border-radius:3px;padding:.05rem .3rem}
+@media print{.corrida{background:none}}
 .panelcard{display:block;background:var(--panel);border:1px solid var(--line);
   border-radius:6px;padding:1.1rem 1.2rem;text-decoration:none;color:inherit;
   transition:border-color .15s,box-shadow .15s}

@@ -16,7 +16,25 @@ import contenido
 from estilos import CSS
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
-FECHA = "31 de agosto de 2026"
+def _fecha_de_la_corrida():
+    """La fecha del pie sale de la corrida, no de una constante.
+
+    Estaba escrita a mano («31 de agosto de 2026») y siguió ahí durante tres corridas y dos
+    cambios de taxonomía: el pie decía agosto en una página generada en septiembre. Es el mismo
+    error que las tablas copiadas a mano, en pequeño."""
+    MESES = ("enero febrero marzo abril mayo junio julio agosto septiembre octubre "
+             "noviembre diciembre").split()
+    ext = [r for r in (datos.manifiesto() or []) if r.get("step") == "extract_arguments"]
+    sello = ext[-1].get("timestamp") if ext else None
+    if sello:
+        a, m, d = str(sello)[:10].split("-")
+        return f"{int(d)} de {MESES[int(m) - 1]} de {a}"
+    import datetime
+    hoy = datetime.date.today()
+    return f"{hoy.day} de {MESES[hoy.month - 1]} de {hoy.year}"
+
+
+FECHA = _fecha_de_la_corrida()
 FIGS = figuras.construir_todo()
 PANELES = datos.paneles()
 
@@ -57,8 +75,18 @@ def barra_postura(r):
     return '<div class="bar">' + "".join(out) + "</div>"
 
 
+def num_decision(clave):
+    """Número de una decisión por una palabra de su título. Las referencias en prosa («la
+    decisión 5») se escribían a mano y quedaron mal en cuanto la lista se reordenó por
+    urgencia: unidades pasó de la 5 a la 3 y el texto seguía diciendo 5."""
+    for i, d in enumerate(contenido.DECISIONES, 1):
+        if clave.lower() in d["titulo"].lower():
+            return i
+    return "?"
+
+
 SUP = ('<sup title="Unidad asumida por nosotros, no declarada en la taxonomía '
-       '(decisión 7)">*</sup>')
+       f'(decisión {num_decision("Bordes")})">*</sup>')
 
 
 def tabla_postura(filas):
@@ -128,8 +156,8 @@ def tabla_cuant(filas):
     pregunta medida por semana, se convierte — <b>×5</b>. El mismo texto vale 8 o 40.</p>
     <p>Corrimos el análisis dos veces sobre los mismos datos y con el mismo código: las
     preguntas de opción dieron <b>exactamente el mismo resultado</b>, y 4 de las 12 numéricas
-    <b>cambiaron de etiqueta</b>. Hasta que se cierre la decisión 5, esta tabla es diagnóstico,
-    no resultado.</p>
+    <b>cambiaron de etiqueta</b>. Hasta que se cierre la decisión {num_decision("Unidades")},
+    esta tabla es diagnóstico, no resultado.</p>
   </div>''' if asumidas else ""
     return f'''
   <h3>Preguntas numéricas</h3>
@@ -145,12 +173,36 @@ def tabla_cuant(filas):
 
 
 def decisiones_de(panel):
-    ds = [d for d in contenido.DECISIONES if panel in d["paneles"]]
+    """El número de cada decisión es su posición en contenido.DECISIONES, que está ordenada por
+    urgencia. Así el mismo asunto lleva el mismo número en las cuatro páginas y reordenar la
+    lista no obliga a renumerar nada a mano."""
+    ds = [(i, d) for i, d in enumerate(contenido.DECISIONES, 1) if panel in d["paneles"]]
     return "\n".join(
-        f'<div class="dec"><h3><span class="numdec">{d["n"]}</span>{d["titulo"]}</h3>'
+        f'<div class="dec"><h3><span class="numdec">{i}</span>{d["titulo"]}</h3>'
         f'<p>{d["hoy"]}</p><p class="ev"><span class="lbl">Evidencia</span>{d["evidencia"]}</p>'
         f'<div class="pide"><span class="lbl">Decisión</span>{d["decision"]}</div></div>'
-        for d in ds), len(ds)
+        for i, d in ds), len(ds)
+
+
+def banda_corrida():
+    """Qué modelo y qué taxonomía produjeron estos números. Sale del manifiesto de la corrida,
+    no de un texto escrito a mano: si cambia el modelo, cambia la banda sin que nadie la edite."""
+    runs = datos.manifiesto()
+    ext = [r for r in runs if r.get("step") == "extract_arguments"] if runs else []
+    if not ext:
+        return ""
+    r = ext[-1]
+    fecha = str(r.get("timestamp", ""))[:10]
+    fallidas = int(r.get("n_failed", 0) or 0)
+    aviso = (f' Quedaron <b>{fallidas}</b> respuestas sin extraer.' if fallidas else "")
+    # La parte mecánica (modelo, fecha, taxonomía) sale del manifiesto. La nota de contexto es
+    # editorial y vive en contenido.py, para poder quitarla cuando deje de hacer falta sin
+    # tocar la plantilla.
+    return (f'<p class="corrida"><b>Resultados preliminares.</b> Clasificados por '
+            f'<code>{esc(str(r.get("model", "?")))}</code> el {fecha}, contra la taxonomía '
+            f'<code>{esc(str(r.get("taxonomy_hash", "?")))}</code>.{aviso} '
+            f'{contenido.NOTA_MODELO} Faltan además las decisiones de taxonomía de la sección '
+            f'de abajo.</p>')
 
 
 def envoltura(titulo, subtitulo, nav, cuerpo, pie_extra=""):
@@ -171,6 +223,7 @@ def envoltura(titulo, subtitulo, nav, cuerpo, pie_extra=""):
     <p class="kicker">Universidad San Francisco de Quito · Estudio Delphi de currículo médico</p>
     <h1>{titulo}</h1>
     <p class="sub">{subtitulo}</p>
+    {banda_corrida()}
   </div>
 </header>
 <nav class="toc"><ul>{nav}</ul></nav>
@@ -248,8 +301,10 @@ def pagina_panel(panel):
 <section id="decisiones">
   <h2><span class="sec-n">03</span>Lo que hace falta decidir</h2>
   <span class="audience">Para Emily</span>
-  <p class="lead">{n_decs} de las ocho decisiones de taxonomía afectan a este panel. Ninguna
-  requiere saber programación: son decisiones sobre cómo debe estar definida la taxonomía.</p>
+  <p class="lead">{n_decs} de las {len(contenido.DECISIONES)} decisiones de taxonomía abiertas
+  afectan a este panel. Ninguna requiere saber programación: son decisiones sobre cómo debe
+  estar definida la taxonomía.</p>
+  <p class="lead">{contenido.CERRADAS}</p>
 {decs}
 </section>
 '''
@@ -327,6 +382,7 @@ def portada():
   <h2><span class="sec-n">04</span>Confiabilidad</h2>
   <p class="lead">La respuesta a «¿por qué creerle a estos números?». No hace falta leerla para
   usar los resultados.</p>
+  <div class="callout warn">{contenido.NOTA_CONFIANZA}</div>
 
   <h3>Acuerdo con la codificación manual</h3>
   <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Coinciden en el 75 %

@@ -169,19 +169,26 @@ def to_question_unit(value, unit, question_unit):
 
 
 def _parse_band_range(rng):
-    """'1-2' -> [1,2]; '>6' -> (6,inf); '<50' -> (-inf,50); '50' -> [50,50]; texto -> None.
-    Devuelve (lo, hi, lo_abierto, hi_abierto)."""
+    """'1-2' -> [1,2]; '>6' -> (6,inf); '>=6' -> [6,inf); '<=5' -> (-inf,5]; '50' -> [50,50].
+    Texto no numérico -> None.  Devuelve (lo, hi, lo_abierto, hi_abierto).
+
+    Los operadores con igual (>=, <=, ≥, ≤) NO son un adorno: el documento v2 de Emily los usa
+    en la mayoría de las bandas ('Intensive: >=6', 'Minimal: <=5'). Antes esta función sólo
+    reconocía '>' y '<', así que '>=6' no parseaba, la banda se descartaba entera y los valores
+    que le correspondían caían en la banda vecina por el criterio de borde más cercano — sin
+    ningún error visible. Cualquier cambio aquí necesita su test.
+    """
     import re as _re
-    rng = str(rng).strip()
-    m = _re.match(r"^(\d+\.?\d*)\s*-\s*(\d+\.?\d*)", rng)
+    rng = str(rng).strip().replace("≥", ">=").replace("≤", "<=")
+    m = _re.match(r"^(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)", rng)
     if m:
         return float(m.group(1)), float(m.group(2)), False, False
-    m = _re.match(r"^>\s*(\d+\.?\d*)", rng)
+    m = _re.match(r"^(>=?)\s*(\d+\.?\d*)", rng)
     if m:
-        return float(m.group(1)), float("inf"), True, False
-    m = _re.match(r"^<\s*(\d+\.?\d*)", rng)
+        return float(m.group(2)), float("inf"), m.group(1) == ">", False
+    m = _re.match(r"^(<=?)\s*(\d+\.?\d*)", rng)
     if m:
-        return float("-inf"), float(m.group(1)), False, True
+        return float("-inf"), float(m.group(2)), False, m.group(1) == "<"
     m = _re.match(r"^(\d+\.?\d*)$", rng)
     if m:
         return float(m.group(1)), float(m.group(1)), False, False

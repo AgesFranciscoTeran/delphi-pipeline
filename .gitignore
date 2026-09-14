@@ -8,10 +8,11 @@ datos/*.csv
 
 # ── Salidas del pipeline ──────────────────────────────────────────────────────
 # Se regeneran con ./run.sh, pesan, y contienen las respuestas del panel.
+# El patrón es general a propósito: antes se enumeraban los sufijos conocidos
+# (Resultados_v1_*, Resultados_2*) y una carpeta archivada con otro nombre —por ejemplo
+# Resultados_gemma_2026-09-03— se habría publicado con un `git add -A`.
 Resultados/
-Resultados_smoke/
-Resultados_v1_*/
-Resultados_2*/
+Resultados_*/
 
 # Lo que SÍ se publica: el sitio ya generado. Pages sirve archivos, no ejecuta nada.
 !sitio/index.html

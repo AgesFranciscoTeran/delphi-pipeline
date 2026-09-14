@@ -17,6 +17,13 @@
   margin-right:.28rem;vertical-align:0}
 .panelgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
   gap:.9rem;margin:1.4rem 0 1.6rem}
+.corrida{background:#fdf8ef;border:1px solid #ecdcc0;border-left:3px solid #d97706;
+  border-radius:5px;padding:.7rem 1rem;margin:1.4rem 0 0;font-size:.85rem;color:var(--ink-2);
+  line-height:1.6}
+.corrida b{color:var(--ink)}
+.corrida code{font-family:var(--mono,ui-monospace,monospace);font-size:.82rem;
+  background:#fff;border:1px solid #ecdcc0;border-radius:3px;padding:.05rem .3rem}
+@media print{.corrida{background:none}}
 .panelcard{display:block;background:var(--panel);border:1px solid var(--line);
   border-radius:6px;padding:1.1rem 1.2rem;text-decoration:none;color:inherit;
   transition:border-color .15s,box-shadow .15s}
@@ -199,6 +206,7 @@ footer p{max-width:46rem}
     <p class="kicker">Universidad San Francisco de Quito · Estudio Delphi de currículo médico</p>
     <h1>Qué decidió cada panel</h1>
     <p class="sub">Resultados del análisis computacional del estudio Delphi, panel por panel, y lo que hace falta para cerrar cada artículo.</p>
+    <p class="corrida"><b>Resultados preliminares.</b> Clasificados por <code>zai-org/GLM-5.3-Flash</code> el 2026-09-14, contra la taxonomía <code>857aa43cf1c1</code>. Quedaron <b>9</b> respuestas sin extraer. La taxonomía es el documento «Posturas varias opciones» v2 de Emily. El modelo cambió: el servidor de la universidad dejó de servir Gemma, así que estos números <b>no son comparables</b> con las versiones anteriores de esta página, y la validación contra las etiquetas de Emily (κ = 0,72) se midió con el modelo anterior y hay que rehacerla. Faltan además las decisiones de taxonomía de la sección de abajo.</p>
   </div>
 </header>
 <nav class="toc"><ul><li><a href="#paneles">Los paneles</a></li><li><a href="#metodo">Cómo funciona</a></li><li><a href="#estado">Estado</a></li><li><a href="#confianza">Confiabilidad</a></li></ul></nav>
@@ -208,7 +216,7 @@ footer p{max-width:46rem}
   <h2><span class="sec-n">01</span>Cuatro estudios, cuatro páginas</h2>
   <p class="lead">Los cuatro paneles son <b>estudios independientes</b>: ningún panelista participa en más de uno, y de las 32 preguntas sólo una se repite entre paneles. Por eso cada uno tiene su página y no se agregan ni se comparan resultados entre ellos.</p>
   <div class="panelgrid">
-<a class="panelcard" href="panel1.html"><h3>Panel 1</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>1 de 4</b> preguntas de opción resueltas · <b>1</b> convergieron</p><p class="pc-pend">6 decisiones pendientes · 3 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel2.html"><h3>Panel 2</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>2 de 6</b> preguntas de opción resueltas · <b>2</b> convergieron</p><p class="pc-pend">3 decisiones pendientes · 1 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel3.html"><h3>Panel 3</h3><p class="pc-meta">10 panelistas · 10 preguntas · 3 rondas</p><p class="pc-res"><b>4 de 5</b> preguntas de opción resueltas · <b>2</b> convergieron</p><p class="pc-pend">6 decisiones pendientes · 5 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel4.html"><h3>Panel 4</h3><p class="pc-meta">8 panelistas · 8 preguntas · 3 rondas</p><p class="pc-res"><b>4 de 5</b> preguntas de opción resueltas · <b>5</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a>
+<a class="panelcard" href="panel1.html"><h3>Panel 1</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 4</b> preguntas de opción resueltas · <b>3</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel2.html"><h3>Panel 2</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 6</b> preguntas de opción resueltas · <b>3</b> convergieron</p><p class="pc-pend">4 decisiones pendientes · 1 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel3.html"><h3>Panel 3</h3><p class="pc-meta">10 panelistas · 10 preguntas · 3 rondas</p><p class="pc-res"><b>5 de 5</b> preguntas de opción resueltas · <b>5</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 5 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel4.html"><h3>Panel 4</h3><p class="pc-meta">8 panelistas · 8 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 5</b> preguntas de opción resueltas · <b>4</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a>
   </div>
   <div class="callout">
     <span class="ct">Por qué no hay una tabla que los junte</span>
@@ -258,6 +266,7 @@ footer p{max-width:46rem}
   <h2><span class="sec-n">04</span>Confiabilidad</h2>
   <p class="lead">La respuesta a «¿por qué creerle a estos números?». No hace falta leerla para
   usar los resultados.</p>
+  <div class="callout warn"><span class="ct">Estas comprobaciones son del modelo anterior</span><p>Las cuatro que siguen —acuerdo con la codificación manual, consistencia entre rondas, contraste con las síntesis y comparación entre modelos— se midieron con <code>google/gemma-4-12B-it</code>, que el servidor de la universidad ya no sirve, y contra la taxonomía anterior. Siguen describiendo cómo se comprueba el método, pero <b>no describen la corrida que produjo los números de arriba</b>. Rehacerlas con el modelo actual es parte de lo que falta, y en el caso del acuerdo con Emily hay que esperar además a que se cierren las decisiones de taxonomía: sus 44 etiquetas están hechas contra las opciones viejas.</p></div>
 
   <h3>Acuerdo con la codificación manual</h3>
   <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Coinciden en el 75 %
@@ -295,7 +304,7 @@ footer p{max-width:46rem}
 </main>
 <footer>
   <div class="wrap">
-    <p>Documento de trabajo interno · 31 de agosto de 2026. 
+    <p>Documento de trabajo interno · 14 de septiembre de 2026. 
     Generado desde la salida del pipeline; ningún número está escrito a mano.</p>
   </div>
 </footer>

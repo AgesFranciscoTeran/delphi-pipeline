@@ -6,66 +6,113 @@ Todo lo demás —tablas, cifras, figuras— lo produce datos.py desde los CSV d
 Si un número aparece escrito aquí, es un bug.
 """
 
+# Nota de contexto de la banda de corrida (build.py la pega después de los datos del
+# manifiesto). Es temporal: cuando la corrida con GLM sea la referencia y no haya nada
+# publicado de Gemma con qué confundirla, esta cadena se vacía y la banda queda sólo con los
+# datos mecánicos.
+NOTA_MODELO = (
+ "La taxonomía es el documento «Posturas varias opciones» v2 de Emily. El modelo cambió: el "
+ "servidor de la universidad dejó de servir Gemma, así que estos números <b>no son "
+ "comparables</b> con las versiones anteriores de esta página, y la validación contra las "
+ "etiquetas de Emily (κ = 0,72) se midió con el modelo anterior y hay que rehacerla."
+)
+
+# Aviso de la sección «Confiabilidad»: todo lo que hay ahí se midió con el modelo anterior.
+# Se quita cuando las cuatro comprobaciones se rehagan con el modelo actual.
+NOTA_CONFIANZA = (
+ "<span class=\"ct\">Estas comprobaciones son del modelo anterior</span>"
+ "<p>Las cuatro que siguen —acuerdo con la codificación manual, consistencia entre rondas, "
+ "contraste con las síntesis y comparación entre modelos— se midieron con "
+ "<code>google/gemma-4-12B-it</code>, que el servidor de la universidad ya no sirve, y contra "
+ "la taxonomía anterior. Siguen describiendo cómo se comprueba el método, pero <b>no describen "
+ "la corrida que produjo los números de arriba</b>. Rehacerlas con el modelo actual es parte "
+ "de lo que falta, y en el caso del acuerdo con Emily hay que esperar además a que se cierren "
+ "las decisiones de taxonomía: sus 44 etiquetas están hechas contra las opciones viejas.</p>"
+)
+
+CERRADAS = (
+ "La v2 del documento de posturas de Emily (14-09-2026) cerró cuatro de las ocho decisiones "
+ "anteriores: la estructura anidada postura → calificador, que ahora viene declarada y ya no "
+ "se reconstruye a mano; <b>P1_Q3</b>, retipificada en actividades más semestres; "
+ "<b>P3_Q3</b>, con umbrales numéricos en vez de «alta / moderada / baja»; y <b>P4_Q5</b>, "
+ "con la opción mixta por etapa. Esta corrida es la primera que usa esa taxonomía."
+)
+
 # Qué decisión de taxonomía afecta a qué panel. Sirve para que cada página diga sólo lo
-# que le toca, en vez de repetir las ocho en las cuatro.
+# que le toca, en vez de repetirlas todas en las cuatro.
+#
+# El número que ve el lector NO se escribe aquí: lo da la posición en esta lista (build.py).
+# Antes iba a mano y al reordenar por prioridad quedaron numeradas 1, 9, 2, 3... Van en orden
+# de urgencia, así que reordenar es una operación normal.
 DECISIONES = [
- {"n": 1, "titulo": "Separar postura de calificadores",
-  "paneles": [1, 2, 3, 4],
-  "hoy": "Cada pregunta tiene una lista única de opciones excluyentes que mezcla la postura "
-         "con sus condiciones. «Sí, pero sólo en ciencias básicas» encaja en tres a la vez.",
-  "evidencia": "El documento de posturas de Emily ya trae la estructura anidada y ya está "
-               "codificada; leído así, el acuerdo con sus etiquetas sube de 18/24 a 21/24.",
-  "decision": "Confirmar dos casos: «Replaced by clinical cases» cuelga de <em>Sí</em> en "
-              "P2_Q7, y «According to the subject» cuelga de <em>Sí</em> en P4_Q8 pero de "
-              "<em>Depende</em> en P2_Q4."},
- {"n": 2, "titulo": "P1_Q3 (DCI): volver a tipificar",
-  "paneles": [1],
-  "hoy": "El 86 % de las respuestas queda sin clasificar: los panelistas no eligen una "
-         "postura, describen cómo debería ser el DCI.",
-  "evidencia": "Al validar, Emily creó una categoría que no existía («Less semesters»).",
-  "decision": "¿Dividirla en dos capas —cuántos semestres y qué actividades— o dejarla como "
-              "una sola pregunta abierta?"},
- {"n": 3, "titulo": "P3_Q3: umbrales de depuración",
-  "paneles": [3],
-  "hoy": "«Alta / Moderada / Baja depuración» no tienen números. En los datos aparecen 20 %, "
-         "15 %, «menos del 10 %», «20 estudiantes», y tres personas que dicen que no debe "
-         "haber porcentaje fijo.",
-  "evidencia": "Sin umbral, ni el modelo ni una persona clasifican igual dos veces. Los dos "
-               "modelos que probamos fallan este ítem.",
-  "decision": "Fijar los cortes y decidir si se añade «Sin porcentaje fijo / según mérito», "
-              "que hoy es la respuesta más frecuente y no existe como opción."},
- {"n": 4, "titulo": "P4_Q5: opción «mixto»",
+ {"titulo": "P4_Q8 se quedó sin rama «No»",
   "paneles": [4],
-  "hoy": "Dos panelistas proponen letras los primeros años y aprobado/reprobado los últimos.",
-  "evidencia": "Emily los etiquetó «Both: letter system, Pass/Fail», una categoría que la "
-               "taxonomía no tiene.",
-  "decision": "¿Se añade «Mixto (letras + aprobado/reprobado por etapa)»?"},
- {"n": 5, "titulo": "Unidades: qué se asume cuando alguien dice «8 horas»",
+  "hoy": "«¿Debería la participación ser parte de la evaluación?» tiene «Yes» y cuatro "
+         "calificadores, y nada más. Quien responde que no, no tiene dónde caer.",
+  "evidencia": "Pasó de <b>0 % a 61 % sin clasificar</b> al aplicar la v2, y las catorce "
+               "respuestas perdidas dicen lo mismo: «participation is too subjective», «it "
+               "doesn't reflect the student's knowledge». Por el texto, el «no» parece ser la "
+               "postura mayoritaria del panel — hoy la pregunta reporta consenso a favor "
+               "construido sólo con los que dijeron que sí.",
+  "decision": "Añadir la rama «No». Es una línea y recupera 14 de 23 respuestas: el cambio de "
+              "mayor rendimiento del documento."},
+ {"titulo": "P3_Q7 y P4_Q6: revisar si se clasificaron o se forzaron",
+  "paneles": [3, 4],
+  "hoy": "Las dos mejoraron mucho con la v2 —P3_Q7 de 55 % a 7 % sin clasificar, P4_Q6 de 25 % "
+         "a 5 %—, pero quedar clasificada no es quedar bien clasificada.",
+  "evidencia": "Cuando alguien escribe «PBL 50 %, examen 20 %, práctica 20 %» y el sistema lo "
+               "mete en «Priority to PBL», se perdió una distribución entera. En P4_Q6, "
+               "«socrática sólo en ciencias básicas» ahora encaja en «Yes, only in basic "
+               "sciences», que puede ser un sí que el panelista no dijo.",
+  "decision": "Revisar a mano las ~40 respuestas afectadas. Es lo que decide si estas dos "
+              "preguntas se pueden reportar."},
+ {"titulo": "Unidades: qué se asume cuando alguien dice «8 horas»",
   "paneles": [1, 2, 3, 4],
   "hoy": "Si el panelista declara «8 horas al día» en una pregunta medida por semana, el "
          "sistema convierte (<b>×5</b> → 40). Si escribe «8 horas» a secas, toma la unidad de "
          "la pregunta y deja 8. El mismo texto vale 8 o 40.",
-  "evidencia": "Es la causa de que los resultados numéricos no sean reproducibles: entre dos "
-               "corridas del mismo código sobre los mismos datos, 4 de 12 preguntas numéricas "
-               "cambiaron de etiqueta. Las categóricas no cambiaron ninguna.",
-  "decision": "Escribir la regla: ante «8 horas» sin periodo, ¿se asume la unidad de la "
-              "pregunta, se descarta la respuesta, o se vuelve a preguntar? <b>Es la decisión "
-              "más urgente de las ocho.</b>"},
- {"n": 6, "titulo": "¿Puede asignarse banda sin número?",
-  "paneles": [1, 3],
-  "hoy": "Emily asignó bandas a respuestas que no dan ninguna cifra («restringir las prácticas "
-         "a internos» → Mínima). El modelo lo tiene prohibido.",
-  "evidencia": "Son 3 de los 9 desacuerdos que quedan con sus etiquetas.",
-  "decision": "¿Se permite, y con qué regla escrita?"},
- {"n": 7, "titulo": "Bordes de las bandas",
-  "paneles": [1, 3, 4],
-  "hoy": "Las bandas 3-5 / 6-8 / &gt;9 dejan fuera valores como 5,5 y 8,5. Las de admisión "
-         "(&lt;50 / 50 / &gt;50) mandan a «Alta» casi todo el Panel 3, cuyas respuestas van "
-         "de 20 a 120.",
-  "evidencia": "Ya se incorporó lo que Emily aclaró en sus notas para P1_Q6, P1_Q7, P3_Q5 y "
-               "P3_Q8. Faltan P3_Q1 y P3_Q6, hoy asumidos por nosotros.",
-  "decision": "Hacer los bordes contiguos y revisar las bandas de admisión."},
- {"n": 8, "titulo": "Taxonomía de argumentos",
+  "evidencia": "En la corrida nueva, <b>25 respuestas</b> llegaron sin periodo declarado por el "
+               "panelista. Donde el eje sí lo declara la ambigüedad se resuelve sola; donde no "
+               "—<b>P3_Q1</b> (7 respuestas), <b>P2_Q3, P4_Q1 y P4_Q2</b>— el mismo texto puede "
+               "valer 8 o 40. Es también la causa de que los números no sean reproducibles: "
+               "entre dos corridas del mismo código, 4 de 12 preguntas numéricas cambiaron de "
+               "etiqueta y ninguna categórica.",
+  "decision": "Escribir el periodo en el nombre de esos cuatro ejes, como ya está hecho en los "
+              "otros seis. <b>Sigue siendo lo más urgente de la capa numérica.</b>"},
+ {"titulo": "P1_Q7: por día o por semana",
+  "paneles": [1],
+  "hoy": "La v2 declara el eje como «Numerical per week». La nota de Emily de agosto decía lo "
+         "contrario: «calcular horas diarias con el promedio semanal, 20 h para 5 días».",
+  "evidencia": "El enunciado de la pregunta dice «per week», así que esta corrida siguió a la "
+               "v2. Cambia la mediana y la etiqueta de consenso de esa pregunta.",
+  "decision": "Confirmar cuál de las dos vale. Es un conflicto entre dos fuentes de Emily, no "
+              "una decisión de código."},
+ {"titulo": "P1_Q3 y P2_Q1 se quedaron sin Sí/No",
+  "paneles": [1, 2],
+  "hoy": "La v2 puso el Sí/No explícito en once de las trece preguntas de postura, pero en "
+         "estas dos no. En <b>P2_Q1</b> el «Yes» va dentro del texto de dos opciones y no hay "
+         "ningún «No»: quien responde que no, no tiene dónde caer.",
+  "evidencia": "En las dos, la taxonomía anterior sí tenía Sí y No, así que quitarlos es un "
+               "retroceso respecto de lo que ya corría.",
+  "decision": "¿Se añaden las ramas Sí/No, como en las otras once?"},
+ {"titulo": "P3_Q3: falta «sin porcentaje fijo»",
+  "paneles": [3],
+  "hoy": "La v2 arregló los umbrales (máximo 10 / 20 / 30 %) y los criterios. Pero la respuesta "
+         "más frecuente sigue sin existir como opción: varios panelistas dicen que no debería "
+         "haber ninguna cuota —«is not a matter of rejecting them», «there should not be a "
+         "mandatory or fixed amount»—.",
+  "evidencia": "Es casi la mitad de las respuestas que hoy quedan fuera en esa pregunta.",
+  "decision": "¿Se añade «Sin porcentaje fijo / según mérito»? Rechazar la premisa es una "
+              "postura, no una respuesta inválida."},
+ {"titulo": "Bordes y pisos de las bandas",
+  "paneles": [1, 2, 3, 4],
+  "hoy": "Las bandas 3-5 / 6-8 / &gt;=9 dejan fuera 5,5 y 8,5, y además <b>1 y 2 horas</b>, que "
+         "no caen en ninguna banda. Las de admisión pasaron de tres cortes a dos "
+         "(&lt;50 / &gt;=50), y el Panel 3 responde de 20 a 120.",
+  "evidencia": "La solución ya está en el mismo documento: P3_Q5, P3_Q6 y P3_Q8 usan "
+               "«&lt;=5», que cierra el piso. Basta con usarlo en todas.",
+  "decision": "Hacer los bordes contiguos y revisar si dos bandas alcanzan para admisión."},
+ {"titulo": "Taxonomía de argumentos",
   "paneles": [1, 2, 3, 4],
   "hoy": "Se clasifica <b>qué</b> responde cada panelista, pero no <b>por qué</b>. Las razones "
          "están en el texto y no se usan.",

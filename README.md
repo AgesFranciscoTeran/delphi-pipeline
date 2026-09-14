@@ -55,9 +55,7 @@ python -m pytest tests -q          # 32 pruebas, sin LLM ni red
 Antes de una corrida con LLM, comprobar que la universidad no cambió los modelos:
 
 ```bash
-for p in 12555 12559; do echo -n "  $p -> "; \
-  curl -s --max-time 5 http://172.28.230.10:$p/v1/models \
-  | python -c "import sys,json;print(', '.join(m['id'] for m in json.load(sys.stdin)['data']))"; done
+python3 tools/escanear_endpoints.py
 ```
 
 Si cambiaron, actualizar `MODEL_LLM` en `pipeline/config.py` y `MODELS` en

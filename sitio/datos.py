@@ -64,7 +64,17 @@ POSTURA_ES = {"favor": "A favor", "conditional": "Condicional", "against": "En c
 
 
 def _ruta(nombre):
-    return os.path.join(RUTA_RESULTADOS, nombre)
+    ruta = os.path.join(RUTA_RESULTADOS, nombre)
+    if not os.path.exists(ruta):
+        raise SystemExit(
+            f"\nNo encuentro {ruta}\n\n"
+            f"  El sitio se genera a partir de la salida del pipeline, y esa carpeta está\n"
+            f"  vacía o incompleta. Opciones:\n\n"
+            f"    ./run.sh              corrida completa (llama al LLM, ~1 min)\n"
+            f"    ./run.sh --sin-llm    si ya tienes 02_extracted.csv de una corrida anterior\n\n"
+            f"  Si guardaste una corrida en otra carpeta, apunta a ella:\n"
+            f"    DELPHI_RESULTADOS=/ruta/a/Resultados ./run.sh --solo-sitio\n")
+    return ruta
 
 
 def qid(panel, question):
@@ -271,8 +281,13 @@ def contexto():
 
 
 def manifiesto():
-    """Datos de la corrida, si el pipeline dejó el manifiesto."""
-    p = _ruta("run_manifest.json")
+    """Datos de la corrida, si el pipeline dejó el manifiesto. {} si no hay.
+
+    NO usa _ruta(): esa función aborta el proceso cuando falta el archivo, que es lo correcto
+    para un CSV sin el cual el sitio no tiene contenido, pero no para el manifiesto, que es
+    opcional. Con _ruta() el `if not os.path.exists` de abajo era inalcanzable y una carpeta
+    sin manifiesto tumbaba la generación entera del sitio."""
+    p = os.path.join(RUTA_RESULTADOS, "run_manifest.json")
     if not os.path.exists(p):
         return {}
     with open(p) as f:

@@ -1,138 +1,135 @@
 """
-Mapa opción → (postura, calificador), transcrito de los documentos de Emily
-"Posturas pregunta por pregunta 2.0" / "Question by question" (PDFs, 30-08-2026).
+Mapa opción -> (postura, calificador).
 
-En esos documentos las opciones están ANIDADAS: el nivel superior es la postura
-(Sí / No / Depende) y el nivel inferior son calificadores. taxonomy.py las aplanó
-("Depends" + "Quality of tutors" -> "Depends on quality of tutors"), y este módulo
-recupera la estructura original sin reextraer nada: cada opción aplanada se mapea a
-su postura y su calificador.
+GENERADO por tools/build_taxonomy.py desde la anidación del documento de Emily.
+NO EDITAR A MANO.
 
-Posturas: "favor" | "against" | "conditional". Preguntas sin anidación (elección
-entre alternativas, no sí/no) no tienen mapa y se analizan por opción, como hasta ahora.
+Antes esto era una transcripción manual: el documento anidaba las opciones bajo la postura,
+taxonomy.py las aplanaba perdiendo el nivel de arriba, y este módulo lo reconstruía opción por
+opción. Dos transcripciones a mano del mismo documento, que podían desajustarse en silencio.
+Ahora las dos salen de la misma fuente y el prefijo de la opción ("Yes, ...") determina la
+postura sin que nadie decida nada.
 
-Pendiente de Emily (Fase 1): confirmar dos rarezas del documento tal cual está:
-  * P2_Q7 "Replaced by clinical cases" cuelga de Sí (¿no debería ser No o Depende?).
-  * P4_Q8 "According to the subject" cuelga de Sí, pero en P2_Q4 la frase análoga
-    cuelga de Depende.
+Posturas: "favor" | "against" | "conditional". Las preguntas sin anidación (elección entre
+alternativas, no sí/no) no aparecen aquí y se analizan por opción.
 """
 
 F, A, C = "favor", "against", "conditional"
 
 STANCE_MAP = {
-    "P1_Q3": {
-        "Yes": (F, None),
-        "Only if there are students with prior experience": (F, "prior experience"),
-        "No": (A, None),
-        "A professor must be present": (A, "professor must be present"),
-        "Affects follow-up": (A, "affects follow-up"),
-        "Depends on the type of community project": (C, "type of community project"),
-        "Depends on the type of population (children, elderly)": (C, "type of population"),
-    },
     "P1_Q4": {
         "Yes": (F, None),
-        "Basic sciences only": (F, "basic sciences only"),
-        "NBME preparation only": (F, "NBME preparation only"),
-        "With passing exam": (F, "with passing exam"),
-        "With prior experience": (F, "with prior experience"),
-        "According to their academic performance": (F, "according to academic performance"),
+        "Yes, basic sciences only": (F, "Basic sciences only"),
+        "Yes, NBME preparation only": (F, "NBME preparation only"),
+        "Yes, with passing exam": (F, "With passing exam"),
+        "Yes, with prior experience": (F, "With prior experience"),
+        "Yes, according to their academic performance": (F, "According to their academic performance"),
         "No": (A, None),
+        "No, lack of preparation": (A, "Lack of preparation"),
     },
     "P1_Q5": {
-        "No": (A, None),
         "Yes": (F, None),
-        "With student representation": (F, "with student representation"),
-        "Independent from Medicine": (F, "independent from Medicine"),
-        "Supervised by a central university committee": (F, "supervised by central committee"),
-    },
-    "P2_Q1": {
-        "Yes": (F, None),
-        "Supplemented with lecture classes": (F, "supplemented with lectures"),
-        "With increased clinical practice": (F, "more clinical practice"),
-        "Only in certain years of the program": (F, "only certain years"),
-        "Only in some subjects": (F, "only some subjects"),
+        "Yes, with student representation": (F, "With student representation"),
+        "Yes, independent from medicine": (F, "Independent from medicine"),
+        "Yes, supervised by a central university committee": (F, "Supervised by a central university committee"),
         "No": (A, None),
-        "Depends on quality of tutors": (C, "quality of tutors"),
+        "No, use the ones that already exist": (A, "Use the ones that already exist"),
     },
     "P2_Q4": {
         "Yes": (F, None),
+        "Yes, only in practical activities": (F, "Only in practical activities"),
+        "Yes, only in laboratories": (F, "Only in laboratories"),
         "No": (A, None),
-        "Depends": (C, None),
-        "Only in practical activities": (C, "only practical activities"),
-        "Only in laboratories": (C, "only laboratories"),
-        "Evaluate participation, not attendance": (C, "participation, not attendance"),
-        "According to the subject": (C, "according to the subject"),
+        "No, according to the subject": (A, "According to the subject"),
+        "No, evaluate participation, not attendance": (A, "Evaluate participation, not attendance"),
     },
-    "P2_Q5": {"Yes": (F, None), "No": (A, None)},
+    "P2_Q5": {
+        "Yes": (F, None),
+        "No": (A, None),
+        "Depends on the availability of the student": (C, "Depends on the availability of the student"),
+    },
     "P2_Q6": {
         "Yes": (F, None),
-        "Only makeup classes": (F, "only makeup classes"),
-        "Clinical practices": (F, "clinical practices"),
-        "Only optional activities": (F, "only optional activities"),
-        "Only in clinical years": (F, "only clinical years"),
+        "Yes, only makeup classes": (F, "Only makeup classes"),
+        "Yes, clinical practices": (F, "Clinical practices"),
+        "Yes, only optional activities": (F, "Only optional activities"),
+        "Yes, only in clinical years": (F, "Only in clinical years"),
+        "Yes, only for exams": (F, "Only for exams"),
         "No": (A, None),
+        "No, respect free time": (A, "Respect free time"),
     },
     "P2_Q7": {
         "Yes": (F, None),
-        "With reduction of written evaluations": (F, "fewer written evaluations"),
-        "Combined with practical evaluation": (F, "combined with practical"),
-        "Only in certain modules": (F, "only certain modules"),
-        "Replaced by clinical cases": (F, "replaced by clinical cases"),   # así en el doc; confirmar
-        "According to learning objectives": (F, "according to objectives"),
+        "Yes, with reduction of written evaluations": (F, "With reduction of written evaluations"),
+        "Yes, combined with practical evaluation": (F, "Combined with practical evaluation"),
         "No": (A, None),
+        "No, only in certain modules": (A, "Only in certain modules"),
+        "No, according to learning objectives": (A, "According to learning objectives"),
+        "No, replaced by clinical cases": (A, "Replaced by clinical cases"),
     },
     "P3_Q4": {
         "Yes": (F, None),
+        "Yes, only as complement for other classes": (F, "Only as complement for other classes"),
+        "Yes, only in clinical subjects": (F, "Only in clinical subjects"),
+        "Yes, only with trained tutors": (F, "Only with trained tutors"),
+        "Yes, only in certain years": (F, "Only in certain years"),
         "No": (A, None),
-        "Depends": (C, None),
-        "Only as a complement": (C, "only as a complement"),
-        "Only in clinical subjects": (C, "only clinical subjects"),
-        "Only with trained tutors": (C, "trained tutors"),
-        "Only in certain years": (C, "only certain years"),
-        "According to the student's profile": (C, "student profile"),
     },
     "P3_Q9": {
         "Yes": (F, None),
-        "Only with fewer class hours": (F, "fewer class hours"),
-        "Only specific courses": (F, "specific courses"),
-        "Only at the beginning of the program": (F, "beginning of program"),
+        "Yes, only with fewer class hours": (F, "Only with fewer class hours"),
+        "Yes, only specific courses": (F, "Only specific courses"),
+        "Yes, only at the beginning of the program": (F, "Only at the beginning of the program"),
         "No": (A, None),
-        "Depends on course content": (C, "course content"),
-        "Depends on relationship with medicine": (C, "relationship with medicine"),
+        "Depends on the course content": (C, "Depends on the course content"),
+        "Depends on the relation it has with medicine": (C, "Depends on the relation it has with medicine"),
     },
     "P4_Q3": {
         "Yes": (F, None),
-        "With multiple attempts": (F, "multiple attempts"),
-        "As a partial requirement": (F, "partial requirement"),
-        "Together with clinical evaluation": (F, "with clinical evaluation"),
+        "Yes, with multiple attempts": (F, "With multiple attempts"),
+        "Yes, as a partial requirement": (F, "As a partial requirement"),
+        "Yes, together with clinical evaluation": (F, "Together with clinical evaluation"),
         "No": (A, None),
-        "Depends on score required": (C, "score required"),
-        "Depends on other academic metrics": (C, "other academic metrics"),
+        "No, depends on the score required": (A, "Depends on the score required"),
+        "No, should depend on other academic metrics": (A, "Should depend on other academic metrics"),
     },
     "P4_Q6": {
         "Yes": (F, None),
-        "Only for complex topics": (F, "only complex topics"),
-        "Combined with PBL": (F, "combined with PBL"),
-        "Only in basic sciences": (F, "only basic sciences"),
-        "According to year of training": (F, "according to year"),
+        "Yes, only for complex topics": (F, "Only for complex topics"),
+        "Yes, combined with PBL": (F, "Combined with PBL"),
+        "Yes, only in basic sciences": (F, "Only in basic sciences"),
         "No": (A, None),
+        "No, according to year of training": (A, "According to year of training"),
     },
     "P4_Q8": {
         "Yes": (F, None),
-        "With a low percentage": (F, "low percentage"),
-        "Only in PBL": (F, "only in PBL"),
-        "Only in practical activities": (F, "only practical activities"),
-        "According to the subject": (F, "according to the subject"),      # así en el doc; confirmar (en P2_Q4 cuelga de Depende)
-        "No": (A, None),
+        "Yes, with a low percentage": (F, "With a low percentage"),
+        "Yes, only in PBL": (F, "Only in PBL"),
+        "Yes, only in practical activities": (F, "Only in practical activities"),
+        "Yes, according to the subject": (F, "According to the subject"),
     },
 }
 
 STANCE_ES = {"favor": "A favor", "against": "En contra", "conditional": "Condicional"}
 
 
-def stance_of(question_id, option):
-    """(postura, calificador) para una opción aplanada; (None, None) si la pregunta no tiene mapa."""
-    m = STANCE_MAP.get(question_id)
-    if not m or not isinstance(option, str):
+def stance_of(qid, option):
+    """(postura, calificador) de una opción; (None, None) si la pregunta no tiene postura."""
+    entrada = STANCE_MAP.get(qid)
+    if not entrada:
         return None, None
-    return m.get(option, (None, None))
+    if option in entrada:
+        return entrada[option]
+    objetivo = " ".join(str(option).lower().split())
+    for k, v in entrada.items():
+        if " ".join(k.lower().split()) == objetivo:
+            return v
+    return None, None
+
+
+if __name__ == "__main__":
+    print("Preguntas con postura: %d" % len(STANCE_MAP))
+    for q, m in STANCE_MAP.items():
+        from collections import Counter
+        c = Counter(p for p, _ in m.values())
+        print("  %-7s %2d opciones  %s" % (q, len(m), dict(c)))
