@@ -31,3 +31,14 @@ __pycache__/
 
 # salida de tools/estabilidad.py
 estabilidad_diferencias.csv
+
+# ── Material de estudio sin publicar ─────────────────────────────────────────
+# Citas textuales de panelistas y el instrumento completo de Emily. Documentación
+# del pipeline sí se versiona; datos del estudio no.
+#
+# OJO: estas líneas se perdieron una vez. Se añadieron directamente en el servidor y
+# un parche posterior sobrescribió el .gitignore con una copia que no las tenía; el
+# siguiente `git add -A` republicó los dos archivos. Si vuelve a mandarse este archivo
+# en un parche, tiene que salir de aquí — no de una copia parcial.
+docs/preguntas-problematicas.md
+docs/emily_posturas_varias_opciones.json
