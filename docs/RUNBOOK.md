@@ -20,9 +20,38 @@ python3 tools/escanear_endpoints.py           # barre 12550-12570 y sugiere la l
 python3 tools/escanear_endpoints.py --probar  # además comprueba que genera, y mide latencia
 
 pip install -r requirements.txt
-python3 -m pytest tests -q                    # 42 passed
+python3 -m pytest tests -q                    # 48 passed
 python3 pipeline/run_smoke_offline.py         # corrida completa con LLM simulado -> Resultados_smoke/
 ```
+
+**Decodificación: libre, sin extras.** Se probaron las alternativas contra el servidor y
+ninguna mejoró. La prueba se repite en cualquier momento:
+
+```bash
+python3 tools/escanear_endpoints.py --capacidades
+```
+
+Escala el presupuesto por variante e informa `finish_reason` y tamaño de salida, para poder
+distinguir «no sabe» de «no le alcanzó» — que es donde se equivocaron dos versiones anteriores
+de esa prueba. Medido con GLM-5.3-Flash el 14-09-2026, sobre el mismo ítem:
+
+| variante | salida | corrida completa |
+|---|---|---|
+| sin extras (control) | 44 chars | **770/775** |
+| `guided_json` | 44 chars | 767/775 en 795 s |
+| `enable_thinking=false` | 713 chars | no probada en corrida completa |
+| las dos juntas | 1259 chars | — |
+
+Apagar el pensamiento **funciona pero no sirve**: no elimina la explicación, la mueve del canal
+de razonamiento al de contenido, donde compite con el JSON por el mismo presupuesto. El guiado
+tampoco ayuda porque el truncado ocurre antes de que el esquema aplique.
+
+Lo que sí resuelve el truncado es la escalada de presupuesto en `extract_single`: sólo ante
+`finish_reason=length`, duplicando hasta `MAX_TOKENS_TECHO`. La columna `max_tokens_usados`
+del CSV dice cuánto necesitó cada respuesta.
+
+El modo de decodificación entra en la clave del caché, así que cambiarlo obliga a reextraer
+las 775. Es deliberado: una tabla no puede mezclar dos modos.
 
 **Los puertos y modelos no se escriben en la documentación.** Se escribieron a mano en tres
 sitios —`config.py`, `compare_models.py` y una página de Notion— y los tres se desactualizaron;

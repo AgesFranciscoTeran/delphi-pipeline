@@ -29,7 +29,5 @@ __pycache__/
 # Zips que llegan por descarga y acaban dentro del repo sin querer
 *.zip
 
-# Material de estudio sin publicar: citas textuales de panelistas y el
-# instrumento completo de Emily. Documentación del pipeline sí; datos no.
-docs/preguntas-problematicas.md
-docs/emily_posturas_varias_opciones.json
+# salida de tools/estabilidad.py
+estabilidad_diferencias.csv

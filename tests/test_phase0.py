@@ -473,3 +473,108 @@ def test_texto_de_distingue_falta_de_presupuesto_de_respuesta_mala():
     with pytest.raises(ValueError) as e:
         ea.texto_de(_respuesta(content=None, reasoning=None, finish="stop"))
     assert "vacía" in str(e.value)
+
+
+# ── escalada de presupuesto ───────────────────────────────────────────────────
+
+class _ClienteSinPresupuesto:
+    """Falla por falta de presupuesto hasta que max_tokens llega al umbral."""
+    def __init__(self, umbral):
+        self.umbral = umbral
+        self.presupuestos = []
+        self.chat = self
+        self.completions = self
+
+    def create(self, **kw):
+        self.presupuestos.append(kw["max_tokens"])
+        if kw["max_tokens"] < self.umbral:
+            msg = type("M", (), {"content": None, "reasoning_content": None})()
+            return type("R", (), {"choices": [
+                type("C", (), {"message": msg, "finish_reason": "length"})()]})()
+        msg = type("M", (), {"content": '{"option_letter":"A","option_text":"Yes",'
+                                        '"core_argument":"c","key_phrases":[]}'})()
+        return type("R", (), {"choices": [type("C", (), {"message": msg})()]})()
+
+
+def test_el_presupuesto_escala_solo_ante_falta_de_presupuesto():
+    """Reintentar con el mismo tope es repetir el mismo fallo. Subirlo a ciegas para las 775
+    encarece la corrida entera por culpa de cinco. Escala sólo quien lo necesita, y con techo."""
+    tax = get_taxonomy(2, 5)
+    c = _ClienteSinPresupuesto(umbral=ea.MAX_TOKENS * 4)
+    res = ea.extract_single(c, "rid", "Yes", tax["text"], 1, tax, retries=5)
+    assert res["extraction_status"] == "ok"
+    assert c.presupuestos == [ea.MAX_TOKENS, ea.MAX_TOKENS * 2, ea.MAX_TOKENS * 4]
+    assert res["max_tokens_usados"] == ea.MAX_TOKENS * 4
+
+
+def test_la_escalada_llega_al_techo_aunque_haya_pocos_reintentos():
+    """Regresión: la escalada compartía cupo con los reintentos, así que con RETRIES=3 desde
+    2500 la secuencia era 2500 -> 5000 -> 10000 y el techo de 16000 no se alcanzaba nunca en
+    una corrida normal. Subir el tope no gasta reintento: son cosas distintas."""
+    tax = get_taxonomy(2, 5)
+    c = _ClienteSinPresupuesto(umbral=10 ** 9)          # nunca alcanza
+    res = ea.extract_single(c, "rid", "Yes", tax["text"], 1, tax, retries=3)
+    assert res["extraction_status"] == "failed"
+    assert max(c.presupuestos) == ea.MAX_TOKENS_TECHO   # llega al techo…
+    assert c.presupuestos.count(ea.MAX_TOKENS_TECHO) <= 3   # …y ahí sí se rinde
+
+    # Y si el techo alcanza, la recupera en vez de darla por perdida.
+    c2 = _ClienteSinPresupuesto(umbral=ea.MAX_TOKENS_TECHO)
+    r2 = ea.extract_single(c2, "rid", "Yes", tax["text"], 1, tax, retries=3)
+    assert r2["extraction_status"] == "ok"
+    assert r2["max_tokens_usados"] == ea.MAX_TOKENS_TECHO
+
+
+def test_un_fallo_que_no_es_de_presupuesto_no_escala():
+    tax = get_taxonomy(2, 5)
+    c = _FakeClient(["basura", "basura", "basura"])
+    ea.extract_single(c, "rid", "Yes", tax["text"], 1, tax)
+    assert {k["max_tokens"] for k in c.calls} == {ea.MAX_TOKENS}
+
+
+# ── decodificación guiada ─────────────────────────────────────────────────────
+
+def test_el_modo_de_decodificacion_entra_en_la_clave_del_cache():
+    """Encender guided_json cambia CÓMO se produce la salida. Si no invalidara el caché, una
+    corrida mezclaría 770 respuestas decodificadas libremente con 5 decodificadas por esquema
+    en la misma tabla — lo que un artículo de métodos no puede tener."""
+    import importlib
+    hashes = {}
+    for guiado in ("0", "1"):
+        os.environ["DELPHI_GUIADO"] = guiado
+        import config, extract_arguments
+        importlib.reload(config)
+        importlib.reload(extract_arguments)
+        hashes[guiado] = extract_arguments.prompt_hash("el mismo prompt exacto")
+    os.environ.pop("DELPHI_GUIADO", None)
+    importlib.reload(config)
+    importlib.reload(extract_arguments)
+    assert hashes["0"] != hashes["1"], "el modo de decodificación no invalida el caché"
+
+
+def test_los_esquemas_guiados_son_validos_para_las_32_preguntas():
+    """guided_json era código muerto: estaba escrito pero nunca se había ejecutado. Antes de
+    encenderlo, comprobar que produce un esquema válido para cada pregunta."""
+    import jsonschema
+    for qid, tax in EMILY_TAXONOMY.items():
+        esquema = ea.guided_schema_for(tax)
+        assert esquema, qid
+        jsonschema.Draft7Validator.check_schema(esquema)
+        json.dumps(esquema)                      # serializable para mandarlo al servidor
+        if tax["type"] in ("nominal", "binary"):
+            letras = esquema["properties"]["option_letter"]["enum"]
+            assert len(letras) == len(tax["options"]) + 1   # +1 por NONE
+            assert ea.NONE_TOKEN in letras
+        else:
+            bandas = esquema["properties"]["band"]["enum"]
+            assert set(tax["bands"]) <= set(b for b in bandas if b)
+
+
+def test_call_llm_manda_el_esquema_cuando_el_guiado_esta_activo():
+    tax = get_taxonomy(2, 5)
+    c = _FakeClient(['{"option_letter":"A","option_text":"Yes","core_argument":"c","key_phrases":[]}'])
+    ea.extract_single(c, "rid", "Yes", tax["text"], 1, tax)
+    extra = c.calls[0].get("extra_body") or {}
+    if ea.USE_GUIDED_JSON:
+        assert "guided_json" in extra and extra["guided_json"]["properties"]["option_letter"]
+    assert "chat_template_kwargs" not in extra      # medido: con GLM empeora

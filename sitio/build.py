@@ -154,9 +154,7 @@ def tabla_cuant(filas):
     sistema: {asumidas} en este panel. Cuando alguien escribe «8 horas» sin decir si es al día
     o a la semana, se toma la unidad de la pregunta; cuando escribe «8 horas al día» en una
     pregunta medida por semana, se convierte — <b>×5</b>. El mismo texto vale 8 o 40.</p>
-    <p>Corrimos el análisis dos veces sobre los mismos datos y con el mismo código: las
-    preguntas de opción dieron <b>exactamente el mismo resultado</b>, y 4 de las 12 numéricas
-    <b>cambiaron de etiqueta</b>. Hasta que se cierre la decisión {num_decision("Unidades")},
+    <p>{contenido.ESTABILIDAD} Hasta que se cierre la decisión {num_decision("Unidades")},
     esta tabla es diagnóstico, no resultado.</p>
   </div>''' if asumidas else ""
     return f'''
@@ -193,8 +191,17 @@ def banda_corrida():
         return ""
     r = ext[-1]
     fecha = str(r.get("timestamp", ""))[:10]
-    fallidas = int(r.get("n_failed", 0) or 0)
-    aviso = (f' Quedaron <b>{fallidas}</b> respuestas sin extraer.' if fallidas else "")
+    # Si la salida es una consolidación de k corridas, decirlo: es la diferencia entre "esto es
+    # lo que salió" y "esto es lo que sale la mayoría de las veces".
+    consolidado = next((x for x in reversed(runs) if x.get("step") == "consolidar"), None)
+    if consolidado:
+        k = consolidado.get("k_corridas")
+        aviso = (f' Voto mayoritario de <b>{k}</b> corridas independientes, no una sola: '
+                 f'ver «Qué es estable y qué no».')
+        fecha = str(consolidado.get("timestamp", fecha))[:10]
+    else:
+        fallidas = int(r.get("n_failed", 0) or 0)
+        aviso = (f' Quedaron <b>{fallidas}</b> respuestas sin extraer.' if fallidas else "")
     # La parte mecánica (modelo, fecha, taxonomía) sale del manifiesto. La nota de contexto es
     # editorial y vive en contenido.py, para poder quitarla cuando deje de hacer falta sin
     # tocar la plantilla.
@@ -402,14 +409,8 @@ def portada():
   siete son exactamente las mismas respuestas que falla el otro.</p>
 
   <h3>Qué es estable y qué no</h3>
-  <p>Dos corridas completas del mismo código sobre los mismos datos: <b>las preguntas de opción
-  y las posturas dieron resultados idénticos</b>; <b>4 de las 12 numéricas cambiaron de
-  etiqueta</b>. La parte que sólo requiere elegir entre opciones cerradas es estable; la que
-  exige interpretar una magnitud, no. Por eso los resultados numéricos de cada panel están
-  marcados como preliminares.</p>
-  <p>El servidor tampoco garantiza resultados idénticos entre corridas aunque se fijen todos los
-  parámetros. Lo que hace reproducible un resultado es archivar el registro de la corrida, que
-  el sistema ya genera.</p>
+  <p>{contenido.ESTABILIDAD}</p>
+  <p>{contenido.ESTABILIDAD_CONSECUENCIA}</p>
 
   <h3>Sobre los números anteriores</h3>
   <p>Si alguien recuerda conclusiones distintas de una versión previa: el análisis anterior tenía

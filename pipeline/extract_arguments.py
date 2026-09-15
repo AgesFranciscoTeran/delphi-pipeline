@@ -267,8 +267,25 @@ def _to_number(x):
     return float(m.group(0).replace(",", ".")) if m else None
 
 
+def modo_decodificacion():
+    """Firma del MODO en que se le pide al modelo, no sólo de lo que se le pide."""
+    return f"guided={int(bool(USE_GUIDED_JSON))},sinraz={int(bool(SIN_RAZONAMIENTO))}"
+
+
 def prompt_hash(prompt):
-    return hashlib.sha1((PROMPT_VERSION + "\n" + prompt).encode("utf-8")).hexdigest()[:12]
+    """Identifica qué se pidió Y cómo.
+
+    El modo de decodificación entra en el hash a propósito. Activar `guided_json` cambia cómo
+    se produce la salida —el servidor la restringe al esquema— igual que cambiar el prompt.
+    Si no entrara, encender la decodificación guiada reutilizaría el caché de las 770 hechas
+    sin ella y sólo reintentaría las 5 que fallaron: una corrida mezclada, con dos modos de
+    decodificación distintos conviviendo en la misma tabla. Para un artículo de métodos eso es
+    justo lo que no se puede tener.
+
+    El precio es que cambiar el modo obliga a reextraer las 775. Es el precio correcto.
+    """
+    firma = f"{PROMPT_VERSION}|{modo_decodificacion()}"
+    return hashlib.sha1((firma + "\n" + prompt).encode("utf-8")).hexdigest()[:12]
 
 
 def cache_key(rid, model, phash):
@@ -287,8 +304,17 @@ def call_llm(client, prompt, tax, model=None, max_tokens=None):
         messages=[{"role": "system", "content": SYSTEM_PROMPT},
                   {"role": "user", "content": prompt}],
     )
+    extra = {}
     if USE_GUIDED_JSON:
-        kwargs["extra_body"] = {"guided_json": guided_schema_for(tax)}
+        extra["guided_json"] = guided_schema_for(tax)
+    if SIN_RAZONAMIENTO:
+        # Codificación deductiva contra una lista cerrada a temperatura 0: no hace falta cadena
+        # de pensamiento, y tenerla activa es lo que agota el presupuesto antes de emitir el
+        # JSON. vLLM lo desactiva por plantilla en los modelos que lo soportan; si el servidor
+        # lo rechaza con 400, poner SIN_RAZONAMIENTO = False.
+        extra["chat_template_kwargs"] = {"enable_thinking": False}
+    if extra:
+        kwargs["extra_body"] = extra
     resp = client.chat.completions.create(**kwargs)
     return texto_de(resp)
 
@@ -360,26 +386,43 @@ def extract_single(client, response_id, response_text, question_text, round_num,
     prompt = build_prompt_for_type(tax, question_text, response_text, round_num)
     phash = prompt_hash(prompt)
     last_error = None
-    for attempt in range(retries or RETRIES):
+    # El presupuesto escala SÓLO ante un fallo por falta de presupuesto, y con techo. Reintentar
+    # con el mismo tope es repetir el mismo fallo; subirlo a ciegas para todos encarece las 775
+    # por culpa de cinco. `max_tokens` no entra en la clave del caché (que va por prompt), así
+    # que escalar no invalida nada.
+    presupuesto = max_tokens or MAX_TOKENS
+    intentos_max = retries or RETRIES
+    intento = 0
+    while True:
+        intento += 1
         try:
-            raw = call_llm(client, prompt, tax, model=model, max_tokens=max_tokens)
+            raw = call_llm(client, prompt, tax, model=model, max_tokens=presupuesto)
             parsed = extract_json(raw)
             out = postprocess(parsed, tax)
             out.update(response_id=response_id, question_type=tax["type"],
                        extraction_model=model or MODEL_LLM, prompt_hash=phash,
                        prompt_version=PROMPT_VERSION, raw_output=str(raw)[:2000],
-                       extraction_status="ok")
+                       extraction_status="ok", max_tokens_usados=presupuesto)
             return out
         except (json.JSONDecodeError, ValueError) as e:
             last_error = f"json: {e}"
+            # Un fallo por presupuesto NO gasta el cupo de reintentos: sube el tope y se
+            # concede un intento extra mientras quede margen hasta el techo. Antes compartían
+            # cupo, así que con RETRIES=3 desde 2500 la escalada llegaba a 10000 y se quedaba
+            # ahí: el techo de 16000 no se alcanzaba nunca en una corrida normal.
+            if "sin presupuesto" in str(e) and presupuesto < MAX_TOKENS_TECHO:
+                presupuesto = min(presupuesto * 2, MAX_TOKENS_TECHO)
+                intento -= 1
             time.sleep(0.5)
         except Exception as e:
             last_error = f"{type(e).__name__}: {str(e)[:120]}"
             time.sleep(2)
+        if intento >= intentos_max:
+            break
     return {"response_id": response_id, "question_type": tax["type"],
             "extraction_model": model or MODEL_LLM, "prompt_hash": phash,
             "prompt_version": PROMPT_VERSION, "extraction_status": "failed",
-            "error": last_error}
+            "error": last_error, "max_tokens_usados": presupuesto}
 
 
 # ── caché, manifiesto, corrida ───────────────────────────────────────────────
@@ -526,7 +569,7 @@ EXTRACTION_COLUMNS = [
     "question_type", "selected_option", "option_letter", "option_text", "classification_status",
     "letter_text_mismatch", "numeric_value", "value_unit", "unit_source", "value_type", "value_raw", "band",
     "band_policy", "proposed_approach", "core_argument", "key_phrases", "extraction_model",
-    "prompt_hash", "prompt_version", "extraction_status",
+    "prompt_hash", "prompt_version", "extraction_status", "max_tokens_usados",
 ]
 
 

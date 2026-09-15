@@ -30,6 +30,26 @@ NOTA_CONFIANZA = (
  "las decisiones de taxonomía: sus 44 etiquetas están hechas contra las opciones viejas.</p>"
 )
 
+# Estabilidad test-retest. Medido, no supuesto — y cambió al cambiar de modelo, así que el
+# texto va aquí y no incrustado en la plantilla.
+ESTABILIDAD = (
+ "Dos corridas completas del mismo código sobre los mismos datos, a temperatura 0 y con semilla "
+ "fija, difieren en el <b>5,8 % de las etiquetas</b>: 6 % de las categóricas, 5 % de las "
+ "numéricas. No es un fallo del pipeline — el servidor agrupa peticiones en lotes de "
+ "composición variable y la aritmética en coma flotante no es asociativa, así que el mismo "
+ "texto puede recibir distinta etiqueta según con qué otras respuestas le tocó viajar."
+)
+
+ESTABILIDAD_CONSECUENCIA = (
+ "Por eso <b>una corrida sola no es una medición</b>, sino una muestra de un clasificador "
+ "estocástico. Lo que se publica aquí es el voto mayoritario de varias corridas, y cada "
+ "respuesta lleva su grado de acuerdo entre ellas."
+)
+
+# Con el modelo anterior esto era distinto: las categóricas salían idénticas entre corridas y
+# sólo se movían 4 de las 12 numéricas. Esa afirmación estuvo publicada y era correcta para
+# Gemma; con GLM es falsa. Queda anotado para no volver a copiarla.
+
 CERRADAS = (
  "La v2 del documento de posturas de Emily (14-09-2026) cerró cuatro de las ocho decisiones "
  "anteriores: la estructura anidada postura → calificador, que ahora viene declarada y ya no "
@@ -74,9 +94,9 @@ DECISIONES = [
   "evidencia": "En la corrida nueva, <b>25 respuestas</b> llegaron sin periodo declarado por el "
                "panelista. Donde el eje sí lo declara la ambigüedad se resuelve sola; donde no "
                "—<b>P3_Q1</b> (7 respuestas), <b>P2_Q3, P4_Q1 y P4_Q2</b>— el mismo texto puede "
-               "valer 8 o 40. Es también la causa de que los números no sean reproducibles: "
-               "entre dos corridas del mismo código, 4 de 12 preguntas numéricas cambiaron de "
-               "etiqueta y ninguna categórica.",
+               "valer 8 o 40. Es una fuente de irreproducibilidad que se suma a la del "
+               "servidor, y a diferencia de aquélla no se arregla repitiendo la corrida: "
+               "depende de una regla que sólo Emily puede escribir.",
   "decision": "Escribir el periodo en el nombre de esos cuatro ejes, como ya está hecho en los "
               "otros seis. <b>Sigue siendo lo más urgente de la capa numérica.</b>"},
  {"titulo": "P1_Q7: por día o por semana",
@@ -123,13 +143,15 @@ DECISIONES = [
 ]
 
 CAPAS = [
- ("Convertir las respuestas en etiquetas", "Listo", "ok",
-  "Sin fallos de formato ni inconsistencias en toda la corrida.", "—"),
+ ("Convertir las respuestas en etiquetas", "A medias", "wip",
+  "El formato nunca falla, pero la etiqueta no es determinista: entre dos corridas idénticas "
+  "cambia el 5,8 %. Se publica el voto mayoritario de varias corridas.", "Pancho · hecho"),
  ("Calcular el consenso de cada pregunta", "Listo", "ok",
   "Mediana y rango para las numéricas, distribución y n para las de opción.", "—"),
  ("Resultados numéricos", "No reportables", "block",
-  "Dependen de qué se asume cuando el panelista no declara el periodo. Entre dos corridas "
-  "idénticas, 4 de 12 cambiaron de etiqueta.", "<b>Emily</b> · decisión 5"),
+  "Dependen de qué se asume cuando el panelista no declara el periodo — una ambigüedad que "
+  "repetir la corrida no resuelve, porque está en la taxonomía y no en el modelo.",
+  "<b>Emily</b> · decisión 3"),
  ("Definir qué cuenta como «consenso»", "Provisional", "wip",
   "Los umbrales actuales se fijaron mirando los datos. Hay que fijarlos con la literatura "
   "Delphi (acuerdo + estabilidad) <b>antes</b> de volver a mirar resultados.",

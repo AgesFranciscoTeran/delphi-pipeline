@@ -206,7 +206,7 @@ footer p{max-width:46rem}
     <p class="kicker">Universidad San Francisco de Quito · Estudio Delphi de currículo médico</p>
     <h1>Qué decidió cada panel</h1>
     <p class="sub">Resultados del análisis computacional del estudio Delphi, panel por panel, y lo que hace falta para cerrar cada artículo.</p>
-    <p class="corrida"><b>Resultados preliminares.</b> Clasificados por <code>zai-org/GLM-5.3-Flash</code> el 2026-09-14, contra la taxonomía <code>857aa43cf1c1</code>. Quedaron <b>5</b> respuestas sin extraer. La taxonomía es el documento «Posturas varias opciones» v2 de Emily. El modelo cambió: el servidor de la universidad dejó de servir Gemma, así que estos números <b>no son comparables</b> con las versiones anteriores de esta página, y la validación contra las etiquetas de Emily (κ = 0,72) se midió con el modelo anterior y hay que rehacerla. Faltan además las decisiones de taxonomía de la sección de abajo.</p>
+    <p class="corrida"><b>Resultados preliminares.</b> Clasificados por <code>zai-org/GLM-5.3-Flash</code> el 2026-09-15, contra la taxonomía <code>857aa43cf1c1</code>. Voto mayoritario de <b>5</b> corridas independientes, no una sola: ver «Qué es estable y qué no». La taxonomía es el documento «Posturas varias opciones» v2 de Emily. El modelo cambió: el servidor de la universidad dejó de servir Gemma, así que estos números <b>no son comparables</b> con las versiones anteriores de esta página, y la validación contra las etiquetas de Emily (κ = 0,72) se midió con el modelo anterior y hay que rehacerla. Faltan además las decisiones de taxonomía de la sección de abajo.</p>
   </div>
 </header>
 <nav class="toc"><ul><li><a href="#paneles">Los paneles</a></li><li><a href="#metodo">Cómo funciona</a></li><li><a href="#estado">Estado</a></li><li><a href="#confianza">Confiabilidad</a></li></ul></nav>
@@ -216,7 +216,7 @@ footer p{max-width:46rem}
   <h2><span class="sec-n">01</span>Cuatro estudios, cuatro páginas</h2>
   <p class="lead">Los cuatro paneles son <b>estudios independientes</b>: ningún panelista participa en más de uno, y de las 32 preguntas sólo una se repite entre paneles. Por eso cada uno tiene su página y no se agregan ni se comparan resultados entre ellos.</p>
   <div class="panelgrid">
-<a class="panelcard" href="panel1.html"><h3>Panel 1</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 4</b> preguntas de opción resueltas · <b>3</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel2.html"><h3>Panel 2</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 6</b> preguntas de opción resueltas · <b>3</b> convergieron</p><p class="pc-pend">4 decisiones pendientes · 1 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel3.html"><h3>Panel 3</h3><p class="pc-meta">10 panelistas · 10 preguntas · 3 rondas</p><p class="pc-res"><b>5 de 5</b> preguntas de opción resueltas · <b>5</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 5 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel4.html"><h3>Panel 4</h3><p class="pc-meta">8 panelistas · 8 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 5</b> preguntas de opción resueltas · <b>4</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a>
+<a class="panelcard" href="panel1.html"><h3>Panel 1</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>2 de 4</b> preguntas de opción resueltas · <b>3</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel2.html"><h3>Panel 2</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>1 de 6</b> preguntas de opción resueltas · <b>2</b> convergieron</p><p class="pc-pend">4 decisiones pendientes · 1 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel3.html"><h3>Panel 3</h3><p class="pc-meta">10 panelistas · 10 preguntas · 3 rondas</p><p class="pc-res"><b>5 de 5</b> preguntas de opción resueltas · <b>5</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 5 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel4.html"><h3>Panel 4</h3><p class="pc-meta">8 panelistas · 8 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 5</b> preguntas de opción resueltas · <b>4</b> convergieron</p><p class="pc-pend">5 decisiones pendientes · 3 preguntas numéricas preliminares</p></a>
   </div>
   <div class="callout">
     <span class="ct">Por qué no hay una tabla que los junte</span>
@@ -243,9 +243,9 @@ footer p{max-width:46rem}
   <div class="scroll"><table class="tcapas">
     <thead><tr><th>Parte</th><th>Estado</th><th>Qué falta</th><th>Depende de</th></tr></thead>
     <tbody>
-<tr><td class="capa">Convertir las respuestas en etiquetas</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Sin fallos de formato ni inconsistencias en toda la corrida.</td><td class="quien">—</td></tr>
+<tr><td class="capa">Convertir las respuestas en etiquetas</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">El formato nunca falla, pero la etiqueta no es determinista: entre dos corridas idénticas cambia el 5,8 %. Se publica el voto mayoritario de varias corridas.</td><td class="quien">Pancho · hecho</td></tr>
 <tr><td class="capa">Calcular el consenso de cada pregunta</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Mediana y rango para las numéricas, distribución y n para las de opción.</td><td class="quien">—</td></tr>
-<tr><td class="capa">Resultados numéricos</td><td><span class="est e-block">No reportables</span></td><td class="qtxt">Dependen de qué se asume cuando el panelista no declara el periodo. Entre dos corridas idénticas, 4 de 12 cambiaron de etiqueta.</td><td class="quien"><b>Emily</b> · decisión 5</td></tr>
+<tr><td class="capa">Resultados numéricos</td><td><span class="est e-block">No reportables</span></td><td class="qtxt">Dependen de qué se asume cuando el panelista no declara el periodo — una ambigüedad que repetir la corrida no resuelve, porque está en la taxonomía y no en el modelo.</td><td class="quien"><b>Emily</b> · decisión 3</td></tr>
 <tr><td class="capa">Definir qué cuenta como «consenso»</td><td><span class="est e-wip">Provisional</span></td><td class="qtxt">Los umbrales actuales se fijaron mirando los datos. Hay que fijarlos con la literatura Delphi (acuerdo + estabilidad) <b>antes</b> de volver a mirar resultados.</td><td class="quien">Pancho · 1 semana</td></tr>
 <tr><td class="capa">Saber si el sistema codifica tan bien como una persona</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas 11 por panel. Si cada panel es un artículo, hace falta validar cada uno por separado.</td><td class="quien">Emily + 2.º codificador</td></tr>
 <tr><td class="capa">Las razones que dan los panelistas</td><td><span class="est e-todo">Sin empezar</span></td><td class="qtxt">Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo con las opciones.</td><td class="quien">Emily + Pancho · decisión 8</td></tr>
@@ -286,14 +286,8 @@ footer p{max-width:46rem}
   siete son exactamente las mismas respuestas que falla el otro.</p>
 
   <h3>Qué es estable y qué no</h3>
-  <p>Dos corridas completas del mismo código sobre los mismos datos: <b>las preguntas de opción
-  y las posturas dieron resultados idénticos</b>; <b>4 de las 12 numéricas cambiaron de
-  etiqueta</b>. La parte que sólo requiere elegir entre opciones cerradas es estable; la que
-  exige interpretar una magnitud, no. Por eso los resultados numéricos de cada panel están
-  marcados como preliminares.</p>
-  <p>El servidor tampoco garantiza resultados idénticos entre corridas aunque se fijen todos los
-  parámetros. Lo que hace reproducible un resultado es archivar el registro de la corrida, que
-  el sistema ya genera.</p>
+  <p>Dos corridas completas del mismo código sobre los mismos datos, a temperatura 0 y con semilla fija, difieren en el <b>5,8 % de las etiquetas</b>: 6 % de las categóricas, 5 % de las numéricas. No es un fallo del pipeline — el servidor agrupa peticiones en lotes de composición variable y la aritmética en coma flotante no es asociativa, así que el mismo texto puede recibir distinta etiqueta según con qué otras respuestas le tocó viajar.</p>
+  <p>Por eso <b>una corrida sola no es una medición</b>, sino una muestra de un clasificador estocástico. Lo que se publica aquí es el voto mayoritario de varias corridas, y cada respuesta lleva su grado de acuerdo entre ellas.</p>
 
   <h3>Sobre los números anteriores</h3>
   <p>Si alguien recuerda conclusiones distintas de una versión previa: el análisis anterior tenía
@@ -304,7 +298,7 @@ footer p{max-width:46rem}
 </main>
 <footer>
   <div class="wrap">
-    <p>Documento de trabajo interno · 14 de septiembre de 2026. 
+    <p>Documento de trabajo interno · 15 de septiembre de 2026. 
     Generado desde la salida del pipeline; ningún número está escrito a mano.</p>
   </div>
 </footer>

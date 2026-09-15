@@ -44,6 +44,19 @@ SEED = 42                  # vLLM acepta `seed`; si el servidor lo ignora no pas
 # GLM no. Subirlo no cuesta nada en las respuestas cortas: se paga por token generado, no por
 # el tope.
 MAX_TOKENS = int(_os.environ.get("DELPHI_MAX_TOKENS", "2500"))
+
+# Techo al que puede escalar el reintento cuando el fallo es "agotó max_tokens razonando".
+# Escalar sólo ante ese fallo evita encarecer las 775 llamadas por culpa de cinco.
+MAX_TOKENS_TECHO = int(_os.environ.get("DELPHI_MAX_TOKENS_TECHO", "16000"))
+
+# Desactivar la cadena de pensamiento del modelo. Funciona —devuelve JSON válido—, pero no
+# sirve para lo que se quería. Medido contra GLM-5.3-Flash el 14-09-2026 sobre el mismo ítem,
+# tamaño de la salida:
+#     sin extras 44 chars | guided_json 44 | enable_thinking=false 713 | las dos juntas 1259
+# No elimina la explicación: la mueve del canal de razonamiento al de contenido, donde compite
+# con el JSON por el mismo presupuesto. Empeora el truncado en vez de evitarlo.
+# Queda como interruptor por si otro modelo se comporta distinto.
+SIN_RAZONAMIENTO = _os.environ.get("DELPHI_SIN_RAZONAMIENTO", "0") == "1"
 MAX_WORKERS = 8            # peticiones concurrentes al LLM (vLLM batchea; 8-16 es razonable)
 REQUEST_TIMEOUT = 120      # segundos por petición
 RETRIES = 3
@@ -53,10 +66,12 @@ RETRIES = 3
 # están hechas sobre la mitad del panel. Para saltárselo a propósito: DELPHI_IGNORA_FALLOS=1.
 MAX_FALLOS_PCT = 5.0
 
-# Decodificación guiada (vLLM): si el servidor la soporta, el JSON y las opciones
-# quedan restringidos por esquema y desaparecen los errores de formato. Si el
-# servidor devuelve error 400 con esto activado, ponerlo en False.
-USE_GUIDED_JSON = False
+# Decodificación guiada (vLLM). Suena a que resuelve el problema —el servidor restringe la
+# salida al esquema— pero MEDIDO contra GLM-5.3-Flash el 14-09-2026 no ayudó: corrida completa
+# con guiado 767/775 en 795 s, contra 770/775 sin él. El truncado ocurre ANTES de que el
+# esquema aplique, así que restringir la salida no evita quedarse sin presupuesto.
+# Se deja apagado y disponible: DELPHI_GUIADO=1.
+USE_GUIDED_JSON = _os.environ.get("DELPHI_GUIADO", "0") == "1"
 
 # ── Caché ──
 CACHE_RESULTS = True

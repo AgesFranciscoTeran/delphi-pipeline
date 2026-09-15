@@ -7,3 +7,4 @@ openai>=1.30
 pytest>=8
 # Capa de argumentos (Fase 1): scikit-learn, umap-learn, hdbscan. python-louvain ya no compila
 # con setuptools recientes; networkx trae louvain_communities si hace falta.
+jsonschema  # validar los esquemas de decodificación guiada (sólo tests)

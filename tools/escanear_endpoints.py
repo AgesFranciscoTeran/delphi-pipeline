@@ -88,11 +88,100 @@ def generar(puerto, modelo):
         return False, time.time() - t0, f"{type(e).__name__}: {str(e)[:60]}"
 
 
+def _una_llamada(puerto, cuerpo):
+    req = urllib.request.Request(
+        f"http://{HOST}:{puerto}/v1/chat/completions", data=json.dumps(cuerpo).encode(),
+        headers={"Content-Type": "application/json", "Authorization": "Bearer local"})
+    t0 = time.time()
+    with urllib.request.urlopen(req, timeout=180) as r:
+        d = json.load(r)
+    eleccion = d["choices"][0]
+    msg = eleccion.get("message", {})
+    contenido = (msg.get("content") or "").strip()
+    razonado = (msg.get("reasoning_content") or "").strip()
+    txt = contenido or razonado
+    obj = None
+    try:
+        i, j = txt.find("{"), txt.rfind("}")
+        if i != -1 and j > i:
+            obj = json.loads(txt[i:j + 1])
+    except Exception:
+        pass
+    return {"seg": time.time() - t0, "motivo": eleccion.get("finish_reason"),
+            "chars": len(txt), "razono": bool(razonado), "json": obj, "txt": txt}
+
+
+def capacidades(puerto, modelo, presupuestos=(512, 2500, 6000)):
+    """¿Qué extras acepta el servidor Y sirven, dándoles presupuesto suficiente?
+
+    Dos versiones anteriores de esta función se equivocaron por lo mismo: medir con muy pocos
+    tokens. La primera pidió 5 y leyó `content=None` como "no genera". La segunda pidió 512,
+    mostró 40 caracteres de la salida y NO mostró `finish_reason`, así que un "no es JSON
+    usable" podía ser en realidad "se quedó sin tokens explicando". Con un modelo de
+    razonamiento, un presupuesto corto no distingue "no sabe" de "no le alcanzó".
+
+    Ahora cada variante escala el presupuesto mientras el servidor diga `finish_reason=length`,
+    y se informa SIEMPRE el motivo y el tamaño de la salida. Así se puede responder la pregunta
+    correcta: ¿esto falla, o sólo necesita más sitio?
+    """
+    ESQUEMA = {"type": "object",
+               "properties": {"option_letter": {"type": "string", "enum": ["A", "B", "NONE"]},
+                              "option_text": {"type": "string"}},
+               "required": ["option_letter", "option_text"]}
+    PETICION = ('Classify this response into ONE option.\n\nResponse: """I agree completely, '
+                'the program should keep it as it is."""\n\nOptions:\n  A. Yes\n  B. No\n\n'
+                'Respond ONLY with valid JSON:\n'
+                '{"option_letter": "<A, B or NONE>", "option_text": "<text of the option>"}')
+    variantes = {
+        "sin extras (control)": {},
+        "guided_json": {"guided_json": ESQUEMA},
+        "enable_thinking=false": {"chat_template_kwargs": {"enable_thinking": False}},
+        "las dos juntas": {"guided_json": ESQUEMA,
+                           "chat_template_kwargs": {"enable_thinking": False}},
+    }
+    salida = {}
+    for nombre, extra in variantes.items():
+        intentos = []
+        for presupuesto in presupuestos:
+            cuerpo = {"model": modelo, "max_tokens": presupuesto, "temperature": 0,
+                      "messages": [{"role": "user", "content": PETICION}], **extra}
+            try:
+                r = _una_llamada(puerto, cuerpo)
+            except urllib.error.HTTPError as ex:
+                salida[nombre] = ("ERROR", f"HTTP {ex.code} — el servidor lo rechaza")
+                intentos = None
+                break
+            except Exception as ex:
+                salida[nombre] = ("ERROR", type(ex).__name__)
+                intentos = None
+                break
+            intentos.append((presupuesto, r))
+            if r["json"] is not None and "option_letter" in r["json"]:
+                break                      # ya salió: no hace falta más presupuesto
+            if r["motivo"] != "length":
+                break                      # terminó solo y aun así no hay JSON: no es presupuesto
+        if intentos is None:
+            continue
+        presupuesto, r = intentos[-1]
+        marca = (f"{presupuesto} tok, {r['seg']:.1f}s, {r['chars']} chars, "
+                 f"finish={r['motivo']}" + (", razonó" if r["razono"] else ""))
+        if r["json"] is not None and "option_letter" in r["json"]:
+            veredicto = "sí" if presupuesto == presupuestos[0] else f"sí con {presupuesto}"
+            salida[nombre] = (veredicto, f"option_letter={r['json']['option_letter']!r} ({marca})")
+        elif r["motivo"] == "length":
+            salida[nombre] = ("NO", f"sigue truncando al máximo probado ({marca})")
+        else:
+            salida[nombre] = ("NO", f"termina sin JSON: {r['txt'][:70]!r} ({marca})")
+    return salida
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--puertos", default=PUERTOS_HABITUALES)
     ap.add_argument("--probar", action="store_true",
                     help="además de listar, comprobar que genera y medir latencia")
+    ap.add_argument("--capacidades", action="store_true",
+                    help="probar guided_json y apagar el pensamiento, escalando el presupuesto")
     args = ap.parse_args()
 
     puertos = rango(args.puertos)
@@ -124,6 +213,17 @@ def main():
                 ok, seg, detalle = generar(puerto, m)
                 linea += f"   {'genera' if ok else 'NO GENERA'} en {seg:.1f}s  {detalle}"
             print(linea)
+
+    if args.capacidades:
+        print("\n── Qué extras acepta el servidor ──")
+        puerto, modelos = vivos[0]
+        for nombre, (ok, detalle) in capacidades(puerto, modelos[0]).items():
+            print(f"  {nombre:24} {ok:3}  {detalle}")
+        print("\n  «sí» = JSON parseable con la clave pedida. «sí con N» = lo logra, pero")
+        print("  necesita N tokens: no es que no sepa, es que primero explica. «NO» con")
+        print("  finish=length significa que sigue truncando al máximo probado.")
+        print("    enable_thinking=false ->  DELPHI_SIN_RAZONAMIENTO=1 ./run.sh")
+        print("    guided_json           ->  USE_GUIDED_JSON = True en config.py")
 
     print(f"\n── Resumen: {len(unicos)} modelo(s) distinto(s) ──")
     for m, ps in unicos.items():
