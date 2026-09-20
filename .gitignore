@@ -45,3 +45,9 @@ docs/emily_posturas_varias_opciones.json
 docs/para-emily*.md
 docs/inestables-para-emily*.md
 docs/*_comentarios.json
+
+# El .docx original de Emily, no sólo el JSON derivado. Se coló en a14d9b4 porque
+# el archivo se copió a docs/ para correr tools/leer_docx_emily.py y `git add -A`
+# lo tomó: el instrumento completo, sin publicar, en un repo público.
+docs/*.docx
+docs/*.doc
