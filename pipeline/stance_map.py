@@ -25,6 +25,7 @@ STANCE_MAP = {
         "Yes, with prior experience": (F, "With prior experience"),
         "Yes, according to their academic performance": (F, "According to their academic performance"),
         "No": (A, None),
+        "No, there is not pedagogical experience": (A, "There is not pedagogical experience"),
         "No, lack of preparation": (A, "Lack of preparation"),
     },
     "P1_Q5": {
@@ -62,6 +63,7 @@ STANCE_MAP = {
         "Yes": (F, None),
         "Yes, with reduction of written evaluations": (F, "With reduction of written evaluations"),
         "Yes, combined with practical evaluation": (F, "Combined with practical evaluation"),
+        "Yes, with PBL methodology": (F, "With PBL methodology"),
         "No": (A, None),
         "No, only in certain modules": (A, "Only in certain modules"),
         "No, according to learning objectives": (A, "According to learning objectives"),
@@ -98,8 +100,10 @@ STANCE_MAP = {
         "Yes, only for complex topics": (F, "Only for complex topics"),
         "Yes, combined with PBL": (F, "Combined with PBL"),
         "Yes, only in basic sciences": (F, "Only in basic sciences"),
+        "Yes, only for theoretical classes": (F, "Only for theoretical classes"),
         "No": (A, None),
         "No, according to year of training": (A, "According to year of training"),
+        "No, PBL or ABP system is better": (A, "PBL or ABP system is better"),
     },
     "P4_Q8": {
         "Yes": (F, None),
@@ -107,6 +111,10 @@ STANCE_MAP = {
         "Yes, only in PBL": (F, "Only in PBL"),
         "Yes, only in practical activities": (F, "Only in practical activities"),
         "Yes, according to the subject": (F, "According to the subject"),
+        "No": (A, None),
+        "No, personality traits vary in each student": (A, "Personality traits vary in each student"),
+        "No, subjective posture from professors": (A, "Subjective posture from professors"),
+        "No, variable emotions throughout the day": (A, "Variable emotions throughout the day"),
     },
 }
 

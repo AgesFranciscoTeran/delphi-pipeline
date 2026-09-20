@@ -183,35 +183,47 @@ def aplanar_ejes(ejes):
             numericos.append({"tipo": tipo, "opciones": [limpiar(o) for o in ops]})
             continue
 
-        # Una celda que lista Sí Y No como opciones sueltas es un eje de postura puro
-        # (así viene el eje "Binary" de P2_Q5): cada una es su propia postura y lo que
-        # quede en la celda son calificadores en paralelo, no colgados de ninguna.
-        sueltas = [es_rama(o) for o in ops]
-        if sueltas.count("Yes") and sueltas.count("No"):
-            for o, s in zip(ops, sueltas):
-                if s:
-                    anadir(s, s, None)
-                else:
-                    anadir(capitalizar(limpiar(o)), None, None)
-        elif postura:
-            anadir(postura, postura, None)
-            for o in ops[1:]:
-                q = limpiar(o)
-                anadir("%s, %s" % (postura, descapitalizar(q)), postura, q)
-        else:
-            for o in ops:
-                anadir(capitalizar(limpiar(o)), None, None)
+        # Recorrido secuencial: cada '- Yes' / '- No' abre una rama, y las opciones que le
+        # siguen EN LA MISMA CELDA cuelgan de ella. Las que van antes del primer marcador no
+        # cuelgan de ninguna y van sin prefijo.
+        #
+        # Antes había una regla aparte para la celda que lista Sí Y No: en cuanto veía las dos
+        # posturas juntas daba por paralelos todos los calificadores de esa celda. Se escribió
+        # para el eje "Binary" de P2_Q5, que es sólo ['Yes', 'No']. En la v3, P1_Q4 mete las
+        # DOS ramas con sus calificadores en una sola celda, y esa regla dejaba sin prefijo los
+        # cinco calificadores del «Yes»: la pregunta se quedaba sin postura en la ronda final
+        # (n = 0) y sus calificadores parecían hermanos de «Yes» en vez de hijos suyos.
+        # El recorrido secuencial da lo mismo en P2_Q5 y lo correcto en P1_Q4.
+        actual = None
+        for o in ops:
+            s = es_rama(o)
+            if s:
+                actual = s
+                anadir(s, s, None)
+                continue
+            texto = limpiar(o)
+            if actual:
+                anadir("%s, %s" % (actual, descapitalizar(texto)), actual, texto)
+            else:
+                anadir(capitalizar(texto), None, None)
 
     # Segunda pasada: sólo si la pregunta tiene ramas, las opciones sueltas de tipo
     # "Depends on ..." se leen como postura condicional (ver PREFIJOS_CONDICIONALES).
+    ambiguas = []
     if ramas:
         for texto in opciones:
             if texto in ramas:
+                # Una opción con forma condicional que además cuelga de una rama: gana la
+                # posición en el documento, porque eso es lo que Emily escribió. Se avisa
+                # porque las dos lecturas son defendibles y la elección cambia el resultado.
+                cuerpo = texto.split(", ", 1)[-1].lower()
+                if cuerpo.startswith(PREFIJOS_CONDICIONALES) and ramas[texto][0] != "Depends":
+                    ambiguas.append(texto)
                 continue
             if texto.lower().startswith(PREFIJOS_CONDICIONALES):
                 ramas[texto] = ("Depends", texto)
 
-    return opciones, numericos, ramas
+    return opciones, numericos, ramas, ambiguas
 
 
 def bandas_de(eje_numerico):
@@ -234,7 +246,10 @@ def construir():
 
     for qid, item in doc.items():
         tipo = TIPOS[qid]
-        opciones, numericos, ramas = aplanar_ejes(item["ejes"])
+        opciones, numericos, ramas, ambiguas = aplanar_ejes(item["ejes"])
+        for t in ambiguas:
+            informe.append("POSTURA AMBIGUA %s: «%s» tiene forma condicional pero el documento "
+                           "la pone bajo «%s»; gana la posición" % (qid, t, ramas[t][0]))
         entrada = OrderedDict()
         entrada["emily_num"] = EMILY_NUM[qid]
         entrada["text"] = item["pregunta"].strip()
@@ -271,12 +286,12 @@ def construir():
                 entrada["unit"] = unidad
                 entrada["unit_assumed"] = False
                 if heredada and unidad != heredada:
-                    informe.append("UNIDAD CAMBIA  %s: %s -> %s (el documento v2 la declara)"
+                    informe.append("UNIDAD CAMBIA  %s: %s -> %s (el documento la declara)"
                                    % (qid, heredada, unidad))
             elif heredada:
                 entrada["unit"] = heredada
                 entrada["unit_assumed"] = True
-                informe.append("UNIDAD ASUMIDA %s: %s (la v2 dice sólo «%s»)"
+                informe.append("UNIDAD ASUMIDA %s: %s (el documento dice sólo «%s»)"
                                % (qid, heredada, numericos[0]["tipo"]))
         else:
             # Los ejes numéricos de una pregunta nominal entran como opciones de texto:
