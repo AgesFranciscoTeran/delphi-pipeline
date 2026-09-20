@@ -253,6 +253,28 @@ def test_stance_map_is_a_subset_of_the_taxonomy_options():
         assert "Yes" in m or "No" in m, qid
 
 
+def test_two_branches_in_one_cell_keep_their_qualifiers():
+    """Regresión de la v3: P1_Q4 mete «- Yes» y «- No» con sus calificadores en UNA celda.
+
+    La regla vieja daba por paralelos los calificadores en cuanto veía las dos posturas juntas
+    —se escribió para el eje «Binary» de P2_Q5, que es sólo ['Yes','No']—, así que los cinco del
+    «Yes» salían sin prefijo. Consecuencia medible: P1_Q4 se quedaba sin postura en la ronda
+    final (n = 0) y sus calificadores parecían hermanos de «Yes» en vez de hijos suyos, lo que
+    además inflaba la clase «entre hermanas» del informe de inestabilidad.
+    """
+    from stance_map import STANCE_MAP, stance_of
+    for opcion in ("Yes, with passing exam", "Yes, basic sciences only",
+                   "Yes, with prior experience"):
+        assert opcion in EMILY_TAXONOMY["P1_Q4"]["options"], opcion
+        assert stance_of("P1_Q4", opcion)[0] == "favor", opcion
+    assert stance_of("P1_Q4", "No, there is not pedagogical experience")[0] == "against"
+    # ninguna opción de una pregunta con ramas debe quedar sin postura por accidente
+    sin_postura = set(EMILY_TAXONOMY["P1_Q4"]["options"]) - set(STANCE_MAP["P1_Q4"])
+    assert not sin_postura, sin_postura
+    # y el eje de postura puro de P2_Q5 sigue sin arrastrar sus calificadores paralelos
+    assert stance_of("P2_Q5", "Obligatory") == (None, None)
+
+
 def test_stance_of_recovers_the_nested_structure():
     from stance_map import stance_of
     # La postura viaja en el texto de la opción, que es lo que cambia respecto de la v1.

@@ -42,3 +42,6 @@ estabilidad_diferencias.csv
 # en un parche, tiene que salir de aquí — no de una copia parcial.
 docs/preguntas-problematicas.md
 docs/emily_posturas_varias_opciones.json
+docs/para-emily*.md
+docs/inestables-para-emily*.md
+docs/*_comentarios.json
