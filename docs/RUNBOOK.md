@@ -221,6 +221,12 @@ corridas. Lo que hace reproducible un resultado es archivar `Resultados/02_extra
 y `Resultados/run_manifest.json`, no los parámetros. **Guardar esos dos archivos de la corrida
 que se reporte en el artículo.**
 
+Las carpetas `Resultados_v4_k*` se sobrescriben en la próxima corrida. La referencia vigente está
+archivada, en sólo lectura y fuera de git, en `Resultados_referencia_v4_2026-09-28/`: caché,
+manifiesto y extracción de cada corrida, el consolidado con sus `03_*`, la taxonomía usada, el
+commit (`COMMIT`) y `SHA256SUMS` para comprobar que nada cambió (`sha256sum -c SHA256SUMS`).
+Para una referencia nueva, repetir el mismo esquema con otra fecha; no tocar la anterior.
+
 ---
 
 ## 8. Lo que esta corrida NO resuelve

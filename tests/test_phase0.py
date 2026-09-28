@@ -689,3 +689,34 @@ def test_p3_q1_es_por_dia_aunque_el_documento_diga_por_semana():
     de banda y la pregunta se vuelve inestable, como pasó en la primera corrida v4."""
     t = EMILY_TAXONOMY["P3_Q1"]
     assert t["unit"] == "hours/day" and t["unit_assumed"] is False
+
+
+
+# ── consolidación de k corridas ──────────────────────────────────────────────
+
+def _consolidar():
+    import importlib.util, pathlib
+    ruta = pathlib.Path(__file__).resolve().parent.parent / "tools" / "consolidar.py"
+    spec = importlib.util.spec_from_file_location("consolidar", ruta)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_sin_mayoria_no_se_resuelve_por_el_orden_de_las_corridas():
+    """Tres corridas, tres etiquetas: antes ganaba la primera carpeta que se pasó."""
+    c = _consolidar()
+    assert c.votar(["A", "B", "C"]) == (None, 1)
+    assert c.votar(["A", "B"]) == (None, 1)
+    assert c.votar(["B", "A", "A"]) == ("A", 2)
+    assert c.votar(["A"]) == ("A", 1)
+
+
+def test_fila_sin_mayoria_queda_sin_clasificar():
+    c = _consolidar()
+    cat = c.sin_mayoria(pd.Series({"question_type": "nominal", "selected_option": "Yes"}))
+    assert cat["selected_option"] == "Unclassified"
+    assert cat["classification_status"] == "sin_mayoria"
+    num = c.sin_mayoria(pd.Series({"question_type": "quantitative", "band": "Minimal",
+                                   "numeric_value": 4.0}))
+    assert num["band"] is None and math.isnan(num["numeric_value"])

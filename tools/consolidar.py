@@ -68,6 +68,32 @@ def etiqueta_de(fila):
     return None
 
 
+def votar(votos):
+    """(etiqueta modal, n_acuerdo). La etiqueta es None si hay empate en el primer puesto.
+
+    Con tres corridas que dan tres etiquetas distintas no hay mayoría, y elegir la primera
+    —lo que hacía `Counter.most_common`— es elegir por el orden en que se pasaron las carpetas.
+    Esas respuestas quedan sin clasificar: el voto no puede decir nada de ellas.
+    """
+    top = collections.Counter(votos).most_common(2)
+    if len(top) > 1 and top[0][1] == top[1][1]:
+        return None, top[0][1]
+    return top[0]
+
+
+def sin_mayoria(fila):
+    """Vacía la etiqueta de una fila sin mayoría y la marca, conservando el resto."""
+    fila = fila.copy()
+    if fila.get("question_type") in ("nominal", "binary"):
+        fila["selected_option"] = "Unclassified"
+        fila["classification_status"] = "sin_mayoria"
+    else:
+        # sin cifra ni banda: consensus_metrics no puede volver a derivar la banda del valor
+        fila["band"] = None
+        fila["numeric_value"] = float("nan")
+    return fila
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("carpetas", nargs="+")
@@ -105,20 +131,24 @@ def main():
 
         if not votos:
             salida.append(fila_base)          # nadie la resolvió: se conserva como está
-            estab.append((len(votos), 0, None))
+            estab.append((len(votos), 0, None, False))
             continue
 
-        cuenta = collections.Counter(votos)
-        modal, n_acuerdo = cuenta.most_common(1)[0]
-        _, representante = filas[modal]       # fila completa de una corrida que votó con la mayoría
-        salida.append(representante.rename(rid))
-        estab.append((len(votos), n_acuerdo, n_acuerdo / len(votos)))
+        modal, n_acuerdo = votar(votos)
+        if modal is None:
+            _, representante = next(iter(filas.values()))
+            salida.append(sin_mayoria(representante).rename(rid))
+        else:
+            _, representante = filas[modal]   # fila completa de una corrida que votó con la mayoría
+            salida.append(representante.rename(rid))
+        estab.append((len(votos), n_acuerdo, n_acuerdo / len(votos), modal is None))
 
     df = pd.DataFrame(salida).reset_index(drop=True)
     df["response_id"] = base["response_id"].values
     df["n_corridas"] = [e[0] for e in estab]
     df["n_acuerdo"] = [e[1] for e in estab]
     df["estabilidad"] = [e[2] for e in estab]
+    df["sin_mayoria"] = [e[3] for e in estab]
 
     os.makedirs(args.salida, exist_ok=True)
     # El resto de la salida (01_*, 02a_*) no depende del LLM: se copia de la primera corrida.
@@ -155,6 +185,7 @@ def main():
     # hacía parecer que 28 ítems habían fallado cuando la mayoría son respuestas sin número.
     sin = df[(df.n_corridas == 0) & df.get("is_valid_response", True)]
     fallidos = int((sin.get("extraction_status") == "failed").sum()) if len(sin) else 0
+    print(f"  sin mayoría (quedan sin clasificar): {int(df.sin_mayoria.sum())}")
     print(f"  sin etiqueta en ninguna corrida: {len(sin)}")
     print(f"     de esos, extracciones fallidas: {fallidos}")
     print(f"     el resto se extrajo bien pero no tiene nada que votar")
