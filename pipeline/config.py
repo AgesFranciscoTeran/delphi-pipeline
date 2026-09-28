@@ -91,6 +91,13 @@ RESPONSE_TYPE_INDIVIDUAL = "Individual"
 RESPONSE_TYPE_SYNTHESIS = "Synthesis"
 
 # Marcadores de "sin respuesta" que se consideran vacíos (además de NaN y "")
+# Emily añade a algunas preguntas una opción para las respuestas que no contestan lo que se
+# pregunta. No es una postura ni un fallo de la taxonomía: se clasifica aparte («fuera de tema»)
+# y sale del denominador del consenso. Si contara, un «no responde» colgado de la celda «- No»
+# sumaría como un voto en contra.
+OFF_TOPIC_OPTION = "Does not answer the question"
+OFF_TOPIC_LABEL = "Off-topic"
+
 EMPTY_MARKERS = {"nan", "n.a.", "na", "n/a", "-", "--", "."}
 SHORT_RESPONSE_CHARS = 15  # sólo informativo (columna is_short); NO excluye
 

@@ -21,6 +21,11 @@ RUTA_PIPELINE = os.environ.get("DELPHI_PIPELINE", os.path.join(_RAIZ, "pipeline"
 RUTA_RESULTADOS = os.environ.get("DELPHI_RESULTADOS", os.path.join(_RAIZ, "Resultados"))
 sys.path.insert(0, RUTA_PIPELINE)
 
+from config import OFF_TOPIC_LABEL  # noqa: E402
+
+# Etiquetas que no son una opción: no se pintan ni cuentan en lo categórico.
+SIN_OPCION = ("Unclassified", OFF_TOPIC_LABEL)
+
 ORDEN_ETIQUETAS = ["Consenso fuerte", "Mayoría clara", "Convergencia moderada",
                    "Opción dominante", "Sin consenso", "Insuficiente"]
 
@@ -96,7 +101,7 @@ def clasificadas(d=None):
     """Sólo respuestas con una opción asignada: es el denominador de todo lo categórico."""
     d = cargar_extraidas() if d is None else d
     return d[d.is_valid_response & d.selected_option.notna()
-             & (d.selected_option != "Unclassified")]
+             & ~d.selected_option.isin(SIN_OPCION)]
 
 
 # ── tablas del sitio ──────────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ Taxonomía de preguntas y opciones — definida y revisada por Emily (experta de
 GENERADO por tools/build_taxonomy.py desde docs/emily_posturas_varias_opciones.json.
 NO EDITAR A MANO: edita el documento de Emily, vuelve a extraer el JSON y regenera.
 
-Fuente: «Posturas varias opciones» v2 (Emily, 14-09-2026).
+Fuente: «Posturas varias opciones» v4 (Emily, 27-09-2026).
 
 Cómo se aplanó el árbol
 -----------------------
@@ -70,16 +70,19 @@ EMILY_TAXONOMY = {
         "text": "How should Integral Community Development (DCI) be delivered to medical students?",
         "type": "nominal",
         "options": [
-            "Should be optional",
+            "To have DCI should be optional",
+            "Should be able to decide what to do",
+            "Should be various activities",
             "Should contain work with kids",
             "Should contain work with elderly",
             "Should be in rural areas",
             "Only with students with prior experience",
             "Only if it does not affect follow up",
             "Should implement public health strategies",
-            "Should be beneficial for communities at that moment",
+            "Should be beneficial for communities overall",
             "4 semesters or less",
             "More than 4 semesters",
+            "Does not answer the question",
         ],
     },
     "P1_Q4": {
@@ -88,14 +91,16 @@ EMILY_TAXONOMY = {
         "type": "nominal",
         "options": [
             "Yes",
-            "Yes, basic sciences only",
-            "Yes, NBME preparation only",
+            "Yes, basic sciences",
+            "Yes, NBME classes",
             "Yes, with passing exam",
             "Yes, with prior experience",
             "Yes, according to their academic performance",
             "No",
-            "No, there is not pedagogical experience",
             "No, lack of preparation",
+            "No, there is not pedagogical experience",
+            "No, mandatory probation/trial period",
+            "No, no ABP classes",
         ],
     },
     "P1_Q5": {
@@ -160,12 +165,15 @@ EMILY_TAXONOMY = {
         "options": [
             "Yes, supplemented with lecture classes",
             "Yes, with increased clinical practice",
-            "Yes, with effort of the students",
+            "Yes, with effort of the students and/or professors",
             "Yes, because it is useful in medical fields",
+            "Yes, with no extra classes",
+            "It is effective if well used",
             "No, because leaves blanks in knowledge",
-            "Only certain year",
+            "Only certain years",
             "Only some subjects",
             "Depending on the quality of tutors",
+            "It is not well implemented",
         ],
     },
     "P2_Q2": {
@@ -175,7 +183,7 @@ EMILY_TAXONOMY = {
         "options": [
             "More practice, less theory",
             "More theory, less practice",
-            "Balanced",
+            "Balanced / Half theory and half practice",
             "Based on student need",
             "Depending on the year",
         ],
@@ -200,7 +208,7 @@ EMILY_TAXONOMY = {
             },
         ],
         "unit": "hours/day",
-        "unit_assumed": True,
+        "unit_assumed": False,
     },
     "P2_Q4": {
         "emily_num": 11,
@@ -213,6 +221,8 @@ EMILY_TAXONOMY = {
             "No",
             "No, according to the subject",
             "No, evaluate participation, not attendance",
+            "No, only extra points",
+            "Does not answer the question",
         ],
     },
     "P2_Q5": {
@@ -243,6 +253,10 @@ EMILY_TAXONOMY = {
             "Yes, only for exams",
             "No",
             "No, respect free time",
+            "No, physical / mental rest",
+            "Yes, once a month",
+            "Yes, once a week",
+            "Yes, once in the semester",
         ],
     },
     "P2_Q7": {
@@ -252,15 +266,16 @@ EMILY_TAXONOMY = {
         "options": [
             "Yes",
             "Yes, with reduction of written evaluations",
-            "Yes, combined with practical evaluation",
+            "Yes, practical or oral evaluation",
             "Yes, with PBL methodology",
+            "Yes, only material taught in class",
             "No",
             "No, only in certain modules",
             "No, according to learning objectives",
             "No, replaced by clinical cases",
-            "Only once",
-            "Only twice",
-            "4 / Every week",
+            "Yes, only once",
+            "Yes, only twice",
+            "Yes, 4 / Every week",
         ],
     },
     "P3_Q1": {
@@ -283,7 +298,7 @@ EMILY_TAXONOMY = {
             },
         ],
         "unit": "hours/day",
-        "unit_assumed": True,
+        "unit_assumed": False,
     },
     "P3_Q2": {
         "emily_num": 16,
@@ -325,7 +340,7 @@ EMILY_TAXONOMY = {
             "Should be rejected before first year",
             "Depends on infrastructure capacity",
             "As minimal as possible",
-            "None",
+            "No specific number",
             "<=10 - 19%",
             "20 - 29%",
             ">=30%",
@@ -401,6 +416,7 @@ EMILY_TAXONOMY = {
             "Priority to medicine subjects rather than general college",
             "Less than 6 credits",
             "PBL only 30%",
+            "Does not answer the question",
         ],
     },
     "P3_Q8": {
@@ -444,9 +460,8 @@ EMILY_TAXONOMY = {
         "text": "When should the night shift start?",
         "type": "nominal",
         "options": [
-            "First years (1-2)",
-            "Preclinical years (3-4)",
-            "Final years (5-6)",
+            "First years (1-3)",
+            "Final years (4-6)",
             "In all the career (1-6)",
             "Should be mandatory",
             "Should not happen before graduating",
@@ -475,7 +490,7 @@ EMILY_TAXONOMY = {
             },
         ],
         "unit": "hours/day",
-        "unit_assumed": True,
+        "unit_assumed": False,
     },
     "P4_Q2": {
         "emily_num": 26,
@@ -495,7 +510,7 @@ EMILY_TAXONOMY = {
             },
         ],
         "unit": "hours/day",
-        "unit_assumed": True,
+        "unit_assumed": False,
     },
     "P4_Q3": {
         "emily_num": 27,
@@ -509,6 +524,7 @@ EMILY_TAXONOMY = {
             "No",
             "No, depends on the score required",
             "No, should depend on other academic metrics",
+            "Does not answer the question",
         ],
     },
     "P4_Q4": {
@@ -533,6 +549,7 @@ EMILY_TAXONOMY = {
         "type": "nominal",
         "options": [
             "Numeric system 0-100",
+            "Numeric system with decimals",
             "Letter system A-F",
             "Pass/Fail",
             "Combined",
@@ -553,6 +570,7 @@ EMILY_TAXONOMY = {
             "No",
             "No, according to year of training",
             "No, PBL or ABP system is better",
+            "Does not answer the question",
         ],
     },
     "P4_Q7": {

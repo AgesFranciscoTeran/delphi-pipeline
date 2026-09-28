@@ -27,6 +27,10 @@ def stance_consensus(df):
     cat = df[df["question_type"].isin(("nominal", "binary")) & df["is_valid_response"]].copy()
     cat["question_id"] = "P" + cat[COL_PANEL].astype(str) + "_Q" + cat[COL_QUESTION].astype(str)
     cat = cat[cat["question_id"].isin(STANCE_MAP)]
+    # Fuera de tema: ni postura ni sin clasificar; se cuenta aparte y sale del denominador.
+    cat["off_topic"] = cat["selected_option"].eq(OFF_TOPIC_LABEL)
+    n_off = cat.groupby(["question_id", COL_ROUND])["off_topic"].sum()
+    cat = cat[~cat["off_topic"]]
     mapped = [stance_of(q, o) for q, o in zip(cat["question_id"], cat["selected_option"])]
     cat["stance"] = [STANCE_ES.get(m[0]) for m in mapped]
     cat["qualifier"] = [m[1] for m in mapped]
@@ -51,6 +55,7 @@ def stance_consensus(df):
             "question_id": qid, COL_ROUND: rnd,
             COL_QUESTION_TEXT: grp[COL_QUESTION_TEXT].iloc[0],
             "n_responses": n_total, "n_classified": n_cls,
+            "n_off_topic": int(n_off.get((qid, rnd), 0)),
             "pct_unclassified": pct_unc,
             "modal_stance": modal, "is_tie": is_tie,
             "stance_share": share,

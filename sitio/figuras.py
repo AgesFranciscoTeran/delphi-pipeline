@@ -213,7 +213,7 @@ def fig_cuadricula(panel, png=False):
     pal = {}
     for q in preguntas:
         opts = sorted(x for x in g[g.qid == q].selected_option.dropna().unique()
-                      if x != "Unclassified")
+                      if x not in datos.SIN_OPCION)
         pal[q] = {o: CATEG_GRID[i % len(CATEG_GRID)] for i, o in enumerate(opts)}
 
     # orden de filas por parecido, usando la última ronda como referencia
@@ -242,7 +242,7 @@ def fig_cuadricula(panel, png=False):
         for i, p_ in enumerate(orden):
             for j, q in enumerate(preguntas):
                 v = piv.loc[p_, q]
-                sin = pd.isna(v) or v == "Unclassified"
+                sin = pd.isna(v) or v in datos.SIN_OPCION
                 ax.add_patch(plt.Rectangle(
                     (j + .06, i + .06), .88, .88,
                     facecolor="#f4f2ee" if sin else pal[q].get(v, GRIS),
@@ -272,7 +272,7 @@ def leyenda_opciones(panel):
     bloques = []
     for q in preguntas:
         opts = sorted(x for x in g[g.qid == q].selected_option.dropna().unique()
-                      if x != "Unclassified")
+                      if x not in datos.SIN_OPCION)
         chips = "".join(
             f'<span class="chip"><i style="background:{CATEG_GRID[i % len(CATEG_GRID)]}"></i>'
             f'{_corta(o, 30)}</span>'

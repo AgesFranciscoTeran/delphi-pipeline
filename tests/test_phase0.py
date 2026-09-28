@@ -263,7 +263,7 @@ def test_two_branches_in_one_cell_keep_their_qualifiers():
     además inflaba la clase «entre hermanas» del informe de inestabilidad.
     """
     from stance_map import STANCE_MAP, stance_of
-    for opcion in ("Yes, with passing exam", "Yes, basic sciences only",
+    for opcion in ("Yes, with passing exam", "Yes, basic sciences",
                    "Yes, with prior experience"):
         assert opcion in EMILY_TAXONOMY["P1_Q4"]["options"], opcion
         assert stance_of("P1_Q4", opcion)[0] == "favor", opcion
@@ -600,3 +600,92 @@ def test_call_llm_manda_el_esquema_cuando_el_guiado_esta_activo():
     if ea.USE_GUIDED_JSON:
         assert "guided_json" in extra and extra["guided_json"]["properties"]["option_letter"]
     assert "chat_template_kwargs" not in extra      # medido: con GLM empeora
+
+
+# ── «Does not answer the question» (v4 de Emily, 27-09-2026) ─────────────────
+
+def _aplanar(ejes):
+    import importlib.util, pathlib
+    ruta = pathlib.Path(__file__).resolve().parent.parent / "tools" / "build_taxonomy.py"
+    spec = importlib.util.spec_from_file_location("build_taxonomy", ruta)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.aplanar_ejes(ejes)
+
+
+def test_fuera_de_tema_en_la_celda_del_no_no_es_un_voto_en_contra():
+    """En la v4, P2_Q4, P4_Q3 y P4_Q6 traen «Does not answer the question» dentro de la celda
+    «- No». Con el recorrido secuencial salía «No, does not answer the question» con postura en
+    contra: cada respuesta fuera de tema contaba como un No."""
+    from config import OFF_TOPIC_OPTION
+    opciones, _, ramas, _ = _aplanar([
+        {"tipo": "Nominal", "opciones": ["- Yes", "Only in labs"]},
+        {"tipo": "(sin etiqueta)",
+         "opciones": ["- No", "Respect time", "Does not answer the question"]},
+    ])
+    assert opciones[-1] == OFF_TOPIC_OPTION
+    assert OFF_TOPIC_OPTION not in ramas
+    assert not any("does not answer" in o.lower() and o != OFF_TOPIC_OPTION for o in opciones)
+    assert ramas["No, respect time"][0] == "No"
+
+
+def test_la_taxonomia_generada_no_tiene_fuera_de_tema_con_postura():
+    from config import OFF_TOPIC_OPTION
+    from stance_map import STANCE_MAP
+    for qid, t in EMILY_TAXONOMY.items():
+        for o in t.get("options", []):
+            if "does not answer" in o.lower():
+                assert o == OFF_TOPIC_OPTION, (qid, o)
+        assert OFF_TOPIC_OPTION not in STANCE_MAP.get(qid, {}), qid
+
+
+def test_elegir_fuera_de_tema_no_es_clasificar():
+    from config import OFF_TOPIC_OPTION, OFF_TOPIC_LABEL
+    opts = ["Yes", "No", OFF_TOPIC_OPTION]
+    assert ea.resolve_letter("C", OFF_TOPIC_OPTION, opts) == (OFF_TOPIC_LABEL, "off_topic", False)
+    assert ea.resolve_letter("", OFF_TOPIC_OPTION, opts)[:2] == (OFF_TOPIC_LABEL, "off_topic")
+    assert ea.resolve_letter("A", "Yes", opts) == ("Yes", "classified", False)
+
+
+def test_fuera_de_tema_sale_del_denominador_del_consenso():
+    from config import OFF_TOPIC_LABEL
+    df = pd.DataFrame({
+        "question_type": ["nominal"] * 8, "is_valid_response": [True] * 8,
+        "Panel": [4] * 8, "Question": [3] * 8, "Round": [1] * 8, "Question Text": ["q"] * 8,
+        "selected_option": ["Yes"] * 5 + ["No"] + [OFF_TOPIC_LABEL] * 2,
+        "extraction_status": ["ok"] * 8,
+    })
+    r = cm.categorical_consensus(df).iloc[0]
+    assert r["n_responses"] == 6 and r["n_off_topic"] == 2 and r["n_unclassified"] == 0
+    assert r["modal_share"] == pytest.approx(5 / 6)
+    assert OFF_TOPIC_LABEL not in json.loads(r["option_counts"])
+
+
+def test_eje_numerico_bajo_la_celda_del_si_califica_al_si():
+    """v4, P2_Q6: la frecuencia («Once a month»…) va entre la celda «- Yes» y la «- No». Suelta
+    y sin postura, un «sí, una vez al mes» se perdía en la vista por postura."""
+    from stance_map import stance_of
+    opts = EMILY_TAXONOMY["P2_Q6"]["options"]
+    for o in ("Yes, once a month", "Yes, once a week", "Yes, once in the semester"):
+        assert o in opts, o
+        assert stance_of("P2_Q6", o)[0] == "favor", o
+    assert "Once a month" not in opts
+    # P2_Q5: su eje de sesiones no va bajo ninguna rama y sigue como estaba
+    assert "Minimal: 1" in EMILY_TAXONOMY["P2_Q5"]["options"]
+    assert stance_of("P2_Q5", "Minimal: 1") == (None, None)
+
+
+def test_fuera_de_tema_va_al_final_de_la_lista():
+    from config import OFF_TOPIC_OPTION
+    for qid, t in EMILY_TAXONOMY.items():
+        if OFF_TOPIC_OPTION in t.get("options", []):
+            assert t["options"][-1] == OFF_TOPIC_OPTION, qid
+
+
+def test_p3_q1_es_por_dia_aunque_el_documento_diga_por_semana():
+    """La encuesta y la v4 dicen «per week» en P3_Q1, pero el panel respondió por día (ver
+    UNIDAD_CORREGIDA en tools/build_taxonomy.py).
+    Si la corrección se pierde en una regeneración, las respuestas de 4-6 horas quedan fuera
+    de banda y la pregunta se vuelve inestable, como pasó en la primera corrida v4."""
+    t = EMILY_TAXONOMY["P3_Q1"]
+    assert t["unit"] == "hours/day" and t["unit_assumed"] is False
