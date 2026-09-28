@@ -319,6 +319,26 @@ def pagina_panel(panel):
                      f"Panel {panel} de 4.")
 
 
+def parrafo_conclusiones():
+    """Cuántas conclusiones cambiarían con una sola corrida. Sale de los CSV, no del texto."""
+    e = datos.estabilidad_conclusiones()
+    if not e:
+        return ""
+    if e["n_cambian"]:
+        cuales = ", ".join(e["cambian"])
+        mayoria = ("y en todas el voto coincide con lo que dice la mayoría de las corridas"
+                   if not e["contra_mayoria"] else
+                   "y en <b>%s</b> el voto no coincide con la mayoría de las corridas"
+                   % ", ".join(e["contra_mayoria"]))
+        detalle = (f'<b>{e["n_cambian"]} de {e["n"]}</b> conclusiones de ronda final cambian '
+                   f'según qué corrida suelta se mire ({cuales}), {mayoria}.')
+    else:
+        detalle = f'Ninguna de las {e["n"]} conclusiones de ronda final cambia entre corridas.'
+    return (f'<p><b>Lo que importa es si cambian las conclusiones.</b> {detalle} Las respuestas '
+            f'en las que las {e["k"]} corridas no forman mayoría quedan sin clasificar en vez de '
+            f'resolverse por el orden de las corridas.</p>')
+
+
 def portada():
     filas_capas = "\n".join(
         f'<tr><td class="capa">{n}</td><td><span class="est e-{cl}">{est}</span></td>'
@@ -412,6 +432,7 @@ def portada():
   <h3>Qué es estable y qué no</h3>
   <p>{contenido.ESTABILIDAD}</p>
   <p>{contenido.ESTABILIDAD_CONSECUENCIA}</p>
+  {parrafo_conclusiones()}
 
   <h3>Sobre los números anteriores</h3>
   <p>Si alguien recuerda conclusiones distintas de una versión previa: el análisis anterior tenía

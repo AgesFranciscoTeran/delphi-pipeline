@@ -243,7 +243,7 @@ footer p{max-width:46rem}
   <div class="scroll"><table class="tcapas">
     <thead><tr><th>Parte</th><th>Estado</th><th>Qué falta</th><th>Depende de</th></tr></thead>
     <tbody>
-<tr><td class="capa">Convertir las respuestas en etiquetas</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">El formato nunca falla, pero la etiqueta no es determinista: entre dos corridas idénticas cambia entre el 2,8 y el 4,1 %. Se publica el voto mayoritario de tres corridas.</td><td class="quien">Pancho · hecho</td></tr>
+<tr><td class="capa">Convertir las respuestas en etiquetas</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">La etiqueta de una respuesta no es determinista, pero las conclusiones sí: se publica el voto mayoritario de tres corridas, las respuestas sin mayoría quedan sin clasificar, y la sección «Confiabilidad» muestra cuántas conclusiones cambiarían con una corrida sola.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Calcular el consenso de cada pregunta</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Mediana y rango para las numéricas, distribución y n para las de opción. Las respuestas fuera de tema se cuentan aparte y no entran en el denominador.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Resultados numéricos</td><td><span class="est e-wip">Preliminares</span></td><td class="qtxt">La unidad ya está declarada en todas las preguntas de horas. Falta que los bordes de las bandas sean contiguos: hoy 1–2 horas, 5,5 y 8,5 no caen en ninguna.</td><td class="quien"><b>Emily</b> · bordes de las bandas</td></tr>
 <tr><td class="capa">Definir qué cuenta como «consenso»</td><td><span class="est e-wip">Provisional</span></td><td class="qtxt">Los umbrales actuales se fijaron mirando los datos. Hay que fijarlos con la literatura Delphi (acuerdo + estabilidad) <b>antes</b> de volver a mirar resultados.</td><td class="quien">Pancho · 1 semana</td></tr>
@@ -289,6 +289,7 @@ footer p{max-width:46rem}
   <h3>Qué es estable y qué no</h3>
   <p>Tres corridas completas del mismo código sobre los mismos datos, a temperatura 0 y con semilla fija, difieren en <b>entre el 2,8 y el 4,1 % de las etiquetas</b> según el par que se compare, en proporciones parecidas en las categóricas y en las numéricas; 41 de las 775 respuestas no reciben la misma etiqueta en las tres. No es un fallo del pipeline — el servidor agrupa peticiones en lotes de composición variable y la aritmética en coma flotante no es asociativa, así que el mismo texto puede recibir distinta etiqueta según con qué otras respuestas le tocó viajar.</p>
   <p>Por eso <b>una corrida sola no es una medición</b>, sino una muestra de un clasificador estocástico. Lo que se publica aquí es el voto mayoritario de varias corridas, y cada respuesta lleva su grado de acuerdo entre ellas.</p>
+  <p><b>Lo que importa es si cambian las conclusiones.</b> <b>3 de 43</b> conclusiones de ronda final cambian según qué corrida suelta se mire (P1_Q4, P1_Q6, P3_Q5), y en todas el voto coincide con lo que dice la mayoría de las corridas. Las respuestas en las que las 3 corridas no forman mayoría quedan sin clasificar en vez de resolverse por el orden de las corridas.</p>
 
   <h3>Sobre los números anteriores</h3>
   <p>Si alguien recuerda conclusiones distintas de una versión previa: el análisis anterior tenía

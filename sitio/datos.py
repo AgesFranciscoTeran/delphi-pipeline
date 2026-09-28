@@ -285,6 +285,50 @@ def contexto():
             "cuant_total": len(cua)}
 
 
+def _conclusiones(carpeta):
+    """{(tabla, question_id): conclusión de la ronda final} de una carpeta de resultados."""
+    out = {}
+    for nombre, col in (("03_categorical_consensus.csv", "modal_option"),
+                        ("03b_stance_consensus.csv", "modal_stance"),
+                        ("03_quantitative_consensus.csv", None)):
+        p = os.path.join(carpeta, nombre)
+        if not os.path.exists(p):
+            continue
+        t = pd.read_csv(p)
+        t = t.loc[t.groupby("question_id").Round.idxmax()]
+        for _, r in t.iterrows():
+            out[(nombre, r.question_id)] = (r.consensus_label, r[col] if col else None)
+    return out
+
+
+def estabilidad_conclusiones():
+    """¿Cambia alguna conclusión según qué corrida se mire? None si no hay consolidación.
+
+    La estabilidad por respuesta (cuántas etiquetas cambian entre corridas) no dice si el
+    ruido llega a las conclusiones. Esto sí: compara la conclusión de ronda final de cada
+    pregunta en cada corrida suelta y en el voto consolidado. Las corridas se buscan junto a
+    la carpeta de resultados, por el nombre que dejó consolidar.py en el manifiesto.
+    """
+    paso = next((x for x in reversed(manifiesto()) if x.get("step") == "consolidar"), None)
+    if not paso:
+        return None
+    base = os.path.dirname(os.path.abspath(RUTA_RESULTADOS))
+    corridas = [_conclusiones(os.path.join(base, c)) for c in paso.get("corridas", [])]
+    if len(corridas) < 2 or not all(corridas):
+        return None
+    voto = _conclusiones(RUTA_RESULTADOS)
+    cambian, contra_mayoria = [], []
+    for clave, final in voto.items():
+        sueltas = [c.get(clave) for c in corridas]
+        if len(set(sueltas)) > 1:
+            cambian.append(clave[1])
+            (modal, n), = collections.Counter(sueltas).most_common(1)
+            if n <= len(sueltas) / 2 or modal != final:
+                contra_mayoria.append(clave[1])
+    return {"k": len(corridas), "n": len(voto), "cambian": sorted(set(cambian)),
+            "n_cambian": len(cambian), "contra_mayoria": sorted(set(contra_mayoria))}
+
+
 def manifiesto():
     """Datos de la corrida, si el pipeline dejó el manifiesto. {} si no hay.
 

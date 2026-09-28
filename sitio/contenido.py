@@ -113,10 +113,11 @@ DECISIONES = [
 ]
 
 CAPAS = [
- ("Convertir las respuestas en etiquetas", "A medias", "wip",
-  "El formato nunca falla, pero la etiqueta no es determinista: entre dos corridas idénticas "
-  "cambia entre el 2,8 y el 4,1 %. Se publica el voto mayoritario de tres corridas.",
-  "Pancho · hecho"),
+ ("Convertir las respuestas en etiquetas", "Listo", "ok",
+  "La etiqueta de una respuesta no es determinista, pero las conclusiones sí: se publica el "
+  "voto mayoritario de tres corridas, las respuestas sin mayoría quedan sin clasificar, y la "
+  "sección «Confiabilidad» muestra cuántas conclusiones cambiarían con una corrida sola.",
+  "—"),
  ("Calcular el consenso de cada pregunta", "Listo", "ok",
   "Mediana y rango para las numéricas, distribución y n para las de opción. Las respuestas "
   "fuera de tema se cuentan aparte y no entran en el denominador.", "—"),
