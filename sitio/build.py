@@ -414,23 +414,37 @@ def portada():
   usar los resultados.</p>
   <div class="callout warn">{contenido.NOTA_CONFIANZA}</div>
 
-  <h3>Acuerdo con la codificación manual</h3>
-  <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Coinciden en el 75 %
-  (κ = 0,72), y leídas a nivel de postura, en 21 de 24. Es el rango habitual entre dos
-  codificadores humanos en investigación cualitativa. Esas 44 están repartidas entre los cuatro
-  paneles: unas once por panel, pocas para una validación formal. El artículo necesita 200–300,
-  estratificadas por panel, y un segundo codificador que dé el techo de acuerdo entre
-  personas.</p>
+  <h3>Consistencia <span class="est e-ok">Modelo actual</span></h3>
+  <p>Treinta panelistas repitieron su respuesta palabra por palabra entre rondas, y el sistema les
+  dio la misma etiqueta en los treinta casos: 24 de opción y 6 numéricas. Se cumple en el voto
+  consolidado y en cada una de las tres corridas por separado.</p>
 
-  <h3>Otras tres comprobaciones</h3>
-  <p><b>Consistencia:</b> treinta panelistas repitieron su respuesta palabra por palabra entre
-  rondas y el sistema les dio la misma etiqueta en los treinta casos.
-  <b>Contraste con los facilitadores:</b> las conclusiones coinciden con las síntesis escritas a
-  mano — y en dos casos la síntesis humana es la que se equivoca, lo que es en sí un argumento a
-  favor de tener registro de cada respuesta.
-  <b>Dos modelos distintos:</b> se probaron dos sistemas de familias diferentes sobre las mismas
-  44 respuestas, con resultados equivalentes; de los ocho errores que le quedan al elegido,
-  siete son exactamente las mismas respuestas que falla el otro.</p>
+  <h3>Acuerdo con la codificación manual <span class="est e-wip">Modelo anterior</span></h3>
+  <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Con el modelo anterior
+  coincidían en el 75 % (κ = 0,72), y leídas a nivel de postura, en 21 de 24: el rango habitual
+  entre dos codificadores humanos. <b>Ese número no se puede recalcular con la taxonomía
+  actual.</b> En 19 de las 44 respuestas Emily propuso una categoría que entonces no existía, y
+  las versiones v3 y v4 incorporaron varias de ellas («First years: A-F / Last years:
+  Pass-Fail», «With passing exam», «Final years»). Ahora el modelo elige justo esa opción y la
+  puntuación la cuenta como desacuerdo, porque compara contra etiquetas hechas para opciones que
+  ya no existen. Hace falta etiquetar de nuevo contra la v4. Lo más eficiente es hacerlo
+  directamente con la muestra de la validación formal: 200–300 respuestas estratificadas por
+  panel, con dos codificadores.</p>
+
+  <h3>Contraste con los facilitadores <span class="est e-wip">Modelo anterior</span></h3>
+  <p>Con el modelo anterior, las conclusiones coincidían con las síntesis escritas a mano, y en
+  dos casos la síntesis humana era la que se equivocaba. Para rehacerlo, la hoja que pone cada
+  distribución al lado de su síntesis ya está generada con la corrida actual; falta que una
+  persona le ponga el veredicto a cada pregunta-ronda. Un caso ya se ve sin la hoja: en P3_Q1 la
+  síntesis de la ronda 1 cambió la pregunta de «por semana» a «por día», y el panel la
+  siguió.</p>
+
+  <h3>Dos modelos distintos <span class="est e-wip">Modelo anterior</span></h3>
+  <p>Se probaron dos sistemas de familias diferentes sobre las mismas 44 respuestas, con
+  resultados equivalentes; de los ocho errores que le quedaban al elegido, siete eran
+  exactamente las mismas respuestas que fallaba el otro. Hoy el servidor de modelos rápido sirve
+  un solo modelo. Hay otros en la máquina, pero cargarlos ocupa memoria de GPU compartida y hay
+  que pedirlo antes.</p>
 
   <h3>Qué es estable y qué no</h3>
   <p>{contenido.ESTABILIDAD}</p>

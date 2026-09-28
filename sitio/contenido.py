@@ -19,14 +19,11 @@ NOTA_MODELO = (
 # Aviso de la sección «Confiabilidad»: todo lo que hay ahí se midió con el modelo anterior.
 # Se quita cuando las cuatro comprobaciones se rehagan con el modelo actual.
 NOTA_CONFIANZA = (
- "<span class=\"ct\">Estas comprobaciones son del modelo anterior</span>"
- "<p>Las cuatro que siguen —acuerdo con la codificación manual, consistencia entre rondas, "
- "contraste con las síntesis y comparación entre modelos— se midieron con "
- "<code>google/gemma-4-12B-it</code>, que el servidor de la universidad ya no sirve, y contra "
- "la taxonomía anterior. Siguen describiendo cómo se comprueba el método, pero <b>no describen "
- "la corrida que produjo los números de arriba</b>. Rehacerlas con el modelo actual es parte "
- "de lo que falta, y en el caso del acuerdo con Emily hay que esperar además a que se cierren "
- "las decisiones de taxonomía: sus 44 etiquetas están hechas contra las opciones viejas.</p>"
+ "<span class=\"ct\">Una de las cuatro comprobaciones está rehecha con el modelo actual</span>"
+ "<p>La consistencia está medida con <code>zai-org/GLM-5.3-Flash</code> y la taxonomía v4. Las "
+ "otras tres se midieron con <code>google/gemma-4-12B-it</code>, que el servidor ya no sirve, y "
+ "contra una taxonomía anterior: describen cómo se comprueba el método, pero <b>no la corrida "
+ "que produjo los números de arriba</b>. Debajo de cada una se dice qué falta para rehacerla.</p>"
 )
 
 # Estabilidad test-retest. Medido, no supuesto — y cambió al cambiar de modelo, así que el
@@ -131,8 +128,9 @@ CAPAS = [
   "Pancho · 1 semana"),
  ("Saber si el sistema codifica tan bien como una persona", "A medias", "wip",
   "44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas "
-  "11 por panel, y contra las opciones anteriores a la v4. El artículo necesita 200–300, "
-  "estratificadas por panel, con un segundo codificador.",
+  "11 por panel, y contra las opciones anteriores a la v4. Las hojas para la validación formal "
+  "ya están generadas: 244 respuestas estratificadas por pregunta y ronda, ciegas, una por "
+  "codificador. Falta que dos personas las etiqueten.",
   "Emily + 2.º codificador"),
  ("Las razones que dan los panelistas", "Sin empezar", "todo",
   "Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo "

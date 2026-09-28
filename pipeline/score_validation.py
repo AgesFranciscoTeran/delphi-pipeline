@@ -17,6 +17,7 @@ desacuerdos. Con n=44 los intervalos son anchos; la Fase 3 usa 200–300 ítems 
     python score_validation.py Resultados/validation_emily_done.xlsx Resultados/model_comparison.csv
     python score_validation.py Resultados/validation_emily_done.xlsx Resultados/02_extracted.csv
 """
+import os
 import re
 import sys
 import numpy as np
@@ -37,18 +38,26 @@ def _norm(s):
     return re.sub(r"[^a-z0-9]+", " ", str(s).lower()).strip()
 
 
+def _fuera(item):
+    return (OFF_TOPIC_LABEL, "off_topic") if item == OFF_TOPIC_OPTION else (item, "in_taxonomy")
+
+
 def map_human_label(label, tax):
     """Devuelve (etiqueta comparable, estado). estado: in_taxonomy | none | invalid | new_category."""
     lab = "" if pd.isna(label) else str(label).strip()
     items = tax["options"] if tax["type"] in ("nominal", "binary") else list(tax["bands"].keys())
     if lab.upper() in ("NONE", "0") or lab == "":
         return "Unclassified", "none"
+    # «FUERA» vale en cualquier pregunta; la opción «Does not answer the question» también. Las
+    # dos se comparan contra lo que produce el pipeline para esas respuestas: OFF_TOPIC_LABEL.
+    if lab.upper() in ("FUERA", "OFF", "OFF-TOPIC") or _norm(lab) == _norm(OFF_TOPIC_OPTION):
+        return OFF_TOPIC_LABEL, "off_topic"
     if lab in ("--", "-", "N/A", "n/a"):
         return "Unclassified", "invalid"
     if len(lab) == 1 and lab.upper() in LETTERS[:len(items)]:
-        return items[LETTERS.index(lab.upper())], "in_taxonomy"
+        return _fuera(items[LETTERS.index(lab.upper())])
     if lab.isdigit() and 1 <= int(lab) <= len(items):
-        return items[int(lab) - 1], "in_taxonomy"
+        return _fuera(items[int(lab) - 1])
     for it in items:
         if _norm(lab) == _norm(it) or _norm(lab).startswith(_norm(it) + " "):
             return it, "in_taxonomy"
@@ -56,7 +65,17 @@ def map_human_label(label, tax):
 
 
 def model_columns(df, path):
-    """Columnas de modelos disponibles en un archivo de salidas."""
+    """Columnas de modelos disponibles en un archivo de salidas.
+
+    Una hoja de otro codificador (tiene `human_label`) entra como un «modelo» más: así el mismo
+    cálculo da el acuerdo entre personas, que es el techo contra el que se juzga al sistema.
+    """
+    if "human_label" in df.columns:
+        nombre = "humano_" + os.path.splitext(os.path.basename(path))[0].split("_")[-1]
+        qids = df["response_id"].map(qid_of)
+        df[nombre] = [map_human_label(l, EMILY_TAXONOMY[q])[0]
+                      for l, q in zip(df["human_label"], qids)]
+        return {nombre: nombre}
     if "gemma" in df.columns or "deepseek" in df.columns:
         return {c: c for c in df.columns if c in ("gemma", "deepseek")}
     if "selected_option" in df.columns:
@@ -109,7 +128,7 @@ def main(human_path, *model_paths):
 
     preds = {}
     for p in model_paths:
-        d = pd.read_csv(p)
+        d = pd.read_excel(p) if p.endswith("xlsx") else pd.read_csv(p)
         cols = model_columns(d, p)
         d = d.set_index("response_id")
         for name, col in cols.items():

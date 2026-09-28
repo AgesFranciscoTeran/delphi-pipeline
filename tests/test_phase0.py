@@ -720,3 +720,33 @@ def test_fila_sin_mayoria_queda_sin_clasificar():
     num = c.sin_mayoria(pd.Series({"question_type": "quantitative", "band": "Minimal",
                                    "numeric_value": 4.0}))
     assert num["band"] is None and math.isnan(num["numeric_value"])
+
+
+
+# ── validación formal v4 ─────────────────────────────────────────────────────
+
+def test_fuera_de_tema_del_codificador_se_compara_con_off_topic():
+    import score_validation as sv
+    from config import OFF_TOPIC_OPTION, OFF_TOPIC_LABEL
+    tax = {"type": "nominal", "options": ["Yes", "No", OFF_TOPIC_OPTION]}
+    assert sv.map_human_label("C", tax) == (OFF_TOPIC_LABEL, "off_topic")
+    assert sv.map_human_label("fuera", tax) == (OFF_TOPIC_LABEL, "off_topic")
+    assert sv.map_human_label("FUERA", {"type": "nominal", "options": ["Yes"]})[0] == OFF_TOPIC_LABEL
+    assert sv.map_human_label("A", tax) == ("Yes", "in_taxonomy")
+
+
+def test_muestra_estratificada_cubre_todas_las_preguntas():
+    import muestra_validacion as mv
+    ind = pd.read_csv(os.path.join(os.path.dirname(__file__), "..", "Resultados_v4",
+                                   "01_individual_clean.csv")) \
+        if os.path.exists(os.path.join(os.path.dirname(__file__), "..", "Resultados_v4",
+                                       "01_individual_clean.csv")) else None
+    cuota = mv.asignar({"P1_Q1": 20, "P1_Q2": 3, "P2_Q1": 200}, 60)
+    assert cuota["P1_Q2"] == 3                  # no pide más de las que hay
+    assert cuota["P1_Q1"] >= mv.MIN_POR_PREGUNTA
+    if ind is None:
+        pytest.skip("sin Resultados_v4 en este entorno")
+    a, b = mv.muestrear(ind, 240), mv.muestrear(ind, 240)
+    assert list(a.index) == list(b.index)        # semilla fija: misma muestra
+    assert a.qid.nunique() == 32
+    assert a.groupby("qid")["Round"].nunique().min() >= 2 or len(a) < 64

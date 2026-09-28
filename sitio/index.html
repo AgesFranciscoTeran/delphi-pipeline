@@ -247,7 +247,7 @@ footer p{max-width:46rem}
 <tr><td class="capa">Calcular el consenso de cada pregunta</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Mediana y rango para las numéricas, distribución y n para las de opción. Las respuestas fuera de tema se cuentan aparte y no entran en el denominador.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Resultados numéricos</td><td><span class="est e-wip">Preliminares</span></td><td class="qtxt">La unidad ya está declarada en todas las preguntas de horas. Falta que los bordes de las bandas sean contiguos: hoy 1–2 horas, 5,5 y 8,5 no caen en ninguna.</td><td class="quien"><b>Emily</b> · bordes de las bandas</td></tr>
 <tr><td class="capa">Definir qué cuenta como «consenso»</td><td><span class="est e-wip">Provisional</span></td><td class="qtxt">Los umbrales actuales se fijaron mirando los datos. Hay que fijarlos con la literatura Delphi (acuerdo + estabilidad) <b>antes</b> de volver a mirar resultados.</td><td class="quien">Pancho · 1 semana</td></tr>
-<tr><td class="capa">Saber si el sistema codifica tan bien como una persona</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas 11 por panel, y contra las opciones anteriores a la v4. El artículo necesita 200–300, estratificadas por panel, con un segundo codificador.</td><td class="quien">Emily + 2.º codificador</td></tr>
+<tr><td class="capa">Saber si el sistema codifica tan bien como una persona</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas 11 por panel, y contra las opciones anteriores a la v4. Las hojas para la validación formal ya están generadas: 244 respuestas estratificadas por pregunta y ronda, ciegas, una por codificador. Falta que dos personas las etiqueten.</td><td class="quien">Emily + 2.º codificador</td></tr>
 <tr><td class="capa">Las razones que dan los panelistas</td><td><span class="est e-todo">Sin empezar</span></td><td class="qtxt">Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo con las opciones.</td><td class="quien">Emily + Pancho · taxonomía de argumentos</td></tr>
     </tbody>
   </table></div>
@@ -268,25 +268,39 @@ footer p{max-width:46rem}
   <h2><span class="sec-n">04</span>Confiabilidad</h2>
   <p class="lead">La respuesta a «¿por qué creerle a estos números?». No hace falta leerla para
   usar los resultados.</p>
-  <div class="callout warn"><span class="ct">Estas comprobaciones son del modelo anterior</span><p>Las cuatro que siguen —acuerdo con la codificación manual, consistencia entre rondas, contraste con las síntesis y comparación entre modelos— se midieron con <code>google/gemma-4-12B-it</code>, que el servidor de la universidad ya no sirve, y contra la taxonomía anterior. Siguen describiendo cómo se comprueba el método, pero <b>no describen la corrida que produjo los números de arriba</b>. Rehacerlas con el modelo actual es parte de lo que falta, y en el caso del acuerdo con Emily hay que esperar además a que se cierren las decisiones de taxonomía: sus 44 etiquetas están hechas contra las opciones viejas.</p></div>
+  <div class="callout warn"><span class="ct">Una de las cuatro comprobaciones está rehecha con el modelo actual</span><p>La consistencia está medida con <code>zai-org/GLM-5.3-Flash</code> y la taxonomía v4. Las otras tres se midieron con <code>google/gemma-4-12B-it</code>, que el servidor ya no sirve, y contra una taxonomía anterior: describen cómo se comprueba el método, pero <b>no la corrida que produjo los números de arriba</b>. Debajo de cada una se dice qué falta para rehacerla.</p></div>
 
-  <h3>Acuerdo con la codificación manual</h3>
-  <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Coinciden en el 75 %
-  (κ = 0,72), y leídas a nivel de postura, en 21 de 24. Es el rango habitual entre dos
-  codificadores humanos en investigación cualitativa. Esas 44 están repartidas entre los cuatro
-  paneles: unas once por panel, pocas para una validación formal. El artículo necesita 200–300,
-  estratificadas por panel, y un segundo codificador que dé el techo de acuerdo entre
-  personas.</p>
+  <h3>Consistencia <span class="est e-ok">Modelo actual</span></h3>
+  <p>Treinta panelistas repitieron su respuesta palabra por palabra entre rondas, y el sistema les
+  dio la misma etiqueta en los treinta casos: 24 de opción y 6 numéricas. Se cumple en el voto
+  consolidado y en cada una de las tres corridas por separado.</p>
 
-  <h3>Otras tres comprobaciones</h3>
-  <p><b>Consistencia:</b> treinta panelistas repitieron su respuesta palabra por palabra entre
-  rondas y el sistema les dio la misma etiqueta en los treinta casos.
-  <b>Contraste con los facilitadores:</b> las conclusiones coinciden con las síntesis escritas a
-  mano — y en dos casos la síntesis humana es la que se equivoca, lo que es en sí un argumento a
-  favor de tener registro de cada respuesta.
-  <b>Dos modelos distintos:</b> se probaron dos sistemas de familias diferentes sobre las mismas
-  44 respuestas, con resultados equivalentes; de los ocho errores que le quedan al elegido,
-  siete son exactamente las mismas respuestas que falla el otro.</p>
+  <h3>Acuerdo con la codificación manual <span class="est e-wip">Modelo anterior</span></h3>
+  <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Con el modelo anterior
+  coincidían en el 75 % (κ = 0,72), y leídas a nivel de postura, en 21 de 24: el rango habitual
+  entre dos codificadores humanos. <b>Ese número no se puede recalcular con la taxonomía
+  actual.</b> En 19 de las 44 respuestas Emily propuso una categoría que entonces no existía, y
+  las versiones v3 y v4 incorporaron varias de ellas («First years: A-F / Last years:
+  Pass-Fail», «With passing exam», «Final years»). Ahora el modelo elige justo esa opción y la
+  puntuación la cuenta como desacuerdo, porque compara contra etiquetas hechas para opciones que
+  ya no existen. Hace falta etiquetar de nuevo contra la v4. Lo más eficiente es hacerlo
+  directamente con la muestra de la validación formal: 200–300 respuestas estratificadas por
+  panel, con dos codificadores.</p>
+
+  <h3>Contraste con los facilitadores <span class="est e-wip">Modelo anterior</span></h3>
+  <p>Con el modelo anterior, las conclusiones coincidían con las síntesis escritas a mano, y en
+  dos casos la síntesis humana era la que se equivocaba. Para rehacerlo, la hoja que pone cada
+  distribución al lado de su síntesis ya está generada con la corrida actual; falta que una
+  persona le ponga el veredicto a cada pregunta-ronda. Un caso ya se ve sin la hoja: en P3_Q1 la
+  síntesis de la ronda 1 cambió la pregunta de «por semana» a «por día», y el panel la
+  siguió.</p>
+
+  <h3>Dos modelos distintos <span class="est e-wip">Modelo anterior</span></h3>
+  <p>Se probaron dos sistemas de familias diferentes sobre las mismas 44 respuestas, con
+  resultados equivalentes; de los ocho errores que le quedaban al elegido, siete eran
+  exactamente las mismas respuestas que fallaba el otro. Hoy el servidor de modelos rápido sirve
+  un solo modelo. Hay otros en la máquina, pero cargarlos ocupa memoria de GPU compartida y hay
+  que pedirlo antes.</p>
 
   <h3>Qué es estable y qué no</h3>
   <p>Tres corridas completas del mismo código sobre los mismos datos, a temperatura 0 y con semilla fija, difieren en <b>entre el 2,8 y el 4,1 % de las etiquetas</b> según el par que se compare, en proporciones parecidas en las categóricas y en las numéricas; 41 de las 775 respuestas no reciben la misma etiqueta en las tres. No es un fallo del pipeline — el servidor agrupa peticiones en lotes de composición variable y la aritmética en coma flotante no es asociativa, así que el mismo texto puede recibir distinta etiqueta según con qué otras respuestas le tocó viajar.</p>
