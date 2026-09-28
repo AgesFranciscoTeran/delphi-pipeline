@@ -4,14 +4,18 @@ Marco computacional para analizar estudios Delphi a gran escala: clasifica respu
 libre contra una taxonomía definida por el equipo clínico, mide el consenso ronda por ronda y se
 valida contra codificación humana.
 
-Artículo en preparación: *Mapping the Evolution of Citizen Consensus: A Visual and Network
-Analysis of Delphi Rounds*.
+Artículo en preparación, **de metodología**: propone cómo analizar estudios Delphi de texto libre
+con métodos computacionales, con los cuatro paneles del currículo médico USFQ como casos de
+aplicación. Título de trabajo: *From Free Text to Consensus: A Reproducible LLM-Based Method for
+Round-by-Round Analysis of Delphi Studies*.
 
 | | |
 |---|---|
-| **Conjunto de prueba** | Currículo médico USFQ — 786 respuestas, 32 preguntas, 4 paneles, 3 rondas |
-| **Conjunto real** | Eutanasia, ~22 000 respuestas (Fase 4, pendiente) |
+| **Caso de estudio** | Currículo médico USFQ — 786 respuestas, 32 preguntas, 4 paneles, 3 rondas |
 | **Equipo** | Pancho (implementación) · Emily (marco clínico) · Jonathan Guillemot (supervisión) |
+
+El estudio de eutanasia no forma parte de este proyecto: reutilizará el pipeline en un proyecto
+aparte, cuando éste esté cerrado.
 
 ---
 
