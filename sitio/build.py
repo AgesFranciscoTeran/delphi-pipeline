@@ -150,12 +150,12 @@ def tabla_cuant(filas):
     aviso = f'''
   <div class="callout warn">
     <span class="ct">Estos números todavía no son reportables</span>
-    <p>La columna «unidad asumida» cuenta las respuestas cuya unidad tuvo que adivinar el
-    sistema: {asumidas} en este panel. Cuando alguien escribe «8 horas» sin decir si es al día
-    o a la semana, se toma la unidad de la pregunta; cuando escribe «8 horas al día» en una
-    pregunta medida por semana, se convierte — <b>×5</b>. El mismo texto vale 8 o 40.</p>
-    <p>{contenido.ESTABILIDAD} Hasta que se cierre la decisión {num_decision("Unidades")},
-    esta tabla es diagnóstico, no resultado.</p>
+    <p>La columna «unidad asumida» cuenta las respuestas en las que el panelista no escribió el
+    periodo: {asumidas} en este panel. Se les aplica la unidad que declara la pregunta; cuando
+    alguien escribe «8 horas al día» en una pregunta medida por semana, se convierte —
+    <b>×5</b>.</p>
+    <p>{contenido.ESTABILIDAD} Hasta que se cierre la decisión {num_decision("Bordes")}
+    (bordes de las bandas), esta tabla es diagnóstico, no resultado.</p>
   </div>''' if asumidas else ""
     return f'''
   <h3>Preguntas numéricas</h3>
@@ -377,8 +377,9 @@ def portada():
   </table></div>
   <div class="callout">
     <span class="ct">Qué hay que hacer ahora, en orden</span>
-    <p><b>1. Una sesión con Emily</b> para cerrar las decisiones de taxonomía, empezando por la
-    número 5 (unidades), que es la que hace que los resultados numéricos cambien entre corridas.
+    <p><b>1. Una sesión con Emily</b> para cerrar las decisiones de taxonomía que quedan,
+    empezando por la número {num_decision("Bordes")} (bordes de las bandas), que es lo que falta
+    para poder reportar los resultados numéricos.
     <br><b>2. Conseguir un segundo codificador.</b> Con cuatro artículos separados hace falta
     validar cada panel por su cuenta, y hoy hay unas 11 respuestas etiquetadas por panel.
     <br><b>3. Confirmar con Jonathan</b> el manejo de datos del estudio de eutanasia.</p>
