@@ -206,7 +206,17 @@ def _norm(s):
 def resolve_letter(letter, option_text, options):
     """
     Devuelve (selected_option, status, letter_text_mismatch).
-      status: 'classified' | 'none_fits' | 'invalid_output'
+      status: 'classified' | 'off_topic' | 'none_fits' | 'invalid_output'
+    Elegir «Does not answer the question» no es clasificar: sale como OFF_TOPIC_LABEL.
+    """
+    sel, status, mismatch = _resolve_letter(letter, option_text, options)
+    if status == "classified" and _norm(sel) == _norm(OFF_TOPIC_OPTION):
+        return OFF_TOPIC_LABEL, "off_topic", mismatch
+    return sel, status, mismatch
+
+
+def _resolve_letter(letter, option_text, options):
+    """
     La letra manda; el texto sirve de comprobación. Si la letra es inválida se intenta
     el texto (coincidencia exacta normalizada).
     """

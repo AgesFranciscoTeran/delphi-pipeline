@@ -48,6 +48,9 @@ ENTRADA = os.path.join(RAIZ, "docs", "emily_posturas_varias_opciones.json")
 SALIDA_TAX = os.path.join(RAIZ, "pipeline", "taxonomy.py")
 SALIDA_STANCE = os.path.join(RAIZ, "pipeline", "stance_map.py")
 
+sys.path.insert(0, os.path.join(RAIZ, "pipeline"))
+from config import OFF_TOPIC_OPTION  # noqa: E402
+
 # El tipo de cada pregunta lo fija el pipeline, no el documento: cambiarlo cambiaría el
 # contrato con consensus_metrics.py y con el sitio. Se conserva el de la taxonomía vigente.
 TIPOS = {
@@ -90,6 +93,19 @@ UNIDAD_HEREDADA = {
     "P4_Q1": ("hours/day", False),
     "P4_Q2": ("hours/day", False),
     "P4_Q7": ("students", False),
+}
+
+# Unidades que el equipo corrige sobre lo que declara el documento. Van aquí y no en el JSON
+# porque el JSON se vuelve a extraer del .docx en cada versión y la corrección se perdería.
+#   P3_Q1: la pregunta de la encuesta dice «per week» y la v4 lo copia bien, pero el panel
+#   respondió por día: 19 de 29 respuestas dicen «per day»/«daily», sólo 3 dan horas por
+#   semana, y las que no dan periodo dicen 3-6 horas. La síntesis del facilitador reformuló la
+#   pregunta desde la ronda 1 («4-5 hours per day») y el panel la siguió en R2 y R3. Las
+#   bandas del documento (3-5 / 6-8 / >=9) también están en escala diaria. Se analiza en la
+#   unidad en que respondió el panel; las respuestas por semana se convierten (÷5, ver
+#   UNIT_CONVERSIONS). Hay que declararlo en el artículo. Es lo que la v3 ya asumía.
+UNIDAD_CORREGIDA = {
+    "P3_Q1": "hours/day",
 }
 
 PERIODOS = [
@@ -162,6 +178,10 @@ def aplanar_ejes(ejes):
     """
     opciones, numericos, ramas = [], [], {}
     vistas = set()
+    fuera_de_tema = False
+    # Rama abierta al final de la celda anterior: un eje numérico que va justo debajo de la
+    # celda «- Yes» (P2_Q6 en la v4: con qué frecuencia) califica a ese Sí.
+    rama_previa = None
 
     def anadir(texto, postura, calificador):
         if texto.lower() in vistas:
@@ -180,7 +200,9 @@ def aplanar_ejes(ejes):
         es_num = tipo.lower().startswith(("numer", "quantit", "cuantit"))
 
         if es_num and not postura:
-            numericos.append({"tipo": tipo, "opciones": [limpiar(o) for o in ops]})
+            numericos.append({"tipo": tipo, "opciones": [limpiar(o) for o in ops],
+                              "rama": rama_previa})
+            rama_previa = None
             continue
 
         # Recorrido secuencial: cada '- Yes' / '- No' abre una rama, y las opciones que le
@@ -196,6 +218,12 @@ def aplanar_ejes(ejes):
         # El recorrido secuencial da lo mismo en P2_Q5 y lo correcto en P1_Q4.
         actual = None
         for o in ops:
+            # «Does not answer the question» puede venir dentro de la celda «- No» (P2_Q4,
+            # P4_Q3, P4_Q6 en la v4). No es un calificador del No: va sin prefijo y sin
+            # postura, y al final de la lista.
+            if limpiar(o).lower().rstrip(".") == OFF_TOPIC_OPTION.lower():
+                fuera_de_tema = True
+                continue
             s = es_rama(o)
             if s:
                 actual = s
@@ -206,6 +234,7 @@ def aplanar_ejes(ejes):
                 anadir("%s, %s" % (actual, descapitalizar(texto)), actual, texto)
             else:
                 anadir(capitalizar(texto), None, None)
+        rama_previa = actual
 
     # Segunda pasada: sólo si la pregunta tiene ramas, las opciones sueltas de tipo
     # "Depends on ..." se leen como postura condicional (ver PREFIJOS_CONDICIONALES).
@@ -223,6 +252,8 @@ def aplanar_ejes(ejes):
             if texto.lower().startswith(PREFIJOS_CONDICIONALES):
                 ramas[texto] = ("Depends", texto)
 
+    if fuera_de_tema:
+        opciones.append(OFF_TOPIC_OPTION)
     return opciones, numericos, ramas, ambiguas
 
 
@@ -281,6 +312,10 @@ def construir():
             if extra:
                 entrada["extra_axes"] = extra
             unidad = unidad_declarada(numericos[0]["tipo"])
+            if qid in UNIDAD_CORREGIDA:
+                informe.append("UNIDAD CORREGIDA %s: %s -> %s (decisión del equipo, ver "
+                               "UNIDAD_CORREGIDA)" % (qid, unidad, UNIDAD_CORREGIDA[qid]))
+                unidad = UNIDAD_CORREGIDA[qid]
             heredada, asumida = UNIDAD_HEREDADA.get(qid, (None, True))
             if unidad:
                 entrada["unit"] = unidad
@@ -296,10 +331,21 @@ def construir():
         else:
             # Los ejes numéricos de una pregunta nominal entran como opciones de texto:
             # ya vienen escritos como etiquetas discretas («Up to 4 semesters», «Maximum 20%»).
+            # Si van debajo de una celda de rama, cuelgan de esa postura («Yes, once a month»);
+            # si no (P2_Q5), van sueltos y sin postura, como hasta la v3.
             for e in numericos:
                 for o in e["opciones"]:
-                    if o.lower() not in {x.lower() for x in opciones}:
-                        opciones.append(capitalizar(o))
+                    if e.get("rama"):
+                        texto = "%s, %s" % (e["rama"], descapitalizar(o))
+                        ramas[texto] = (e["rama"], o)
+                    else:
+                        texto = capitalizar(o)
+                    if texto.lower() not in {x.lower() for x in opciones}:
+                        opciones.append(texto)
+            # «Does not answer the question» siempre al final, detrás de los ejes numéricos.
+            if OFF_TOPIC_OPTION in opciones:
+                opciones.remove(OFF_TOPIC_OPTION)
+                opciones.append(OFF_TOPIC_OPTION)
             entrada["options"] = opciones
 
         tax[qid] = entrada
@@ -337,7 +383,7 @@ Taxonomía de preguntas y opciones — definida y revisada por Emily (experta de
 GENERADO por tools/build_taxonomy.py desde docs/emily_posturas_varias_opciones.json.
 NO EDITAR A MANO: edita el documento de Emily, vuelve a extraer el JSON y regenera.
 
-Fuente: «Posturas varias opciones» v2 (Emily, 14-09-2026).
+Fuente: «Posturas varias opciones» v4 (Emily, 27-09-2026).
 
 Cómo se aplanó el árbol
 -----------------------

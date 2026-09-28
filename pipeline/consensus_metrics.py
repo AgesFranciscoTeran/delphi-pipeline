@@ -33,8 +33,9 @@ NUMERIC = ("quantitative", "hybrid")
 # ── categóricas ───────────────────────────────────────────────────────────────
 
 def clean_labels(labels):
-    """Sólo etiquetas reales: fuera NaN, None, '' y 'Unclassified'."""
-    return [l for l in labels if isinstance(l, str) and l and l != "Unclassified"]
+    """Sólo etiquetas reales: fuera NaN, None, '', 'Unclassified' y 'Off-topic'."""
+    return [l for l in labels if isinstance(l, str) and l
+            and l not in ("Unclassified", OFF_TOPIC_LABEL)]
 
 
 def normalized_entropy(labels, k_options):
@@ -72,11 +73,17 @@ def categorical_consensus(df):
     cat = df[df["question_type"].isin(CATEGORICAL) & df["is_valid_response"]]
     records = []
     for (panel, q, rnd), grp in cat.groupby([COL_PANEL, COL_QUESTION, COL_ROUND]):
+        # Las fuera de tema no entran en ningún denominador: no son ni postura ni fallo.
+        fuera = grp["selected_option"].eq(OFF_TOPIC_LABEL)
+        n_off = int(fuera.sum())
+        grp = grp[~fuera]
+        if grp.empty:
+            continue
         labels = grp["selected_option"].tolist()
         classified = clean_labels(labels)
         counts = Counter(classified)
         tax = get_taxonomy(panel, q) or {}
-        options = tax.get("options", [])
+        options = [o for o in tax.get("options", []) if o != OFF_TOPIC_OPTION]
         n_total = len(labels)
         n_cls = len(classified)
         n_failed = int(grp["extraction_status"].ne("ok").sum()) if "extraction_status" in grp else 0
@@ -96,6 +103,7 @@ def categorical_consensus(df):
             "n_classified": n_cls,
             "n_unclassified": n_total - n_cls,
             "n_extraction_failed": n_failed,
+            "n_off_topic": n_off,
             "pct_unclassified": pct_unc,
             "modal_option": modal,
             "is_tie": is_tie,
@@ -300,7 +308,7 @@ def categorical_trajectories(df):
         grp = grp.sort_values(COL_ROUND)
         opts = [o if isinstance(o, str) else None for o in grp["selected_option"]]
         rounds = grp[COL_ROUND].tolist()
-        real = [o for o in opts if o and o != "Unclassified"]
+        real = clean_labels(opts)
         records.append({
             COL_PANEL: panel, COL_QUESTION: q, COL_PANELIST: panelist,
             "trajectory": json.dumps(list(zip(rounds, opts)), ensure_ascii=False),
