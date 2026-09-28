@@ -156,6 +156,14 @@ Referencia: 30/30 (100 %) en la corrida del 30-08. Era 82 % antes de corregir la
 
 ## 4. Kappa contra las etiquetas de Emily
 
+> **Validación formal v4 (28-09-2026).** Las 44 etiquetas de `validation_emily_done.xlsx` se
+> hicieron contra una taxonomía anterior y ya no sirven para el κ (ver sitio, «Confiabilidad»).
+> La muestra nueva sale de `pipeline/muestra_validacion.py` (244 respuestas, una hoja ciega por
+> codificador en `datos/validacion_v4_<X>.xlsx`). Para puntuar modelo y acuerdo entre personas:
+>
+>     cd pipeline
+>     python3 score_validation.py ../datos/validacion_v4_A.xlsx ../Resultados_v4/02_extracted.csv >                                 ../datos/validacion_v4_B.xlsx
+
 Los 44 `response_id` de la hoja están dentro del dataset, así que no hace falta volver a llamar al
 modelo:
 
