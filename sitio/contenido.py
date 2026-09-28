@@ -131,15 +131,12 @@ CAPAS = [
   "Pancho · 1 semana"),
  ("Saber si el sistema codifica tan bien como una persona", "A medias", "wip",
   "44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas "
-  "11 por panel, y contra las opciones anteriores a la v4. Si cada panel es un artículo, hace "
-  "falta validar cada uno por separado.",
+  "11 por panel, y contra las opciones anteriores a la v4. El artículo necesita 200–300, "
+  "estratificadas por panel, con un segundo codificador.",
   "Emily + 2.º codificador"),
  ("Las razones que dan los panelistas", "Sin empezar", "todo",
   "Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo "
   "con las opciones.", "Emily + Pancho · taxonomía de argumentos"),
- ("El estudio real (eutanasia)", "Pendiente", "todo",
-  "Confirmar el manejo de datos sensibles y definir la taxonomía del nuevo tema.",
-  "<b>Jonathan</b>"),
 ]
 
 # Lectura de la cuadrícula de cada panel. Descripciones internas: no comparan un panel con

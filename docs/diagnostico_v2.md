@@ -2,6 +2,12 @@
 
 *Estado del análisis al 31 de agosto de 2026. Reemplaza al diagnóstico del 28 de agosto.*
 
+> **Nota del 27-09-2026.** El estudio de eutanasia salió de este proyecto: reutilizará el
+> pipeline en un proyecto aparte. Este proyecto apunta a un artículo propio, de metodología, con
+> el currículo médico USFQ como caso de estudio. Donde este documento trata al currículo como
+> «banco de pruebas» y a eutanasia como «la aplicación» (§8, §9, §10 Fase 4, §11), esa
+> estructura ya no rige; se conserva como registro de cómo se pensaba entonces.
+
 *Aquel documento describía un sistema roto y proponía arreglarlo. El arreglo se hizo y se
 comprobó; este documento describe el sistema arreglado. Lo que era la mitad del texto —el error
 de índices y sus consecuencias— pasa a ser historia (§5) y anexo (§A), porque ya no es el estado
@@ -523,7 +529,7 @@ transversal.
 | **1 — Taxonomía v2** | 🔒 Bloqueada por Emily | Las ocho decisiones de §6 + taxonomía de argumentos (§8). | Taxonomía v2 firmada; sin clasificar residual < 10 % y explicado. |
 | **2 — Criterios y figuras** | Puede empezar ya | §7. Umbrales a priori con literatura Delphi, `MIN_N` proporcional, figuras finales. | Criterios fijados y escritos **antes** de mirar resultados; ninguna etiqueta por debajo del n mínimo. |
 | **3 — Validación formal** | Depende de un 2.º codificador | 200–300 respuestas estratificadas, dos codificadores ciegos, acuerdo humano–humano como techo, validación agregada además de por ítem. | κ LLM–humano dentro del intervalo humano–humano; veredictos de consenso idénticos en ≥90 % de preguntas-ronda. |
-| **4 — Conjunto real** | Pendiente | Eutanasia, ~22 000 respuestas. | Manejo de datos confirmado con Jonathan; taxonomía del nuevo dominio. |
+| ~~**4 — Conjunto real**~~ | Fuera de este proyecto (27-09) | ~~Eutanasia, ~22 000 respuestas.~~ | Pasa a un proyecto aparte. |
 
 Las Fases 1, 2 y 3 no son secuenciales: la 2 no depende de nadie y la 3 sólo depende de conseguir
 el segundo codificador. Lo único estrictamente encadenado es que la validación formal debe

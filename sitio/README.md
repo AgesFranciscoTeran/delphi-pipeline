@@ -3,8 +3,7 @@
 Página estática con los resultados del estudio Delphi, la evolución del consenso ronda por ronda
 y lo que falta para cerrar el artículo. **Se genera desde la salida del pipeline**, no a mano.
 
-Título de trabajo del artículo: *Mapping the Evolution of Citizen Consensus: A Visual and Network
-Analysis of Delphi Rounds*.
+El artículo es de metodología, con los cuatro paneles como casos. Título de trabajo en el README de la raíz.
 
 ---
 
@@ -136,8 +135,7 @@ no publicados del panel y los desacuerdos con las síntesis de los facilitadores
   no-determinación del servidor entre corridas, y está explicada en la página.
 - **Los resultados numéricos son preliminares** hasta que se cierren las decisiones 5 y 6.
 - **Las figuras de red son ilustrativas, no estadística.** Con 7–10 nodos, centralidad y
-  modularidad son inestables y no deben reportarse como resultado. La red con tamaño suficiente
-  es la del estudio de eutanasia.
+  modularidad son inestables y no deben reportarse como resultado.
 - **Impresión:** hay reglas `@media print`; Ctrl/Cmd+P exporta a PDF sin el menú. Útil para
   llevar las secciones 3, 4 y 6 a la sesión con Emily.
 - El diagnóstico técnico completo está en `claude/diagnostico-delphi-v2.md`, en el proyecto.

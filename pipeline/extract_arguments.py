@@ -14,7 +14,7 @@ Cambios respecto a la v1 (todos motivados por el diagnóstico del 28-08-2026):
     conversión (sólo día<->semana) se hace en consensus_metrics.py de forma explícita.
   * Caché con clave (response_id, modelo, hash del prompt): cambiar de modelo, de prompt o de
     taxonomía invalida la entrada automáticamente. El caché v1 mezclaba modelos.
-  * Concurrencia (ThreadPool) — el dataset real son 22 000 respuestas.
+  * Concurrencia (ThreadPool) — para escalar a estudios de decenas de miles de respuestas.
   * Manifiesto por corrida (modelo, temperatura, hash de taxonomía y prompts, versiones).
   * Se eliminan los campos `certainty` y `references_synthesis`: el diagnóstico mostró que el
     modelo los rellena sin evidencia (52 % "yes" en ronda 1, donde no había síntesis).

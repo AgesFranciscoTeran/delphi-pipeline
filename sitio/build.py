@@ -400,9 +400,11 @@ def portada():
     <p><b>1. Una sesión con Emily</b> para cerrar las decisiones de taxonomía que quedan,
     empezando por la número {num_decision("Bordes")} (bordes de las bandas), que es lo que falta
     para poder reportar los resultados numéricos.
-    <br><b>2. Conseguir un segundo codificador.</b> Con cuatro artículos separados hace falta
-    validar cada panel por su cuenta, y hoy hay unas 11 respuestas etiquetadas por panel.
-    <br><b>3. Confirmar con Jonathan</b> el manejo de datos del estudio de eutanasia.</p>
+    <br><b>2. Conseguir un segundo codificador.</b> La validación del método necesita 200–300
+    respuestas etiquetadas por dos personas, repartidas entre los cuatro paneles; hoy hay 44 y
+    las etiqueta una sola.
+    <br><b>3. Fijar los umbrales de consenso</b> con la literatura Delphi, antes de volver a mirar
+    los resultados.</p>
   </div>
 </section>
 
@@ -416,8 +418,9 @@ def portada():
   <p>Emily etiquetó a ciegas 44 respuestas sin ver la salida del sistema. Coinciden en el 75 %
   (κ = 0,72), y leídas a nivel de postura, en 21 de 24. Es el rango habitual entre dos
   codificadores humanos en investigación cualitativa. Esas 44 están repartidas entre los cuatro
-  paneles: unas once por panel, insuficiente para reportar la fiabilidad de cada artículo por
-  separado. La validación formal necesita 200–300 <b>por panel</b> y un segundo codificador.</p>
+  paneles: unas once por panel, pocas para una validación formal. El artículo necesita 200–300,
+  estratificadas por panel, y un segundo codificador que dé el techo de acuerdo entre
+  personas.</p>
 
   <h3>Otras tres comprobaciones</h3>
   <p><b>Consistencia:</b> treinta panelistas repitieron su respuesta palabra por palabra entre
@@ -442,7 +445,7 @@ def portada():
 '''
     return envoltura("Qué decidió cada panel",
                      "Resultados del análisis computacional del estudio Delphi, panel por panel, "
-                     "y lo que hace falta para cerrar cada artículo.", nav, cuerpo)
+                     "y lo que hace falta para cerrar el artículo de método.", nav, cuerpo)
 
 
 def escribir(nombre, texto):
