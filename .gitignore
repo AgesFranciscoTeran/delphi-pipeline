@@ -13,6 +13,7 @@ datos/*.csv
 # Resultados_gemma_2026-09-03— se habría publicado con un `git add -A`.
 Resultados/
 Resultados_*/
+Resultados_*.log
 
 # Lo que SÍ se publica: el sitio ya generado. Pages sirve archivos, no ejecuta nada.
 !sitio/index.html

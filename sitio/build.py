@@ -290,6 +290,13 @@ def pagina_panel(panel):
 {tabla_postura(c['postura'])}
 {tabla_categ(c['cat'])}
 {tabla_cuant(c['cuant'])}
+
+  <h3>La taxonomía y cómo la usó el panel</h3>
+  <p>Cada pregunta de opción con su taxonomía completa: en las de sí / no, la postura y debajo
+  sus matices; en las demás, las opciones. La barra es cuántos panelistas eligieron cada una en
+  la ronda final. Las que nadie eligió también aparecen, en gris y con 0: muestran qué parte de
+  la taxonomía usó el panel y cuál no. A la derecha de cada pregunta, su resultado.</p>
+  <figure class="fig">{figuras.inline(f['arbol'])}</figure>
 </section>
 
 <section id="evolucion">
@@ -298,24 +305,24 @@ def pagina_panel(panel):
   gente entre rondas y cómo se fueron formando (o no) los acuerdos.</p>
 
   <h3>Quién respondió qué</h3>
-  <p>Una fila por panelista, una columna por pregunta, un color por opción elegida. Las filas
-  están ordenadas por parecido, así que los bloques de color contiguos son grupos que responden
-  igual. Los huecos con una raya son respuestas que no se pudieron clasificar.
-  <b>Los colores sólo se comparan dentro de su columna</b>: cada pregunta tiene sus propias
-  opciones, y el azul de una no es el azul de la otra.</p>
-  <figure class="fig">{figuras.inline(f['cuadricula'])}
-    <figcaption>{contenido.LECTURA_RED.get(panel, '')}</figcaption>
-  </figure>
-  {figuras.leyenda_opciones(panel)}
+  <p>Una fila por panelista (el número es su código en el estudio: 301 es el panelista 1 del
+  panel 3), una columna por pregunta. Las filas están ordenadas por parecido en la última ronda,
+  así que los bloques contiguos son grupos que responden igual, y van en el mismo orden en las
+  dos cuadrículas. {contenido.LECTURA_RED.get(panel, '')}</p>
+  {cuadricula_postura(f)}
+  {cuadricula_opciones(f, panel)}
 
   <h3>Concentración por pregunta</h3>
-  <p>Cuánta gente está en la opción mayoritaria de cada pregunta, ronda a ronda.</p>
+  <p>Cuánta gente está en la postura (preguntas de sí / no) u opción mayoritaria de cada
+  pregunta, ronda a ronda. El color es el resultado; el último tramo va punteado cuando, entre
+  las dos últimas rondas, cambió de opción más del 15 % del panel.</p>
   <figure class="fig">{figuras.inline(f['trayectoria'])}</figure>
+  {significado_resultados()}
 
-  {'<h3>Quién cambió de opinión, y hacia dónde</h3><p>El color de cada cinta es la opción '
-   '<b>de origen</b>, así que se puede seguir a dónde fue a parar cada bloque inicial; las '
-   'cintas tenues son quienes no se movieron. Estas son las preguntas con más movimiento del '
-   'panel.</p>' + flujos if flujos else ''}
+  {'<h3>Quién cambió de opinión, y hacia dónde</h3><p>El color de cada cinta es la postura u '
+   'opción <b>de origen</b>, así que se puede seguir a dónde fue a parar cada bloque inicial; '
+   'las cintas tenues son quienes no se movieron. Estas son las preguntas con más movimiento '
+   'del panel.</p>' + flujos if flujos else ''}
 </section>
 
 <section id="decisiones">
@@ -350,6 +357,49 @@ def parrafo_conclusiones():
     return (f'<p><b>Lo que importa es si cambian las conclusiones.</b> {detalle} Las respuestas '
             f'en las que las {e["k"]} corridas no forman mayoría quedan sin clasificar en vez de '
             f'resolverse por el orden de las corridas.</p>')
+
+
+NOTA_HUECOS = ('<p class="nota-fig"><b>Celdas sin color.</b> Vacía: el panelista no respondió esa '
+               'pregunta en esa ronda (por ejemplo, porque no participó en ella). <b>FT</b>: '
+               'respondió, pero algo que no contesta la pregunta (fuera de tema); no cuenta en el '
+               'consenso. <b>?</b>: respondió, pero la respuesta no encaja en ninguna opción de la '
+               'taxonomía, o las tres corridas del sistema no se pusieron de acuerdo.</p>')
+
+
+def cuadricula_postura(f):
+    ruta = f["cuadricula"].get("postura")
+    if not ruta:
+        return ""
+    return (f'<h4>Preguntas de sí / no: la postura</h4>'
+            f'<div class="leyenda"><span><i style="background:{figuras.AZUL}"></i>✓ A favor</span>'
+            f'<span><i style="background:{figuras.GRIS}"></i>~ Condicional</span>'
+            f'<span><i style="background:{figuras.ROJO}"></i>✕ En contra</span>'
+            f'<span><i style="background:{figuras.OTRAS}"></i>· Sin postura: eligió una opción a '
+            f'la que la taxonomía no asigna postura (p. ej. «Obligatory» en P2_Q5)</span></div>'
+            f'<figure class="fig">{figuras.inline(ruta)}</figure>{NOTA_HUECOS}')
+
+
+def cuadricula_opciones(f, panel):
+    ruta = f["cuadricula"].get("opciones")
+    if not ruta:
+        return ""
+    return (f'<h4>Preguntas de opciones</h4><p>Cada letra es una opción de esa pregunta (debajo, '
+            f'qué es cada una); sólo las tres más elegidas llevan color. <b>Las letras y los '
+            f'colores se comparan dentro de su columna</b>: la A de una pregunta no tiene nada que '
+            f'ver con la A de otra, y el azul aquí no significa «a favor».</p>'
+            f'<figure class="fig">{figuras.inline(ruta)}</figure>'
+            f'{figuras.leyenda_opciones(panel)}{NOTA_HUECOS}')
+
+
+def significado_resultados():
+    """Qué significa cada resultado, con el mismo color que en la figura."""
+    filas = "".join(
+        f'<div class="sig"><span class="chip"><i style="background:'
+        f'{figuras.COL_RESULTADO.get(nombre, figuras.OTRAS)}"></i><b>{nombre}</b></span>'
+        f'<span>{texto}</span></div>'
+        for nombre, texto in contenido.SIGNIFICADO_RESULTADOS)
+    return (f'<div class="callout"><span class="ct">Qué significa cada resultado</span>'
+            f'<div class="sigs">{filas}</div></div>')
 
 
 def portada():

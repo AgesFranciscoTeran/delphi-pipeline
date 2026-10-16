@@ -74,9 +74,9 @@ DECISIONES = [
   'decision': 'Revisar a mano las ~40 respuestas afectadas. Es lo que decide si estas dos preguntas se pueden reportar.'},
  {'titulo': 'Taxonomía de argumentos',
   'paneles': [1, 2, 3, 4],
-  'hoy': 'Se clasifica <b>qué</b> responde cada panelista, pero no <b>por qué</b>. Las razones están en el texto y no se usan.',
-  'evidencia': 'Es lo que haría falta para mapear qué argumentos sostienen cada postura, que es el análisis más rico que permiten estos datos.',
-  'decision': 'Es el trabajo más grande y conviene empezarlo antes que los otros, aunque se cierre después.'},
+  'hoy': 'Se clasifica <b>qué</b> responde cada panelista, pero todavía no <b>por qué</b>. Ya hay un prototipo del grafo que une cada postura con sus razones, pero sus temas los propuso el modelo, no tú.',
+  'evidencia': 'Con temas propuestos por el modelo ya se ven cosas: en P4_Q8 el empate 4 a 4 tiene razones distintas a cada lado (a favor, «refleja interés y compromiso»; en contra, «subjetividad del docente»). Para el artículo, esas categorías tienen que ser tuyas.',
+  'decision': 'Definir la taxonomía de argumentos. Tu lista de perfiles (formación clínica intensiva, científica, equilibrio, ABP, estructura tradicional, bienestar, exigencia, evaluación orientada al aprendizaje, formación integral) puede ser esa taxonomía: hay que confirmar si sirve para clasificar cada respuesta o a cada panelista.'},
 ]
 
 CAPAS = [
@@ -101,9 +101,11 @@ CAPAS = [
   "ya están generadas: 244 respuestas estratificadas por pregunta y ronda, ciegas, una por "
   "codificador. Falta que dos personas las etiqueten.",
   "Emily + 2.º codificador"),
- ("Las razones que dan los panelistas", "Sin empezar", "todo",
-  "Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo "
-  "con las opciones.", "Emily + Pancho · taxonomía de argumentos"),
+ ("Las razones que dan los panelistas", "A medias", "wip",
+  "Hay un prototipo del grafo postura → razón, con temas propuestos por el modelo en una sola "
+  "corrida; no se publica porque no está validado. Falta la taxonomía de argumentos: la define "
+  "Emily, y su lista de perfiles es el punto de partida.",
+  "<b>Emily</b> · taxonomía de argumentos"),
 ]
 
 # Lectura de la cuadrícula de cada panel. Descripciones internas: no comparan un panel con
@@ -145,3 +147,28 @@ CRITERIOS = (
  "no consolidado; si no hay acuerdo pero el panel ya no se mueve, es disenso estable, que "
  "también es un resultado del Delphi."
 )
+
+
+# Qué significa cada resultado (acuerdo × estabilidad, criterios del 15-10-2026). Va debajo del
+# gráfico de trayectoria de cada panel; el color lo pone figuras.COL_RESULTADO.
+SIGNIFICADO_RESULTADOS = [
+ ("Consenso",
+  "En la última ronda al menos el 70 % del panel está en la misma postura u opción, y entre "
+  "las dos últimas rondas cambió de opción, en neto, como mucho el 15 %. El panel se puso de "
+  "acuerdo y el acuerdo se sostiene."),
+ ("Consenso no consolidado",
+  "Hay acuerdo alto en la última ronda, pero llegó moviéndose: entre las dos últimas rondas "
+  "cambió de opción más del 15 % del panel. Puede ser un consenso que se estaba formando o uno "
+  "que todavía podía deshacerse."),
+ ("Disenso estable",
+  "Ninguna postura u opción llega al 70 %, y el panel ya no se mueve (cambio de 15 % o menos). "
+  "El desacuerdo es la conclusión: el panel está dividido y no va a converger. Es un resultado "
+  "válido del Delphi, no un fracaso."),
+ ("Sin estabilizar",
+  "Ninguna postura u opción llega al 70 % y el panel todavía se estaba moviendo (más del 15 % "
+  "cambió entre las dos últimas rondas). No se puede concluir ni consenso ni disenso: con otra "
+  "ronda podría haber ido para cualquier lado."),
+ ("Insuficiente",
+  "No hay datos suficientes para juzgar: menos de 5 respuestas clasificadas en alguna de las dos "
+  "últimas rondas, o más del 40 % sin clasificar."),
+]
