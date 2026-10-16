@@ -108,6 +108,29 @@ UNIDAD_CORREGIDA = {
     "P3_Q1": "hours/day",
 }
 
+# Bandas acordadas con Emily (documento «Decisiones para la reunión» del 02-10-2026; respuestas
+# del 15-10-2026). Contiguas: un valor entre dos bandas («5 a 6 horas» -> 5,5) ya no cae en un
+# hueco que se resolvía con una regla nuestra. En admisión el 50 va a «More» y se añade «Many»
+# para no juntar a quien dice 60 con quien dice 120.
+_CONTIGUAS = OrderedDict([("Minimal", "<=5"), ("Moderate", ">5 and <=8"), ("Intensive", ">8")])
+_ADMISION = OrderedDict([("Few", "<50"), ("More", "50-80"), ("Many", ">80")])
+BANDAS_ACORDADAS = {
+    **{q: _CONTIGUAS for q in ("P1_Q7", "P2_Q3", "P3_Q1", "P3_Q5", "P3_Q6", "P3_Q8",
+                               "P4_Q1", "P4_Q2")},
+    "P1_Q6": OrderedDict([("Minimal", "<=2"), ("Moderate", ">2 and <=5"), ("Intensive", ">5")]),
+    "P3_Q2": _ADMISION,
+    "P4_Q7": _ADMISION,
+}
+
+# P1_Q7 mezcla dos cantidades: el total semanal (20-30 h) y las horas de ABP (6-7 h). Acordado
+# el 15-10-2026: se extraen las dos, el consenso se mide sobre las de ABP y el total queda como
+# descripción.
+MEDIDA_ACORDADA = {
+    "P1_Q7": ("hours of PBL/ABP sessions per week only, not the total teaching hours",
+              "total weekly teaching hours, if the panelist states them",
+              ["ABP", "PBL"]),
+}
+
 PERIODOS = [
     ("per week", "hours/week"), ("per month", "hours/month"), ("per day", "hours/day"),
     ("per semester", "hours/semester"), ("per module", "hours/module"),
@@ -348,6 +371,17 @@ def construir():
                 opciones.append(OFF_TOPIC_OPTION)
             entrada["options"] = opciones
 
+        if qid in BANDAS_ACORDADAS:
+            viejas, nuevas = list(entrada.get("bands", {})), BANDAS_ACORDADAS[qid]
+            if not set(viejas) <= set(nuevas):
+                raise SystemExit("%s: el documento trae bandas %s que el acuerdo no cubre"
+                                 % (qid, viejas))
+            informe.append("BANDAS ACORDADAS %s: %s" % (
+                qid, " / ".join("%s %s" % kv for kv in nuevas.items())))
+            entrada["bands"] = OrderedDict(nuevas)
+        if qid in MEDIDA_ACORDADA:
+            entrada["measure"], entrada["secondary"], entrada["measure_keywords"] = \
+                MEDIDA_ACORDADA[qid]
         tax[qid] = entrada
         if ramas:
             stance[qid] = ramas

@@ -20,7 +20,7 @@ from collections import Counter
 from config import *
 from stance_map import STANCE_MAP, STANCE_ES, stance_of
 from consensus_metrics import (clean_labels, modal_share, normalized_entropy,
-                               categorical_label)
+                               agreement_label)
 
 
 def stance_consensus(df):
@@ -60,7 +60,7 @@ def stance_consensus(df):
             "modal_stance": modal, "is_tie": is_tie,
             "stance_share": share,
             "norm_entropy_3": normalized_entropy(labels, 3),
-            "consensus_label": categorical_label(share, n_cls, pct_unc, is_tie),
+            "consensus_label": agreement_label(share, n_cls, pct_unc, is_tie),
             "stance_counts": json.dumps({s: counts.get(s, 0) for s in STANCE_ES.values()},
                                         ensure_ascii=False),
             "qualifier_counts": json.dumps(dict(quals.most_common()), ensure_ascii=False),

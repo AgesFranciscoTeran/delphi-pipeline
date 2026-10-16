@@ -101,16 +101,23 @@ OFF_TOPIC_LABEL = "Off-topic"
 EMPTY_MARKERS = {"nan", "n.a.", "na", "n/a", "-", "--", "."}
 SHORT_RESPONSE_CHARS = 15  # sólo informativo (columna is_short); NO excluye
 
-# ── Consenso (criterios provisionales de Fase 0; la Fase 2 los fija con literatura Delphi) ──
-MIN_N_CLASSIFIED = 5          # por debajo de esto no se etiqueta consenso
-MAX_UNCLASSIFIED_PCT = 40.0   # cobertura mínima: si más del 40 % quedó sin clasificar, "Insuficiente"
-STRONG_AGREEMENT = 0.75       # modal share >= 75 % -> consenso fuerte
-CLEAR_MAJORITY = 0.60         # >= 60 % -> mayoría clara
-DOMINANT_OPTION = 0.40        # >= 40 % -> opción dominante
-ENTROPY_DELTA = 0.05          # cambio mínimo de entropía normalizada para hablar de convergencia/dispersión
-MIN_N_NUMERIC = 5             # mínimo de valores numéricos comparables para etiquetar
-QUANT_STRONG = {"cv": 0.25, "rel_range": 0.30, "rel_iqr": 0.25}
-QUANT_MODERATE = {"cv": 0.50, "rel_range": 0.75, "rel_iqr": 0.50}
+# ── Criterios de consenso ─────────────────────────────────────────────────────
+# Fijados A PRIORI el 15-10-2026 en la reunión con Emily, desde la literatura Delphi y ANTES de
+# recalcular resultados (docs/criterios_consenso.md). No se ajustan mirando los datos: si alguno
+# cambia, cambia la fecha y se dice en el artículo.
+#   Acuerdo: % de las respuestas clasificadas en la etiqueta modal (opción, postura o banda).
+#            Diamond et al. 2014; Schifano y Niederberger 2025 (niveles 70 / 60 / 50).
+#   Estabilidad: cambio neto entre las dos últimas rondas <= 15 % (Scheibe, Skutsch y Schofer 1975).
+#   Resultado: acuerdo × estabilidad, cuatro categorías (Dajani et al. 1979; ACCORD 2024).
+AGREEMENT_LEVELS = (("Acuerdo alto", 0.70), ("Acuerdo moderado", 0.60), ("Acuerdo bajo", 0.50))
+CONSENSUS_THRESHOLD = 0.70        # consenso = acuerdo alto
+STABILITY_MAX_CHANGE = 0.15
+SENSITIVITY_THRESHOLDS = (0.75, 0.80)   # el artículo reporta también el resultado con estos
+
+# Reglas de calidad de datos (no son criterios de consenso; confirmadas el mismo día)
+MIN_N_CLASSIFIED = 5          # con menos respuestas clasificadas: "Insuficiente"
+MAX_UNCLASSIFIED_PCT = 40.0   # con más del 40 % sin clasificar: "Insuficiente"
+MIN_N_NUMERIC = 5
 
 # ── Unidades ──
 # Vocabulario cerrado que el LLM debe usar (tal como lo dice el panelista, SIN convertir).

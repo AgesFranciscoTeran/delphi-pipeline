@@ -80,15 +80,28 @@ Respond ONLY with valid JSON (no preamble, no markdown):
 """
 
 
-def build_quantitative_prompt(question_text, response_text, round_num, bands, unit):
+def build_quantitative_prompt(question_text, response_text, round_num, bands, unit,
+                              measure=None, secondary=None):
     band_str = "\n".join(f"  - {name}: {rng}" for name, rng in bands.items())
     band_names = " | ".join(bands.keys())
     units = " | ".join(UNIT_VOCAB)
+    # Sólo cuando la taxonomía separa qué se mide (P1_Q7: horas de ABP aparte del total). Para
+    # el resto el prompt queda idéntico, así que su caché sigue valiendo.
+    medida = f"What is measured here: {measure}\n" if measure else ""
+    campo = (f'  "value_secondary": <{secondary}, as a number; null if not stated>,\n'
+             if secondary else "")
+    # La primera versión decía sólo «if the panelist only gives a different quantity»: con eso
+    # el modelo seguía poniendo un total semanal («20 hours») como horas de ABP. Hace falta
+    # decir que, si la respuesta no nombra esa cantidad, «value» va vacío.
+    regla = ('- "value" must be ONLY the quantity described in "What is measured here". If the '
+             'response does not explicitly refer to that quantity (for example, it gives a total '
+             'without saying how much of it is that quantity), "value" MUST be null and "band" '
+             'null; put the number the panelist gives in "value_secondary".\n' if measure else "")
     return f"""Analyze this response to a QUANTITATIVE Delphi question (it asks for a number).
 
 Question: {question_text}
 The question asks for a value in this unit: {unit}
-Round: {round_num}
+{medida}Round: {round_num}
 {_prev_round_note(round_num)}
 
 Response:
@@ -103,7 +116,7 @@ Respond ONLY with valid JSON (no preamble, no markdown):
   "unit": "<the unit the panelist actually uses, one of: {units}>",
   "value_type": "<exact|range|minimum|maximum|none>",
   "value_raw": "<the value exactly as written in the response>",
-  "band": "<one of: {band_names}; or null if no number is given>",
+{campo}  "band": "<one of: {band_names}; or null if no number is given>",
   "core_argument": "<1-2 sentence paraphrase of the panelist's reasoning, in English>",
   "key_phrases": ["<up to 3 short phrases quoted from the response>"]
 }}
@@ -117,7 +130,7 @@ Rules:
 - If a range is given, put the midpoint in "value" and set value_type to "range".
 - "band" must be judged in the question's unit; if the panelist's unit differs, set band to null.
 - core_argument must be YOUR paraphrase, not a quote.
-"""
+{regla}"""
 
 
 def build_open_prompt(question_text, response_text, round_num):
@@ -144,7 +157,8 @@ def build_prompt_for_type(tax, question_text, response_text, round_num):
     qtype = tax["type"]
     if qtype in ("quantitative", "hybrid"):
         return build_quantitative_prompt(question_text, response_text, round_num,
-                                         tax["bands"], tax.get("unit", "as asked"))
+                                         tax["bands"], tax.get("unit", "as asked"),
+                                         tax.get("measure"), tax.get("secondary"))
     if qtype in ("nominal", "binary"):
         return build_categorical_prompt(question_text, response_text, round_num, tax["options"])
     return build_open_prompt(question_text, response_text, round_num)
@@ -383,6 +397,8 @@ def postprocess(parsed, tax):
                    value_raw=str(parsed.get("value_raw") or ""),
                    band=band,
                    classification_status="classified" if value is not None else "none_fits")
+        if tax.get("secondary"):
+            out["value_secondary"] = _to_number(parsed.get("value_secondary"))
         if qtype == "hybrid":
             out["band_policy"] = tax.get("band_policies", {}).get(band)
     else:
@@ -578,7 +594,7 @@ def run_extraction(ind, client=None):
 EXTRACTION_COLUMNS = [
     "question_type", "selected_option", "option_letter", "option_text", "classification_status",
     "letter_text_mismatch", "numeric_value", "value_unit", "unit_source", "value_type", "value_raw", "band",
-    "band_policy", "proposed_approach", "core_argument", "key_phrases", "extraction_model",
+    "value_secondary", "band_policy", "proposed_approach", "core_argument", "key_phrases", "extraction_model",
     "prompt_hash", "prompt_version", "extraction_status", "max_tokens_usados",
 ]
 

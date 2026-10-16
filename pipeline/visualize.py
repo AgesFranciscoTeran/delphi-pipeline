@@ -36,8 +36,8 @@ QUANT_CSV = os.path.join(OUTPUT_DIR, "03_quantitative_consensus.csv")
 CONV_CSV = os.path.join(OUTPUT_DIR, "03_convergence.csv")
 
 CONV_COLORS = {
-    "Convergió": "#1D9E75", "Se dispersó": "#E84855",
-    "Estable en acuerdo": "#3B7DD8", "Estable sin acuerdo": "#8A8A8A", "Insuficiente": "#C8C8C8",
+    "Consenso": "#1D9E75", "Consenso no consolidado": "#3B7DD8",
+    "Disenso estable": "#8A8A8A", "Sin estabilizar": "#E84855", "Insuficiente": "#C8C8C8",
 }
 FIXED_OPTION_COLORS = {
     "Yes": "#2E8B57", "No": "#C0392B", "Depends": "#E0A100", "Balanced": "#E0A100",
@@ -66,7 +66,7 @@ def load_conv():
     if not os.path.exists(CONV_CSV):
         return {}
     conv = pd.read_csv(CONV_CSV)
-    return {(r["question_id"]): r["convergence"] for _, r in conv.iterrows()}
+    return {(r["question_id"]): r["resultado"] for _, r in conv.iterrows()}
 
 
 # ── fig1: concentración por ronda ─────────────────────────────────────────────
@@ -92,8 +92,8 @@ def fig1_concentration_trajectory():
         ax.plot(rounds, shares, "-", color=color, lw=2, zorder=2)
         ax.scatter(rounds[ok], shares[ok], s=55, color=color, zorder=3)
         ax.scatter(rounds[~ok], shares[~ok], s=55, facecolors="white", edgecolors=color, lw=1.5, zorder=3)
-        ax.axhline(STRONG_AGREEMENT * 100, ls=":", color="#999", lw=0.8)
-        ax.axhline(CLEAR_MAJORITY * 100, ls=":", color="#CCC", lw=0.8)
+        ax.axhline(CONSENSUS_THRESHOLD * 100, ls=":", color="#999", lw=0.8)
+        ax.axhline(AGREEMENT_LEVELS[1][1] * 100, ls=":", color="#CCC", lw=0.8)
 
         last = sub.iloc[-1]
         if last["consensus_label"] != "Insuficiente" and pd.notna(last["modal_option"]):
@@ -128,7 +128,7 @@ def fig2_convergence_scatter():
     if not os.path.exists(CONV_CSV):
         print("  skip fig2"); return
     conv = pd.read_csv(CONV_CSV)
-    pts = conv[(conv["type"] == "categorical") & (conv["convergence"] != "Insuficiente")].copy()
+    pts = conv[(conv["type"] == "categorical") & (conv["resultado"] != "Insuficiente")].copy()
     pts = pts.dropna(subset=["initial", "final"]).reset_index(drop=True)
     if pts.empty:
         print("  skip fig2"); return
@@ -144,7 +144,7 @@ def fig2_convergence_scatter():
     fig, ax = plt.subplots(figsize=(12.5, 7))
     lim = 1.08
     ax.plot([0, lim], [0, lim], "--", color="gray", lw=1)
-    for cls, g in pts.groupby("convergence"):
+    for cls, g in pts.groupby("resultado"):
         ax.scatter(g["jx"], g["jy"], s=190, color=CONV_COLORS.get(cls, "#999"), alpha=0.8,
                    label=cls, zorder=3)
     for _, r in pts.iterrows():
@@ -157,7 +157,7 @@ def fig2_convergence_scatter():
     ax.legend(fontsize=9, loc="upper left")
     fig.text(0.02, 0.01, "Métrica: entropía normalizada por el número de opciones de la taxonomía "
              "(0 = acuerdo total, 1 = todas las opciones por igual). Cambios menores a "
-             f"±{ENTROPY_DELTA} se consideran estables. Puntos coincidentes desplazados levemente.",
+             f"±{STABILITY_MAX_CHANGE} se consideran estables. Puntos coincidentes desplazados levemente.",
              fontsize=7.5, color="gray", style="italic")
     fig.subplots_adjust(right=0.56, bottom=0.12)
     n = len(pts)
@@ -224,8 +224,8 @@ def fig3_final_categorical():
     ax.set_yticks(ticks); ax.set_yticklabels(ticklabels, fontsize=7.5)
     ax.set_ylim(-0.7, len(rows) - 0.3)
     ax.set_xlim(0, 100); ax.set_xticks([0, 25, 50, 75, 100])
-    ax.axvline(STRONG_AGREEMENT * 100, ls=":", color="#999", lw=0.8)
-    ax.axvline(CLEAR_MAJORITY * 100, ls=":", color="#CCC", lw=0.8)
+    ax.axvline(CONSENSUS_THRESHOLD * 100, ls=":", color="#999", lw=0.8)
+    ax.axvline(AGREEMENT_LEVELS[1][1] * 100, ls=":", color="#CCC", lw=0.8)
     ax.set_xlabel("% de las respuestas clasificadas (ronda final)")
     ax.set_title("Resultado del consenso por pregunta — preguntas categóricas", fontsize=13)
     fig.subplots_adjust(left=0.36, right=0.78)
@@ -250,7 +250,7 @@ def fig4_final_quantitative():
     fig, axes = plt.subplots(len(units), 1, figsize=(12, sum(heights) + 1.2),
                              gridspec_kw={"height_ratios": heights})
     axes = np.atleast_1d(axes)
-    label_colors = {"Consenso fuerte": "#1D9E75", "Convergencia moderada": "#E0A100",
+    label_colors = {"Acuerdo alto": "#1D9E75", "Acuerdo moderado": "#E0A100",
                     "Sin consenso": "#E84855", "Insuficiente": "#B0B0B0"}
     for ax, unit in zip(axes, units):
         sub = final[final["question_unit"].fillna("?") == unit].sort_values("median").reset_index(drop=True)

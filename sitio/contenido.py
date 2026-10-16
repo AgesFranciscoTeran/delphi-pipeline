@@ -11,7 +11,7 @@ Si un número aparece escrito aquí, es un bug.
 # publicado de Gemma con qué confundirla, esta cadena se vacía y la banda queda sólo con los
 # datos mecánicos.
 NOTA_MODELO = (
- "La taxonomía es el documento «Posturas varias opciones» v4 de Emily (27-09-2026). La "
+ "La taxonomía es el documento «Posturas varias opciones» v4 de Emily (27-09-2026), con los acuerdos del 15-10-2026. La "
  "validación contra sus etiquetas (κ = 0,72) se midió con el modelo anterior y contra las "
  "opciones viejas, y hay que rehacerla."
 )
@@ -49,14 +49,15 @@ ESTABILIDAD_CONSECUENCIA = (
 # Gemma; con GLM es falsa. Queda anotado para no volver a copiarla.
 
 CERRADAS = (
- "Las versiones v3 y v4 del documento de Emily cerraron cuatro de las ocho decisiones "
- "anteriores. <b>P4_Q8</b> tiene rama «No». Las <b>unidades</b> están declaradas en todas las "
- "preguntas de horas; la de <b>P3_Q1</b> la fijó el equipo en horas por día, porque aunque la "
- "encuesta preguntaba por semana, el panel respondió por día siguiendo la síntesis del "
- "facilitador. <b>P3_Q3</b> tiene «No specific number» para quien rechaza una cuota fija. Y "
- "<b>P2_Q1</b> ya tiene opciones de «No», así que deja de perder respuestas (sin ramas marcadas "
- "todavía no entra en la vista por postura). Además, las respuestas que no contestan la "
- "pregunta tienen su propia categoría, «fuera de tema», que no cuenta en el consenso."
+ "El 15-10-2026, con Emily, se cerraron los criterios de consenso (ver «Cómo funciona» en la "
+ "portada) y la taxonomía numérica: bandas contiguas en todas las preguntas de horas (antes 15 "
+ "respuestas caían en huecos), una tercera banda en admisión (más de 80) con el 50 dentro de "
+ "«More», y en <b>P1_Q7</b> se separan las horas de ABP, sobre las que se mide el consenso, del "
+ "total semanal. Antes, la v3 y la v4 del documento habían cerrado <b>P4_Q8</b> (rama «No»), las "
+ "<b>unidades</b> (la de <b>P3_Q1</b> la fijó el equipo en horas por día, porque el panel respondió "
+ "así siguiendo la síntesis del facilitador), <b>P3_Q3</b> («No specific number») y <b>P2_Q1</b> "
+ "(opciones de «No»). Las respuestas que no contestan la pregunta son «fuera de tema» y no "
+ "cuentan en el consenso."
 )
 
 # Qué decisión de taxonomía afecta a qué panel. Sirve para que cada página diga sólo lo
@@ -66,47 +67,16 @@ CERRADAS = (
 # Antes iba a mano y al reordenar por prioridad quedaron numeradas 1, 9, 2, 3... Van en orden
 # de urgencia, así que reordenar es una operación normal.
 DECISIONES = [
- {"titulo": "Bordes y pisos de las bandas",
-  "paneles": [1, 2, 3, 4],
-  "hoy": "Con las unidades ya declaradas, es lo que falta para que la capa numérica sea "
-         "reportable. Las bandas 3-5 / 6-8 / &gt;=9 dejan fuera 5,5 y 8,5, y además <b>1 y 2 "
-         "horas</b>, que no caen en ninguna banda. En P4_Q1 y P4_Q2 el tope es «&gt;9», así que "
-         "9 horas tampoco cae. Las de admisión tienen dos cortes (&lt;50 / &gt;=50), y el Panel 3 "
-         "responde de 20 a 120.",
-  "evidencia": "La solución ya está en el mismo documento: P3_Q5, P3_Q6 y P3_Q8 usan "
-               "«&lt;=5», que cierra el piso. Basta con usarlo en todas.",
-  "decision": "Hacer los bordes contiguos (y «&gt;=9» en el Panel 4) y revisar si dos bandas "
-              "alcanzan para admisión."},
- {"titulo": "P1_Q7: ¿horas totales o horas de ABP?",
-  "paneles": [1],
-  "hoy": "La unidad está resuelta: el panel responde por semana, como pregunta el enunciado. "
-         "Pero responde a dos cosas distintas. Unos dan el <b>total semanal</b> (20–30 horas) y "
-         "otros sólo las <b>horas de ABP</b> (6–7 horas).",
-  "evidencia": "Las bandas 3-5 / 6-8 / &gt;=9 sólo tienen sentido para lo segundo: cualquier "
-               "total cae en «Intensive». La síntesis de la ronda 3 lo cierra hablando del "
-               "sistema actual, «2 horas de ABP tres veces a la semana» más una o dos de "
-               "complementarias.",
-  "decision": "¿La pregunta mide las horas totales o las de ABP? Si son las totales, las bandas "
-              "hay que reescalarlas."},
- {"titulo": "P3_Q7 y P4_Q6: revisar si se clasificaron o se forzaron",
-  "paneles": [3, 4],
-  "hoy": "Las dos ya no dejan respuestas sin clasificar y terminan con consenso fuerte, pero "
-         "quedar clasificada no es quedar bien clasificada.",
-  "evidencia": "Cuando alguien escribe «PBL 50 %, examen 20 %, práctica 20 %» y el sistema lo "
-               "mete en una sola opción de prioridad, se perdió una distribución entera. En P4_Q6, "
-               "«socrática sólo en ciencias básicas» encaja en «Yes, only in basic sciences», que "
-               "puede ser un sí que el panelista no dijo — y es justo la opción que gana la ronda "
-               "final.",
-  "decision": "Revisar a mano las ~40 respuestas afectadas. Es lo que decide si estas dos "
-              "preguntas se pueden reportar."},
- {"titulo": "Taxonomía de argumentos",
-  "paneles": [1, 2, 3, 4],
-  "hoy": "Se clasifica <b>qué</b> responde cada panelista, pero no <b>por qué</b>. Las razones "
-         "están en el texto y no se usan.",
-  "evidencia": "Es lo que haría falta para mapear qué argumentos sostienen cada postura, que "
-               "es el análisis más rico que permiten estos datos.",
-  "decision": "Es el trabajo más grande y conviene empezarlo antes que los otros, aunque se "
-              "cierre después."},
+ {'titulo': 'P3_Q7 y P4_Q6: revisar si se clasificaron o se forzaron',
+  'paneles': [3, 4],
+  'hoy': 'Las dos ya no dejan respuestas sin clasificar y terminan con consenso fuerte, pero quedar clasificada no es quedar bien clasificada.',
+  'evidencia': 'Cuando alguien escribe «PBL 50 %, examen 20 %, práctica 20 %» y el sistema lo mete en una sola opción de prioridad, se perdió una distribución entera. En P4_Q6, «socrática sólo en ciencias básicas» encaja en «Yes, only in basic sciences», que puede ser un sí que el panelista no dijo — y es justo la opción que gana la ronda final.',
+  'decision': 'Revisar a mano las ~40 respuestas afectadas. Es lo que decide si estas dos preguntas se pueden reportar.'},
+ {'titulo': 'Taxonomía de argumentos',
+  'paneles': [1, 2, 3, 4],
+  'hoy': 'Se clasifica <b>qué</b> responde cada panelista, pero no <b>por qué</b>. Las razones están en el texto y no se usan.',
+  'evidencia': 'Es lo que haría falta para mapear qué argumentos sostienen cada postura, que es el análisis más rico que permiten estos datos.',
+  'decision': 'Es el trabajo más grande y conviene empezarlo antes que los otros, aunque se cierre después.'},
 ]
 
 CAPAS = [
@@ -118,14 +88,13 @@ CAPAS = [
  ("Calcular el consenso de cada pregunta", "Listo", "ok",
   "Mediana y rango para las numéricas, distribución y n para las de opción. Las respuestas "
   "fuera de tema se cuentan aparte y no entran en el denominador.", "—"),
- ("Resultados numéricos", "Preliminares", "wip",
-  "La unidad ya está declarada en todas las preguntas de horas. Falta que los bordes de las "
-  "bandas sean contiguos: hoy 1–2 horas, 5,5 y 8,5 no caen en ninguna.",
-  "<b>Emily</b> · bordes de las bandas"),
- ("Definir qué cuenta como «consenso»", "Provisional", "wip",
-  "Los umbrales actuales se fijaron mirando los datos. Hay que fijarlos con la literatura "
-  "Delphi (acuerdo + estabilidad) <b>antes</b> de volver a mirar resultados.",
-  "Pancho · 1 semana"),
+ ("Resultados numéricos", "Listo", "ok",
+  "Unidades declaradas y bandas contiguas (acordadas el 15-10-2026). El consenso se mide sobre "
+  "la banda, con el mismo criterio que las preguntas de opción.", "—"),
+ ("Definir qué cuenta como «consenso»", "Listo", "ok",
+  "Fijado a priori el 15-10-2026 con la literatura Delphi: acuerdo alto (≥ 70 %) y estable "
+  "(cambio neto ≤ 15 % entre las dos últimas rondas). Se reporta también con 75 y 80 %.",
+  "—"),
  ("Saber si el sistema codifica tan bien como una persona", "A medias", "wip",
   "44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas "
   "11 por panel, y contra las opciones anteriores a la v4. Las hojas para la validación formal "
@@ -161,4 +130,18 @@ NOTA_PANELES = (
  "Los cuatro paneles son <b>estudios independientes</b>: ningún panelista participa en más de "
  "uno, y de las 32 preguntas sólo una se repite entre paneles. Por eso cada uno tiene su "
  "página y no se agregan ni se comparan resultados entre ellos."
+)
+
+
+# Criterios de consenso fijados el 15-10-2026 (docs/criterios_consenso.md). Va en «Cómo se
+# obtienen los números».
+CRITERIOS = (
+ "<b>Qué cuenta como consenso.</b> Los criterios se fijaron a priori, desde la literatura "
+ "Delphi y antes de recalcular los resultados. El acuerdo es el porcentaje del panel en la "
+ "postura (en las preguntas de sí / no), la opción o la banda mayoritaria: alto desde 70 %, "
+ "moderado desde 60 %, bajo desde 50 %. Hay <b>consenso</b> cuando el acuerdo es alto en la "
+ "última ronda y además es <b>estable</b>: entre las dos últimas rondas cambió de opción, en "
+ "neto, como mucho el 15 % del panel. Si el acuerdo es alto pero todavía se mueve, es consenso "
+ "no consolidado; si no hay acuerdo pero el panel ya no se mueve, es disenso estable, que "
+ "también es un resultado del Delphi."
 )
