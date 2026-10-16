@@ -13,6 +13,10 @@
 .legq b{color:var(--ink);font-variant-numeric:tabular-nums}
 .legqt{color:var(--ink-3);margin-right:.4rem}
 .chip{display:inline-block;white-space:nowrap;margin-right:.6rem}
+.sigs{display:grid;gap:.55rem;margin-top:.4rem}
+.nota-fig{font-size:.86rem;color:var(--ink-2);margin:.4rem 0 1.4rem}
+.sig{display:grid;grid-template-columns:13.5rem 1fr;gap:.8rem;align-items:baseline}
+@media (max-width:640px){.sig{grid-template-columns:1fr;gap:.15rem}}
 .chip i{display:inline-block;width:9px;height:9px;border-radius:2px;
   margin-right:.28rem;vertical-align:0}
 .panelgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));
@@ -249,7 +253,7 @@ footer p{max-width:46rem}
 <tr><td class="capa">Resultados numéricos</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Unidades declaradas y bandas contiguas (acordadas el 15-10-2026). El consenso se mide sobre la banda, con el mismo criterio que las preguntas de opción.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Definir qué cuenta como «consenso»</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Fijado a priori el 15-10-2026 con la literatura Delphi: acuerdo alto (≥ 70 %) y estable (cambio neto ≤ 15 % entre las dos últimas rondas). Se reporta también con 75 y 80 %.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Saber si el sistema codifica tan bien como una persona</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas 11 por panel, y contra las opciones anteriores a la v4. Las hojas para la validación formal ya están generadas: 244 respuestas estratificadas por pregunta y ronda, ciegas, una por codificador. Falta que dos personas las etiqueten.</td><td class="quien">Emily + 2.º codificador</td></tr>
-<tr><td class="capa">Las razones que dan los panelistas</td><td><span class="est e-todo">Sin empezar</span></td><td class="qtxt">Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo con las opciones.</td><td class="quien">Emily + Pancho · taxonomía de argumentos</td></tr>
+<tr><td class="capa">Las razones que dan los panelistas</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">Hay un prototipo del grafo postura → razón, con temas propuestos por el modelo en una sola corrida; no se publica porque no está validado. Falta la taxonomía de argumentos: la define Emily, y su lista de perfiles es el punto de partida.</td><td class="quien"><b>Emily</b> · taxonomía de argumentos</td></tr>
     </tbody>
   </table></div>
   <div class="callout">

@@ -8,6 +8,10 @@ CSS = """
 .legq b{color:var(--ink);font-variant-numeric:tabular-nums}
 .legqt{color:var(--ink-3);margin-right:.4rem}
 .chip{display:inline-block;white-space:nowrap;margin-right:.6rem}
+.sigs{display:grid;gap:.55rem;margin-top:.4rem}
+.nota-fig{font-size:.86rem;color:var(--ink-2);margin:.4rem 0 1.4rem}
+.sig{display:grid;grid-template-columns:13.5rem 1fr;gap:.8rem;align-items:baseline}
+@media (max-width:640px){.sig{grid-template-columns:1fr;gap:.15rem}}
 .chip i{display:inline-block;width:9px;height:9px;border-radius:2px;
   margin-right:.28rem;vertical-align:0}
 .panelgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));

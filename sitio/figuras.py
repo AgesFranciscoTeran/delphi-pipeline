@@ -8,12 +8,22 @@ pesa menos que un PNG a 300 dpi. Las mismas funciones guardan PNG a 300 dpi para
 Criterios de diseño aplicados en todas:
   * un solo eje por figura (nunca dos escalas verticales),
   * color por entidad y no por posición: una opción conserva su color aunque cambie de orden,
+  * el color nunca va solo: cada marca lleva además un símbolo, una letra o una etiqueta,
   * el n siempre visible — con paneles de 7 a 10 personas, un porcentaje sin n engaña,
   * rejilla y ejes recesivos, etiquetas directas en vez de leyendas cuando caben.
+
+Paleta (16-10-2026), validada con el script de la guía de visualización (validate_palette.js,
+modo claro, superficie #fcfcfb). Cada color hace un solo trabajo:
+  * postura — polaridad: azul (a favor) / gris neutro (condicional) / rojo (en contra);
+  * resultado — 4 categorías en el orden fijo de la paleta (adyacentes: ΔE daltonismo 9.1,
+    visión normal 22.9);
+  * opciones de una pregunta — sólo 3 colores, porque en la cuadrícula cualquier par puede
+    quedar al lado (todos los pares: ΔE 9.2 / 24.0); el resto va en gris como «otras».
+El agua y el amarillo quedan por debajo de 3:1 sobre el fondo: por eso toda marca lleva texto.
 """
 import os
-import math
-import itertools
+import html
+import textwrap
 import collections
 
 import numpy as np
@@ -23,21 +33,19 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
-import networkx as nx
 
 import datos
 
 SALIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "figuras")
 
-# Paleta divergente validada para daltonismo (ΔE CVD 8.4, visión normal 18.1).
-AZUL, GRIS, ROJO = "#2a78d6", "#8a8880", "#e34948"
-TINTA, TINTA2, TINTA3 = "#0b0b0b", "#52514e", "#84827c"
-LINEA, PANEL = "#e5e3dd", "#ffffff"
-# Escala categórica para opciones: orden fijo, nunca ciclada.
-CATEG = ["#2a78d6", "#e34948", "#8a8880", "#1b9e77", "#8b5cf6", "#d97706", "#0891b2"]
-# Para la cuadrícula, sin el gris neutro: ahí el gris claro significa "sin clasificar" y
-# tener además un gris de opción hace que se confundan.
-CATEG_GRID = ["#2a78d6", "#e34948", "#1b9e77", "#d97706", "#8b5cf6", "#0891b2", "#be185d"]
+AZUL, GRIS, ROJO = "#2a78d6", "#898781", "#e34948"          # postura
+CATEG3 = ["#2a78d6", "#eb6834", "#1baf7a"]                   # opciones (A, B, C)
+OTRAS = "#c3c2b7"
+COL_RESULTADO = {"Consenso": "#2a78d6", "Consenso no consolidado": "#eb6834",
+                 "Disenso estable": "#1baf7a", "Sin estabilizar": "#eda100",
+                 "Insuficiente": "#c3c2b7"}
+TINTA, TINTA2, TINTA3 = "#0b0b0b", "#52514e", "#898781"
+LINEA, PANEL, VACIO = "#e1e0d9", "#ffffff", "#f4f2ee"
 
 plt.rcParams.update({
     "figure.facecolor": PANEL, "axes.facecolor": PANEL,
@@ -72,13 +80,66 @@ def inline(ruta):
     return s.replace("<svg ", '<svg style="width:100%;height:auto" ', 1)
 
 
-def _paleta_opciones(opciones):
-    return {o: CATEG[i % len(CATEG)] for i, o in enumerate(opciones)}
-
-
 def _corta(s, n=26):
     s = str(s)
     return s if len(s) <= n else s[:n - 1] + "…"
+
+
+def _envuelve(s, ancho=22, lineas=3):
+    partes = textwrap.wrap(str(s), ancho) or [""]
+    if len(partes) > lineas:
+        partes = partes[:lineas]
+        partes[-1] = _corta(partes[-1], ancho)
+    return "\n".join(partes)
+
+
+def _tinta_sobre(color):
+    """Texto negro o blanco según la luminancia del relleno."""
+    r, g, b = (int(color[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    lin = [c / 12.92 if c <= .03928 else ((c + .055) / 1.055) ** 2.4 for c in (r, g, b)]
+    lum = .2126 * lin[0] + .7152 * lin[1] + .0722 * lin[2]
+    return TINTA if lum > .3 else "white"
+
+
+# ── esquema de color por pregunta ─────────────────────────────────────────────
+
+ORDEN_POSTURA = ["A favor", "Condicional", "En contra", "Sin postura"]
+COL_POSTURA = dict(zip(ORDEN_POSTURA, (AZUL, GRIS, ROJO, OTRAS)))
+MARCA_POSTURA = {"A favor": "✓", "Condicional": "~", "En contra": "✕", "Sin postura": "·"}
+
+
+def esquema(q, valores):
+    """Cómo se pinta una pregunta: (categoría(opción), {cat: color}, orden, {cat: marca}).
+
+    En las preguntas de sí / no la categoría es la postura (criterio 1.2: el consenso se mide
+    sobre ella), con los mismos colores en todas. En las demás, cada opción elegida lleva su
+    letra (A, B, C… en el orden de la taxonomía), pero sólo las tres más elegidas llevan color:
+    con más de tres colores en contacto, dos se confunden con daltonismo. Las demás van en gris
+    y se distinguen por la letra.
+    """
+    from stance_map import STANCE_MAP, STANCE_ES, stance_of
+    if q in STANCE_MAP:
+        def cat(o):
+            if not isinstance(o, str) or o in datos.SIN_OPCION:
+                return None
+            return STANCE_ES.get(stance_of(q, o)[0]) or "Sin postura"
+        return cat, COL_POSTURA, ORDEN_POSTURA, MARCA_POSTURA
+    from taxonomy import EMILY_TAXONOMY
+    tax = EMILY_TAXONOMY.get(q, {}).get("options", [])
+    pos = {o: i for i, o in enumerate(tax)}
+    cuenta = collections.Counter(v for v in valores
+                                 if isinstance(v, str) and v not in datos.SIN_OPCION)
+    top = set(sorted(cuenta, key=lambda o: (-cuenta[o], pos.get(o, 99)))[:3])
+    orden = sorted(cuenta, key=lambda o: pos.get(o, 99))
+    colores = iter(CATEG3)
+    pal = {o: (next(colores) if o in top else OTRAS) for o in orden}
+    marcas = {o: chr(ord("A") + i) for i, o in enumerate(orden)}
+
+    def cat(o):
+        if not isinstance(o, str) or o in datos.SIN_OPCION:
+            return None
+        return o
+    return cat, pal, orden, marcas
 
 
 # ── 1. Flujo de opiniones entre rondas (aluvial) ──────────────────────────────
@@ -96,26 +157,26 @@ def _cinta(ax, x0, x1, y0a, y0b, y1a, y1b, color, alpha):
 
 def fig_flujo(qids, png=False, nombre="fig_flujo"):
     """
-    Aluvial: cómo se reparten los panelistas entre opciones en cada ronda y quién se mueve.
-    Cada cinta es un grupo de panelistas; el color es su opción DE ORIGEN, así que se puede
+    Aluvial: cómo se reparten los panelistas entre categorías en cada ronda y quién se mueve.
+    Cada cinta es un grupo de panelistas; el color es su categoría DE ORIGEN, así que se puede
     seguir a dónde fue cada bloque inicial. Las cintas de quien no se mueve van más tenues.
+    En las preguntas de sí / no las categorías son las posturas.
     """
     d = datos.clasificadas()
     qids = [q for q in qids if q in set(d.qid)]
     n = len(qids)
-    fig, axes = plt.subplots(1, n, figsize=(6.8 * n, 3.9))
+    fig, axes = plt.subplots(1, n, figsize=(7.2 * n, 4.1))
     axes = np.atleast_1d(axes)
 
     for ax, q in zip(axes, qids):
         g = d[d.qid == q]
+        cat, pal, orden, marcas = esquema(q, g.selected_option)
+        g = g.assign(cat=g.selected_option.map(cat))
         rondas = sorted(g.Round.unique())
-        piv = g.pivot_table(index="Panelist", columns="Round",
-                            values="selected_option", aggfunc="first")
+        piv = g.pivot_table(index="Panelist", columns="Round", values="cat", aggfunc="first")
         piv = piv.reindex(columns=rondas)
-        opciones = sorted({v for c in rondas for v in piv[c].dropna().unique()})
-        pal = _paleta_opciones(opciones)
+        cats = [c for c in orden if any((piv[r] == c).any() for r in rondas)]
 
-        # posición vertical de cada banda por ronda
         bandas, GAP = {}, .06
         for r in rondas:
             cuenta = piv[r].value_counts()
@@ -123,12 +184,12 @@ def fig_flujo(qids, png=False, nombre="fig_flujo"):
             if not total:
                 continue
             y = 0.0
-            for o in opciones:
-                c = cuenta.get(o, 0)
-                if not c:
+            for c_ in cats:
+                k = cuenta.get(c_, 0)
+                if not k:
                     continue
-                h = c / total * (1 - GAP * max(0, len(cuenta) - 1))
-                bandas[(r, o)] = (y, y + h, c)
+                h = k / total * (1 - GAP * max(0, len(cuenta) - 1))
+                bandas[(r, c_)] = (y, y + h, k)
                 y += h + GAP
 
         SEP = 2.6
@@ -137,13 +198,13 @@ def fig_flujo(qids, png=False, nombre="fig_flujo"):
             flujos = collections.Counter(zip(sub[r0], sub[r1]))
             desde = collections.defaultdict(float)
             hacia = collections.defaultdict(float)
-            for (o0, o1), c in sorted(flujos.items(), key=lambda kv: (opciones.index(kv[0][0]),
-                                                                     opciones.index(kv[0][1]))):
+            for (o0, o1), k in sorted(flujos.items(), key=lambda kv: (cats.index(kv[0][0]),
+                                                                     cats.index(kv[0][1]))):
                 if (r0, o0) not in bandas or (r1, o1) not in bandas:
                     continue
                 b0, b1 = bandas[(r0, o0)], bandas[(r1, o1)]
-                h0 = (b0[1] - b0[0]) * c / b0[2]
-                h1 = (b1[1] - b1[0]) * c / b1[2]
+                h0 = (b0[1] - b0[0]) * k / b0[2]
+                h1 = (b1[1] - b1[0]) * k / b1[2]
                 y0 = b0[0] + desde[o0]
                 y1 = b1[0] + hacia[o1]
                 _cinta(ax, i * SEP + .16, (i + 1) * SEP - .16, y0, y0 + h0, y1, y1 + h1,
@@ -152,31 +213,34 @@ def fig_flujo(qids, png=False, nombre="fig_flujo"):
                 hacia[o1] += h1
 
         for j, r in enumerate(rondas):
-            for o in opciones:
-                if (r, o) not in bandas:
+            for c_ in cats:
+                if (r, c_) not in bandas:
                     continue
-                y0, y1, c = bandas[(r, o)]
+                y0, y1, k = bandas[(r, c_)]
                 ax.add_patch(plt.Rectangle((j * SEP - .16, y0), .32, y1 - y0,
-                                           facecolor=pal[o], edgecolor=PANEL,
-                                           linewidth=1.2, zorder=3))
+                                           facecolor=pal[c_], edgecolor=PANEL,
+                                           linewidth=1.5, zorder=3))
                 if y1 - y0 > .07:
-                    ax.text(j * SEP, (y0 + y1) / 2, str(c), ha="center", va="center",
-                            color="white", fontsize=8.5, fontweight="bold", zorder=4)
+                    ax.text(j * SEP, (y0 + y1) / 2, str(k), ha="center", va="center",
+                            color=_tinta_sobre(pal[c_]), fontsize=8.5, fontweight="bold",
+                            zorder=4)
+                etiqueta = f"{marcas[c_]}  {_envuelve(c_, 24)}" if c_ in marcas else _envuelve(c_, 24)
                 if j == 0:
-                    ax.text(-.32, (y0 + y1) / 2, _corta(o, 19), ha="right", va="center",
-                            fontsize=8, color=TINTA2, zorder=4)
+                    ax.text(-.32, (y0 + y1) / 2, etiqueta, ha="right", va="center",
+                            fontsize=7.8, color=TINTA2, zorder=4, linespacing=1.15)
                 elif j == len(rondas) - 1:
-                    ax.text(j * SEP + .32, (y0 + y1) / 2, _corta(o, 19), ha="left", va="center",
-                            fontsize=8, color=TINTA2, zorder=4)
+                    ax.text(j * SEP + .32, (y0 + y1) / 2, etiqueta, ha="left", va="center",
+                            fontsize=7.8, color=TINTA2, zorder=4, linespacing=1.15)
 
         seguidos = piv.dropna(subset=[rondas[0], rondas[-1]])
         movidos = int((seguidos[rondas[0]] != seguidos[rondas[-1]]).sum())
-        ax.set_title(f"{q} — {_corta(datos.texto(q), 44)}\n"
-                     f"{movidos} de {len(seguidos)} cambian de opción entre la 1.ª y la 3.ª",
-                     fontsize=9.5, color=TINTA, loc="left", pad=10)
+        que = "de postura" if pal is COL_POSTURA else "de opción"
+        ax.set_title(f"{q} — {_corta(datos.texto(q), 60)}\n"
+                     f"{movidos} de {len(seguidos)} cambian {que} entre la 1.ª y la "
+                     f"{rondas[-1]}.ª ronda", fontsize=9.5, color=TINTA, loc="left", pad=10)
         ax.set_xticks([j * SEP for j in range(len(rondas))])
         ax.set_xticklabels([f"Ronda {r}" for r in rondas])
-        ax.set_xlim(-2.0, (len(rondas) - 1) * SEP + 2.0)
+        ax.set_xlim(-2.5, (len(rondas) - 1) * SEP + 2.5)
         ax.set_ylim(-.04, 1.06)
         ax.set_yticks([])
         for s in ("left", "bottom"):
@@ -189,36 +253,25 @@ def fig_flujo(qids, png=False, nombre="fig_flujo"):
 
 # ── 2. Cuadrícula panelista × pregunta ────────────────────────────────────────
 
-def fig_cuadricula(panel, png=False):
-    """
-    Quién respondió qué, panelista por panelista y pregunta por pregunta, en cada ronda.
-
-    Sustituye a la red de acuerdo entre panelistas que había antes. Aquella promediaba el
-    acuerdo sobre todas las preguntas del panel, y con 4–6 preguntas categóricas cada arista
-    descansaba en una mediana de 2 a 5 preguntas: un "acuerdo del 50 %" quería decir
-    "coincidieron en 1 de 2", y el movimiento entre rondas era una persona cambiando una
-    respuesta. Esto no promedia nada: se ve en QUÉ preguntas coincide cada grupo y en cuáles
-    se parte, y las respuestas sin clasificar quedan como huecos en vez de desaparecer.
-
-    Las filas se ordenan por parecido, así que los bloques de color contiguos son coaliciones.
-    """
+def _preguntas_cat(panel):
     d = datos.cargar_extraidas()
     g = d[(d.Panel == panel) & d.is_valid_response &
           d.question_type.isin(["nominal", "binary"])]
-    rondas = sorted(g.Round.unique())
     preguntas = sorted(g.qid.unique(), key=lambda q: int(q.split("_Q")[1]))
+    return g, preguntas
+
+
+def _es_postura(q):
+    from stance_map import STANCE_MAP
+    return q in STANCE_MAP
+
+
+def _orden_filas(g, preguntas, esq, ronda):
+    """Panelistas ordenados por parecido en la ronda final, sobre TODAS las preguntas de opción
+    del panel: así las dos cuadrículas comparten el orden de filas."""
     panelistas = sorted(g.Panelist.unique())
-
-    # una paleta por pregunta: los colores sólo se comparan DENTRO de su columna
-    pal = {}
-    for q in preguntas:
-        opts = sorted(x for x in g[g.qid == q].selected_option.dropna().unique()
-                      if x not in datos.SIN_OPCION)
-        pal[q] = {o: CATEG_GRID[i % len(CATEG_GRID)] for i, o in enumerate(opts)}
-
-    # orden de filas por parecido, usando la última ronda como referencia
-    ref = g[g.Round == rondas[-1]].pivot_table(index="Panelist", columns="qid",
-                                               values="selected_option", aggfunc="first")
+    ref = g[g.Round == ronda].pivot_table(index="Panelist", columns="qid",
+                                          values="cat", aggfunc="first")
     ref = ref.reindex(index=panelistas, columns=preguntas)
     orden, restantes = [], list(panelistas)
     actual = restantes.pop(0)
@@ -230,130 +283,280 @@ def fig_cuadricula(panel, png=False):
         actual = max(restantes, key=parecido)
         restantes.remove(actual)
         orden.append(actual)
+    return orden
 
-    fig, axes = plt.subplots(1, len(rondas), figsize=(2.5 * len(rondas) + 1.6,
+
+def fig_cuadricula(panel, png=False):
+    """
+    Quién respondió qué, panelista por panelista y pregunta por pregunta, en cada ronda.
+
+    Sustituye a la red de acuerdo entre panelistas que había antes, que promediaba el acuerdo
+    sobre 2 a 5 preguntas por par. Esto no promedia nada: se ve en QUÉ preguntas coincide cada
+    grupo y en cuáles se parte, y las respuestas sin clasificar quedan como huecos.
+
+    Son DOS figuras con el mismo orden de filas: una para las preguntas de sí / no (postura:
+    azul ✓ a favor, rojo ✕ en contra, gris ~ condicional) y otra para las de opciones (tres
+    colores + letra). En una sola, el azul significaba «a favor» en unas columnas y «opción A»
+    en otras; y cinco colores juntos no se distinguen con daltonismo, así que no hay paleta que
+    lo resuelva dentro de una figura.
+
+    Devuelve {"postura": ruta o None, "opciones": ruta o None}.
+    """
+    g, preguntas = _preguntas_cat(panel)
+    rondas = sorted(g.Round.unique())
+    esq = {q: esquema(q, g[g.qid == q].selected_option) for q in preguntas}
+    g = g.assign(cat=[esq[q][0](o) for q, o in zip(g.qid, g.selected_option)])
+    orden = _orden_filas(g, preguntas, esq, rondas[-1])
+    salida = {}
+    for tipo, qs in (("postura", [q for q in preguntas if _es_postura(q)]),
+                     ("opciones", [q for q in preguntas if not _es_postura(q)])):
+        salida[tipo] = (_cuadricula(g, qs, esq, orden, rondas,
+                                    f"fig_cuadricula_{tipo}_panel{panel}", png) if qs else None)
+    return salida
+
+
+def _cuadricula(g, preguntas, esq, orden, rondas, nombre, png):
+    ancho = max(1.9, .52 * len(preguntas) + .3)
+    fig, axes = plt.subplots(1, len(rondas), figsize=(ancho * len(rondas) + 1.4,
                                                       0.42 * len(orden) + 1.9),
                              sharey=True)
     axes = np.atleast_1d(axes)
+    from config import OFF_TOPIC_LABEL
     for ax, r in zip(axes, rondas):
-        piv = g[g.Round == r].pivot_table(index="Panelist", columns="qid",
-                                          values="selected_option", aggfunc="first")
+        gr = g[g.Round == r]
+        piv = gr.pivot_table(index="Panelist", columns="qid", values="cat", aggfunc="first")
         piv = piv.reindex(index=orden, columns=preguntas)
+        # la opción cruda distingue por qué falta la categoría
+        crudo = gr.pivot_table(index="Panelist", columns="qid", values="selected_option",
+                               aggfunc="first").reindex(index=orden, columns=preguntas)
         for i, p_ in enumerate(orden):
             for j, q in enumerate(preguntas):
                 v = piv.loc[p_, q]
-                sin = pd.isna(v) or v in datos.SIN_OPCION
-                ax.add_patch(plt.Rectangle(
-                    (j + .06, i + .06), .88, .88,
-                    facecolor="#f4f2ee" if sin else pal[q].get(v, GRIS),
-                    edgecolor=PANEL, linewidth=1.4))
-                if sin:
-                    ax.plot([j + .35, j + .65], [i + .5, i + .5], color="#cfcbc3", lw=1.2)
+                _, pal, _, marcas = esq[q]
+                if pd.isna(v):
+                    o = crudo.loc[p_, q]
+                    # sin respuesta: celda vacía; fuera de tema: FT; respondió pero no se pudo
+                    # clasificar (ninguna opción encaja, o las corridas no forman mayoría): ?
+                    marca = ("" if not isinstance(o, str) else
+                             "FT" if o == OFF_TOPIC_LABEL else "?")
+                    ax.add_patch(plt.Rectangle((j + .06, i + .06), .88, .88, facecolor=VACIO,
+                                               edgecolor="#d9d6cf" if marca else PANEL,
+                                               linewidth=1.0 if marca else 1.4))
+                    if marca:
+                        ax.text(j + .5, i + .52, marca, ha="center", va="center",
+                                fontsize=7.5, color=TINTA2, fontweight="bold")
+                    continue
+                col = pal.get(v, OTRAS)
+                ax.add_patch(plt.Rectangle((j + .06, i + .06), .88, .88, facecolor=col,
+                                           edgecolor=PANEL, linewidth=1.4))
+                ax.text(j + .5, i + .52, marcas.get(v, "·"), ha="center", va="center",
+                        fontsize=8.5, color=_tinta_sobre(col), fontweight="bold")
         ax.set_xlim(0, len(preguntas)); ax.set_ylim(len(orden), 0)
         ax.set_xticks([j + .5 for j in range(len(preguntas))])
         ax.set_xticklabels([q.split("_")[1] for q in preguntas], fontsize=8)
         ax.set_yticks([i + .5 for i in range(len(orden))])
-        ax.set_yticklabels([str(p_)[-2:] for p_ in orden], fontsize=8)
+        ax.set_yticklabels([str(p_) for p_ in orden], fontsize=8)
         ax.set_title(f"Ronda {r}", fontsize=9.5, color=TINTA, pad=8)
         for sp in ax.spines.values():
             sp.set_visible(False)
         ax.tick_params(length=0)
     axes[0].set_ylabel("Panelista", fontsize=8.5)
     fig.tight_layout()
-    return _guardar(fig, f"fig_cuadricula_panel{panel}", png)
+    return _guardar(fig, nombre, png)
 
 
 def leyenda_opciones(panel):
-    """Leyenda HTML de la cuadrícula: qué color es qué opción, por pregunta."""
-    d = datos.cargar_extraidas()
-    g = d[(d.Panel == panel) & d.is_valid_response &
-          d.question_type.isin(["nominal", "binary"])]
-    preguntas = sorted(g.qid.unique(), key=lambda q: int(q.split("_Q")[1]))
+    """Leyenda HTML de la cuadrícula de opciones: qué letra es qué opción, por pregunta."""
+    g, preguntas = _preguntas_cat(panel)
     bloques = []
-    for q in preguntas:
-        opts = sorted(x for x in g[g.qid == q].selected_option.dropna().unique()
-                      if x not in datos.SIN_OPCION)
+    for q in [q for q in preguntas if not _es_postura(q)]:
+        cat, pal, orden, marcas = esquema(q, g[g.qid == q].selected_option)
+        usados = {cat(o) for o in g[g.qid == q].selected_option} - {None}
         chips = "".join(
-            f'<span class="chip"><i style="background:{CATEG_GRID[i % len(CATEG_GRID)]}"></i>'
-            f'{_corta(o, 30)}</span>'
-            for i, o in enumerate(opts))
+            f'<span class="chip"><i style="background:{pal[c]}"></i>'
+            f'<b>{marcas[c]}</b> {html.escape(_corta(c, 38))}</span>'
+            for c in orden if c in usados)
         bloques.append(f'<div class="legq"><b>{q.split("_")[1]}</b> '
-                       f'<span class="legqt">{_corta(datos.texto(q), 52)}</span>{chips}</div>')
+                       f'<span class="legqt">{html.escape(_corta(datos.texto(q), 52))}</span>'
+                       f'{chips}</div>')
     return '<div class="leygrid">' + "".join(bloques) + "</div>"
 
 
-# ── 3. Trayectoria del consenso por pregunta ──────────────────────────────────
+# ── 3. Trayectoria del acuerdo por pregunta ───────────────────────────────────
 
 def fig_trayectoria(panel, png=False):
     """
-    Cuánto se concentra el panel en su opción mayoritaria, ronda a ronda, para las preguntas
-    de ESTE panel. Una línea por pregunta, con su id al final y coloreada según lo que le pasó.
+    Cuánto se concentra el panel en su postura u opción mayoritaria, ronda a ronda, para las
+    preguntas de ESTE panel. Una línea por pregunta, con su id al final y coloreada según su
+    resultado. El último tramo va punteado si no es estable (cambio neto > 15 %).
 
-    Es por panel a propósito: los cuatro paneles son estudios independientes —distintos
-    panelistas, distintas preguntas— así que ponerlos en un eje común invitaría a comparaciones
-    que los datos no sostienen.
+    Las líneas se separan levemente en horizontal para que dos preguntas con los mismos
+    valores no se tapen, y cada etiqueta se une a su punto.
     """
     import json as _json
+    from config import CONSENSUS_THRESHOLD, AGREEMENT_LEVELS
     cv = datos.convergencia()
-    cv = cv[(cv.Panel == panel) & (cv.type == "categorical")]
-    conv = cv.set_index("qid")["resultado"].to_dict()
-
-    # Sobre la misma base que el resultado: la postura en las preguntas de sí / no, la opción en
-    # las demás (criterio 1.2 del 15-10-2026).
-    COL = {"Consenso": "#1b9e77", "Consenso no consolidado": AZUL,
-           "Disenso estable": GRIS, "Sin estabilizar": ROJO}
+    cv = cv[(cv.Panel == panel) & (cv.type == "categorical")].sort_values("qid")
     rondas = sorted({int(r) for s in cv.rounds for r in _json.loads(s)})
-    fig, ax = plt.subplots(figsize=(6.4, 3.9))
+    fig, ax = plt.subplots(figsize=(6.6, 4.0))
 
+    k = len(cv)
     finales = []
-    for _, fila in cv.iterrows():
-        q = fila.qid
-        sh = {int(k): v for k, v in _json.loads(fila.shares).items() if v is not None}
+    for i, (_, fila) in enumerate(cv.iterrows()):
+        sh = {int(r): v for r, v in _json.loads(fila.shares).items() if v is not None}
         if not sh:
             continue
         xs = sorted(sh)
-        col = COL.get(conv.get(q), "#c8c8c8")
-        ax.plot(xs, [sh[x] * 100 for x in xs], color=col, lw=2.0, marker="o", markersize=5,
-                markerfacecolor=PANEL, markeredgewidth=1.6, markeredgecolor=col, zorder=3)
-        if rondas[-1] in sh:
-            finales.append((float(sh[rondas[-1]] * 100), q))
+        dx = (i - (k - 1) / 2) * .035
+        col = COL_RESULTADO.get(fila.resultado, OTRAS)
+        ys = [sh[x] * 100 for x in xs]
+        xx = [x + dx for x in xs]
+        inestable = fila.stable is False or str(fila.stable) == "False"
+        for a in range(len(xx) - 1):
+            ultimo = a == len(xx) - 2
+            ax.plot(xx[a:a + 2], ys[a:a + 2], color=col, lw=2.0, zorder=3,
+                    ls=(0, (3, 2)) if (ultimo and inestable) else "-")
+        ax.scatter(xx, ys, s=34, color=PANEL, edgecolor=col, linewidth=1.8, zorder=4)
+        if xs[-1] == rondas[-1]:
+            finales.append([ys[-1], xx[-1], fila.qid, col])
 
+    # etiquetas a la derecha, separadas al menos 5,5 puntos y unidas a su punto
     finales.sort()
-    ultimo = -99
-    for y, q in finales:
-        yy = max(y, ultimo + 5.0)
-        ax.annotate(q, (rondas[-1], yy), xytext=(8, 0), textcoords="offset points",
-                    fontsize=8, color=TINTA2, va="center", annotation_clip=False)
-        ultimo = yy
+    pos = []
+    for y, _, _, _ in finales:
+        pos.append(max(y, pos[-1] + 5.5) if pos else y)
+    for (y, x, q, col), yy in zip(finales, pos):
+        xe = rondas[-1] + .22
+        ax.plot([x + .03, xe - .03], [y, yy], color=LINEA, lw=.8, zorder=2)
+        ax.text(xe, yy, q, fontsize=8, color=TINTA2, va="center")
 
-    for y, txt in ((70, "acuerdo alto"), (60, "moderado"), (50, "bajo")):
-        ax.axhline(y, color=LINEA, lw=1, zorder=0)
-        ax.text(rondas[0] - .04, y + 1.6, txt, fontsize=7.4, color=TINTA3, ha="left")
+    ax.axhline(CONSENSUS_THRESHOLD * 100, color=TINTA3, lw=1.0, ls=(0, (4, 3)), zorder=1)
+    ax.text(rondas[0] - .12, CONSENSUS_THRESHOLD * 100 + 1.5, "acuerdo alto · 70 %",
+            fontsize=7.4, color=TINTA2, ha="left")
+    for nombre, u in AGREEMENT_LEVELS[1:]:
+        ax.axhline(u * 100, color=LINEA, lw=.9, ls=(0, (1, 2)), zorder=1)
+        ax.text(rondas[0] - .12, u * 100 + 1.5, nombre.replace("Acuerdo ", "") +
+                f" · {int(u * 100)} %", fontsize=7.2, color=TINTA3, ha="left")
 
     ax.set_xticks(rondas)
     ax.set_xticklabels([f"Ronda {r}" for r in rondas])
-    ax.set_xlim(rondas[0] - .06, rondas[-1] + .55)
-    ax.set_ylim(20, 106)
-    ax.set_ylabel("Panelistas en la postura u opción mayoritaria (%)")
-    ax.grid(axis="y", color=LINEA, lw=.6, zorder=0)
+    ax.set_xlim(rondas[0] - .15, rondas[-1] + .6)
+    ax.set_ylim(0, 106)
+    # Es un porcentaje del panel, no un conteo: con paneles de 7 a 10 personas, un eje que
+    # llega a «100» sin el signo se leía como cien panelistas.
+    ax.set_yticks(range(0, 101, 20))
+    ax.set_yticklabels([f"{v} %" for v in range(0, 101, 20)])
+    ax.set_ylabel("% del panel en la postura u opción mayoritaria")
+    ax.grid(axis="y", color=LINEA, lw=.5, zorder=0, alpha=.6)
     ax.set_axisbelow(True)
     ax.spines["left"].set_visible(False)
     ax.tick_params(length=0)
-    usadas = {conv.get(q) for _, q in finales}
-    manijas = [plt.Line2D([], [], color=v, lw=2.2, label=k) for k, v in COL.items() if k in usadas]
+    usadas = set(cv.resultado)
+    manijas = [plt.Line2D([], [], color=v, lw=2.2, label=k_) for k_, v in COL_RESULTADO.items()
+               if k_ in usadas]
+    if any(str(s) == "False" for s in cv.stable):
+        manijas.append(plt.Line2D([], [], color=TINTA3, lw=2.0, ls=(0, (3, 2)),
+                                  label="último tramo no estable (> 15 %)"))
     if manijas:
         ax.legend(handles=manijas, frameon=False, fontsize=8, ncol=2,
-                  loc="lower center", bbox_to_anchor=(.5, -.26))
+                  loc="upper center", bbox_to_anchor=(.5, -.1))
     fig.tight_layout()
     return _guardar(fig, f"fig_trayectoria_panel{panel}", png)
 
 
-# NOTA: aquí vivía fig_movimiento, que ponía los cuatro paneles en un mismo eje
-# (cuánto se mueve su gente frente a cuánto converge) y de ahí salía el hallazgo
-# "moverse no es converger". Se retiró: los paneles son estudios independientes, con
-# distintos panelistas y distintos conjuntos de preguntas, así que la variación entre
-# ellos está confundida con la dificultad de sus preguntas. Con n=4 estudios no
-# comparables, esa figura no sostenía ninguna conclusión.
+# ── 4. Árbol de la taxonomía (pregunta → postura → calificador) ───────────────
+
+def fig_arbol(panel, png=False):
+    """
+    La taxonomía de cada pregunta de opción y cómo la usó el panel en la ronda final.
+
+    Pregunta → postura → calificadores en las de sí / no; pregunta → opciones en las demás.
+    La barra es cuántos panelistas eligieron cada hoja en la ronda final, sobre los
+    clasificados. Las hojas que nadie eligió también salen (en gris y con 0): muestran qué
+    parte de la taxonomía usó el panel y cuál no.
+    """
+    from stance_map import STANCE_MAP, STANCE_ES
+    from taxonomy import EMILY_TAXONOMY
+    from config import OFF_TOPIC_OPTION
+    d = datos.clasificadas()
+    d = d[d.Panel == panel]
+    _, preguntas = _preguntas_cat(panel)
+    res = {r.qid: r for _, r in datos.convergencia().iterrows()}
+
+    filas = []           # (tipo, nivel, texto, n, total, color, extra)
+    for q in preguntas:
+        g = d[d.qid == q]
+        if g.empty:
+            continue
+        fin = g[g.Round == g.Round.max()]
+        cuenta = collections.Counter(fin.selected_option)
+        total = sum(cuenta.values())
+        opciones = [o for o in EMILY_TAXONOMY[q].get("options", []) if o != OFF_TOPIC_OPTION]
+        rr = res.get(q)
+        filas.append(("pregunta", 0, f"{q}  {datos.texto(q)}", total, total, None,
+                      rr.resultado if rr is not None else ""))
+        if q in STANCE_MAP:
+            grupos = collections.OrderedDict((p, []) for p in ORDEN_POSTURA)
+            for o in opciones:
+                st, calif = STANCE_MAP[q].get(o, (None, None))
+                grupos[STANCE_ES.get(st) or "Sin postura"].append((calif or (o if not st else "(sin matiz)"), o))
+            for p, hojas in grupos.items():
+                if not hojas:
+                    continue
+                n_p = sum(cuenta.get(o, 0) for _, o in hojas)
+                filas.append(("postura", 1, p, n_p, total, COL_POSTURA[p], ""))
+                for texto, o in hojas:
+                    filas.append(("hoja", 2, texto, cuenta.get(o, 0), total, COL_POSTURA[p], ""))
+        else:
+            _, pal, _, _ = esquema(q, g.selected_option)
+            for o in opciones:
+                filas.append(("hoja", 1, o, cuenta.get(o, 0), total, pal.get(o, OTRAS), ""))
+        filas.append(("espacio", 0, "", 0, 0, None, ""))
+
+    alto = .23
+    fig, ax = plt.subplots(figsize=(7.4, max(2.5, len(filas) * alto + .4)))
+    X_TXT, X_BAR, ANCHO = (0, .32, .64), 5.1, 2.2
+    y = 0
+    padre = {}
+    for tipo, nivel, texto, n, total, col, extra in filas:
+        if tipo == "espacio":
+            y += .6
+            continue
+        x = X_TXT[nivel]
+        if nivel > 0 and padre.get(nivel - 1) is not None:     # conector en codo
+            xp = X_TXT[nivel - 1] + .12
+            ax.plot([xp, xp, x - .06], [padre[nivel - 1] + .25, y, y], color=LINEA, lw=.9,
+                    zorder=1)
+        if tipo == "pregunta":
+            ax.text(x, y, _corta(texto, 82), fontsize=8.6, color=TINTA, fontweight="bold",
+                    va="center")
+            if extra:
+                ax.add_patch(plt.Rectangle((X_BAR + ANCHO + .02, y - .17), .16, .34,
+                                           facecolor=COL_RESULTADO.get(extra, OTRAS),
+                                           edgecolor="none"))
+                ax.text(X_BAR + ANCHO + .24, y, extra, fontsize=7.8, color=TINTA2, va="center")
+            padre = {0: y}
+        elif tipo == "postura":
+            ax.text(x, y, MARCA_POSTURA[texto] + "  " + texto, fontsize=8.3, color=TINTA,
+                    va="center")
+            ax.text(X_BAR - .1, y, f"{n} de {total}", fontsize=7.8, color=TINTA2,
+                    va="center", ha="right")
+            padre[1] = y
+        else:
+            usado = n > 0
+            ax.text(x, y, _corta(texto, 60 if nivel == 2 else 64), fontsize=7.9,
+                    color=TINTA2 if usado else TINTA3, va="center")
+            if usado and total:
+                ax.add_patch(plt.Rectangle((X_BAR, y - .16), ANCHO * n / total, .32,
+                                           facecolor=col, edgecolor="none"))
+            ax.text(X_BAR + (ANCHO * n / total if total and usado else 0) + .06, y, str(n),
+                    fontsize=7.8, color=TINTA2 if usado else TINTA3, va="center")
+        y += 1
+    ax.set_xlim(0, X_BAR + ANCHO + 1.9)
+    ax.set_ylim(y, -1)
+    ax.axis("off")
+    fig.tight_layout()
+    return _guardar(fig, f"fig_arbol_panel{panel}", png)
 
 
 def construir_todo(png=False):
@@ -371,8 +574,9 @@ def construir_todo(png=False):
                .sort_values(ascending=False))
         elegidas = [q for q in top.head(2).index if top[q] > 0]
         salida[panel] = {
-            "cuadricula": fig_cuadricula(panel, png),
+            "cuadricula": fig_cuadricula(panel, png),        # {"postura", "opciones"}
             "trayectoria": fig_trayectoria(panel, png),
+            "arbol": fig_arbol(panel, png),
             "flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
         }
     return salida
@@ -383,4 +587,4 @@ if __name__ == "__main__":
     r = construir_todo(png="--png" in sys.argv)
     print("Figuras generadas en", SALIDA + "/")
     for panel, v in r.items():
-        print(f"  Panel {panel}: cuadrícula + trayectoria + {len(v['flujos'])} aluvial(es)")
+        print(f"  Panel {panel}: cuadrícula + trayectoria + árbol + {len(v['flujos'])} aluvial(es)")
