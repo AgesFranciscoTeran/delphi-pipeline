@@ -293,27 +293,30 @@ def fig_trayectoria(panel, png=False):
     panelistas, distintas preguntas— así que ponerlos en un eje común invitaría a comparaciones
     que los datos no sostienen.
     """
-    c = pd.read_csv(datos._ruta("03_categorical_consensus.csv"))
-    c["qid"] = [datos.qid(p_, q) for p_, q in zip(c.Panel, c.Question)]
-    c = c[c.Panel == panel]
-    conv = datos.convergencia().set_index("qid")["convergence"].to_dict()
+    import json as _json
+    cv = datos.convergencia()
+    cv = cv[(cv.Panel == panel) & (cv.type == "categorical")]
+    conv = cv.set_index("qid")["resultado"].to_dict()
 
-    COL = {"Convergió": AZUL, "Se dispersó": ROJO,
-           "Estable en acuerdo": "#1b9e77", "Estable sin acuerdo": GRIS}
-    rondas = sorted(c.Round.unique())
+    # Sobre la misma base que el resultado: la postura en las preguntas de sí / no, la opción en
+    # las demás (criterio 1.2 del 15-10-2026).
+    COL = {"Consenso": "#1b9e77", "Consenso no consolidado": AZUL,
+           "Disenso estable": GRIS, "Sin estabilizar": ROJO}
+    rondas = sorted({int(r) for s in cv.rounds for r in _json.loads(s)})
     fig, ax = plt.subplots(figsize=(6.4, 3.9))
 
     finales = []
-    for q, g in c.groupby("qid"):
-        g = g.sort_values("Round")
-        if g.modal_share.isna().all():
+    for _, fila in cv.iterrows():
+        q = fila.qid
+        sh = {int(k): v for k, v in _json.loads(fila.shares).items() if v is not None}
+        if not sh:
             continue
-        col = COL.get(conv.get(q), GRIS)
-        ax.plot(g.Round, g.modal_share * 100, color=col, lw=2.0, marker="o", markersize=5,
+        xs = sorted(sh)
+        col = COL.get(conv.get(q), "#c8c8c8")
+        ax.plot(xs, [sh[x] * 100 for x in xs], color=col, lw=2.0, marker="o", markersize=5,
                 markerfacecolor=PANEL, markeredgewidth=1.6, markeredgecolor=col, zorder=3)
-        fin = g[g.Round == g.Round.max()]
-        if not fin.empty and pd.notna(fin.modal_share.iloc[0]):
-            finales.append((float(fin.modal_share.iloc[0] * 100), q))
+        if rondas[-1] in sh:
+            finales.append((float(sh[rondas[-1]] * 100), q))
 
     finales.sort()
     ultimo = -99
@@ -323,7 +326,7 @@ def fig_trayectoria(panel, png=False):
                     fontsize=8, color=TINTA2, va="center", annotation_clip=False)
         ultimo = yy
 
-    for y, txt in ((75, "consenso fuerte"), (60, "mayoría clara")):
+    for y, txt in ((70, "acuerdo alto"), (60, "moderado"), (50, "bajo")):
         ax.axhline(y, color=LINEA, lw=1, zorder=0)
         ax.text(rondas[0] - .04, y + 1.6, txt, fontsize=7.4, color=TINTA3, ha="left")
 
@@ -331,7 +334,7 @@ def fig_trayectoria(panel, png=False):
     ax.set_xticklabels([f"Ronda {r}" for r in rondas])
     ax.set_xlim(rondas[0] - .06, rondas[-1] + .55)
     ax.set_ylim(20, 106)
-    ax.set_ylabel("Panelistas en la opción mayoritaria (%)")
+    ax.set_ylabel("Panelistas en la postura u opción mayoritaria (%)")
     ax.grid(axis="y", color=LINEA, lw=.6, zorder=0)
     ax.set_axisbelow(True)
     ax.spines["left"].set_visible(False)

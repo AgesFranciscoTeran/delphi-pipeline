@@ -121,9 +121,9 @@ EMILY_TAXONOMY = {
         "text": "How many hours of clinical practice should a student receive per module?",
         "type": "quantitative",
         "bands": {
-            "Minimal": "1-2",
-            "Moderate": "3-5",
-            "Intensive": ">=6",
+            "Minimal": "<=2",
+            "Moderate": ">2 and <=5",
+            "Intensive": ">5",
         },
         "extra_axes": [
             {
@@ -142,9 +142,9 @@ EMILY_TAXONOMY = {
         "text": "How many hours of teaching do you believe we should receive per week?",
         "type": "quantitative",
         "bands": {
-            "Minimal": "3-5",
-            "Moderate": "6-8",
-            "Intensive": ">=9",
+            "Minimal": "<=5",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -157,6 +157,12 @@ EMILY_TAXONOMY = {
         ],
         "unit": "hours/week",
         "unit_assumed": False,
+        "measure": "hours of PBL/ABP sessions per week only, not the total teaching hours",
+        "secondary": "total weekly teaching hours, if the panelist states them",
+        "measure_keywords": [
+            "ABP",
+            "PBL",
+        ],
     },
     "P2_Q1": {
         "emily_num": 8,
@@ -193,9 +199,9 @@ EMILY_TAXONOMY = {
         "text": "How many hours daily should medical students receive in presential classes?",
         "type": "quantitative",
         "bands": {
-            "Minimal": "3-5",
-            "Moderate": "6-8",
-            "Intensive": ">=9",
+            "Minimal": "<=5",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -283,9 +289,9 @@ EMILY_TAXONOMY = {
         "text": "How many hours of theoretical teaching per week should medicine students receive?",
         "type": "quantitative",
         "bands": {
-            "Minimal": "3-5",
-            "Moderate": "6-8",
-            "Intensive": ">=9",
+            "Minimal": "<=5",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -306,7 +312,8 @@ EMILY_TAXONOMY = {
         "type": "hybrid",
         "bands": {
             "Few": "<50",
-            "More": ">=50",
+            "More": "50-80",
+            "Many": ">80",
         },
         "extra_axes": [
             {
@@ -365,8 +372,8 @@ EMILY_TAXONOMY = {
         "type": "quantitative",
         "bands": {
             "Minimal": "<=5",
-            "Moderate": "6-8",
-            "Intensive": ">=9",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -387,8 +394,8 @@ EMILY_TAXONOMY = {
         "type": "quantitative",
         "bands": {
             "Minimal": "<=5",
-            "Moderate": "6-8",
-            "Intensive": ">=9",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -425,8 +432,8 @@ EMILY_TAXONOMY = {
         "type": "quantitative",
         "bands": {
             "Minimal": "<=5",
-            "Moderate": "6-8",
-            "Intensive": ">=9",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -477,9 +484,9 @@ EMILY_TAXONOMY = {
         "text": "How many hours of theoretical teaching per day should students receive?",
         "type": "quantitative",
         "bands": {
-            "Minimal": "3-5",
-            "Moderate": "6-8",
-            "Intensive": ">9",
+            "Minimal": "<=5",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -497,9 +504,9 @@ EMILY_TAXONOMY = {
         "text": "How many hours of practice teaching per day should students receive?",
         "type": "quantitative",
         "bands": {
-            "Minimal": "3-5",
-            "Moderate": "6-8",
-            "Intensive": ">9",
+            "Minimal": "<=5",
+            "Moderate": ">5 and <=8",
+            "Intensive": ">8",
         },
         "extra_axes": [
             {
@@ -579,7 +586,8 @@ EMILY_TAXONOMY = {
         "type": "hybrid",
         "bands": {
             "Few": "<50",
-            "More": ">=50",
+            "More": "50-80",
+            "Many": ">80",
         },
         "extra_axes": [
             {

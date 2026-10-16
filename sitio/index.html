@@ -206,7 +206,7 @@ footer p{max-width:46rem}
     <p class="kicker">Universidad San Francisco de Quito · Estudio Delphi de currículo médico</p>
     <h1>Qué decidió cada panel</h1>
     <p class="sub">Resultados del análisis computacional del estudio Delphi, panel por panel, y lo que hace falta para cerrar el artículo de método.</p>
-    <p class="corrida"><b>Resultados preliminares.</b> Clasificados por <code>zai-org/GLM-5.3-Flash</code> el 2026-09-28, contra la taxonomía <code>f7f3921d91aa</code>. Voto mayoritario de <b>3</b> corridas independientes, no una sola: ver «Qué es estable y qué no». La taxonomía es el documento «Posturas varias opciones» v4 de Emily (27-09-2026). La validación contra sus etiquetas (κ = 0,72) se midió con el modelo anterior y contra las opciones viejas, y hay que rehacerla. Faltan además las decisiones de taxonomía de la sección de abajo.</p>
+    <p class="corrida"><b>Resultados preliminares.</b> Clasificados por <code>zai-org/GLM-5.3-Flash</code> el 2026-10-16, contra la taxonomía <code>2da6a151c2b8</code>. Voto mayoritario de <b>3</b> corridas independientes, no una sola: ver «Qué es estable y qué no». La taxonomía es el documento «Posturas varias opciones» v4 de Emily (27-09-2026), con los acuerdos del 15-10-2026. La validación contra sus etiquetas (κ = 0,72) se midió con el modelo anterior y contra las opciones viejas, y hay que rehacerla. Faltan además las decisiones de taxonomía de la sección de abajo.</p>
   </div>
 </header>
 <nav class="toc"><ul><li><a href="#paneles">Los paneles</a></li><li><a href="#metodo">Cómo funciona</a></li><li><a href="#estado">Estado</a></li><li><a href="#confianza">Confiabilidad</a></li></ul></nav>
@@ -216,7 +216,7 @@ footer p{max-width:46rem}
   <h2><span class="sec-n">01</span>Cuatro estudios, cuatro páginas</h2>
   <p class="lead">Los cuatro paneles son <b>estudios independientes</b>: ningún panelista participa en más de uno, y de las 32 preguntas sólo una se repite entre paneles. Por eso cada uno tiene su página y no se agregan ni se comparan resultados entre ellos.</p>
   <div class="panelgrid">
-<a class="panelcard" href="panel1.html"><h3>Panel 1</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>2 de 4</b> preguntas de opción resueltas · <b>3</b> convergieron</p><p class="pc-pend">3 decisiones pendientes · 3 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel2.html"><h3>Panel 2</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>1 de 6</b> preguntas de opción resueltas · <b>1</b> convergieron</p><p class="pc-pend">2 decisiones pendientes · 1 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel3.html"><h3>Panel 3</h3><p class="pc-meta">10 panelistas · 10 preguntas · 3 rondas</p><p class="pc-res"><b>4 de 5</b> preguntas de opción resueltas · <b>4</b> convergieron</p><p class="pc-pend">3 decisiones pendientes · 5 preguntas numéricas preliminares</p></a><a class="panelcard" href="panel4.html"><h3>Panel 4</h3><p class="pc-meta">8 panelistas · 8 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 5</b> preguntas de opción resueltas · <b>5</b> convergieron</p><p class="pc-pend">3 decisiones pendientes · 3 preguntas numéricas preliminares</p></a>
+<a class="panelcard" href="panel1.html"><h3>Panel 1</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>2 de 7</b> preguntas con consenso · <b>0</b> con disenso estable</p><p class="pc-pend">1 decisión pendiente · 3 preguntas numéricas</p></a><a class="panelcard" href="panel2.html"><h3>Panel 2</h3><p class="pc-meta">7 panelistas · 7 preguntas · 3 rondas</p><p class="pc-res"><b>2 de 7</b> preguntas con consenso · <b>2</b> con disenso estable</p><p class="pc-pend">1 decisión pendiente · 1 pregunta numérica</p></a><a class="panelcard" href="panel3.html"><h3>Panel 3</h3><p class="pc-meta">10 panelistas · 10 preguntas · 3 rondas</p><p class="pc-res"><b>3 de 10</b> preguntas con consenso · <b>3</b> con disenso estable</p><p class="pc-pend">2 decisiones pendientes · 5 preguntas numéricas</p></a><a class="panelcard" href="panel4.html"><h3>Panel 4</h3><p class="pc-meta">8 panelistas · 8 preguntas · 3 rondas</p><p class="pc-res"><b>6 de 8</b> preguntas con consenso · <b>2</b> con disenso estable</p><p class="pc-pend">2 decisiones pendientes · 3 preguntas numéricas</p></a>
   </div>
   <div class="callout">
     <span class="ct">Por qué no hay una tabla que los junte</span>
@@ -235,6 +235,7 @@ footer p{max-width:46rem}
   respuesta a una de esas opciones; y se mide, ronda por ronda, cuánto se concentra el panel.
   El sistema no inventa categorías: si una respuesta no encaja en ninguna opción, queda marcada
   como tal en vez de forzarse.</p>
+  <p><b>Qué cuenta como consenso.</b> Los criterios se fijaron a priori, desde la literatura Delphi y antes de recalcular los resultados. El acuerdo es el porcentaje del panel en la postura (en las preguntas de sí / no), la opción o la banda mayoritaria: alto desde 70 %, moderado desde 60 %, bajo desde 50 %. Hay <b>consenso</b> cuando el acuerdo es alto en la última ronda y además es <b>estable</b>: entre las dos últimas rondas cambió de opción, en neto, como mucho el 15 % del panel. Si el acuerdo es alto pero todavía se mueve, es consenso no consolidado; si no hay acuerdo pero el panel ya no se mueve, es disenso estable, que también es un resultado del Delphi.</p>
 </section>
 
 <section id="estado">
@@ -245,22 +246,20 @@ footer p{max-width:46rem}
     <tbody>
 <tr><td class="capa">Convertir las respuestas en etiquetas</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">La etiqueta de una respuesta no es determinista, pero las conclusiones sí: se publica el voto mayoritario de tres corridas, las respuestas sin mayoría quedan sin clasificar, y la sección «Confiabilidad» muestra cuántas conclusiones cambiarían con una corrida sola.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Calcular el consenso de cada pregunta</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Mediana y rango para las numéricas, distribución y n para las de opción. Las respuestas fuera de tema se cuentan aparte y no entran en el denominador.</td><td class="quien">—</td></tr>
-<tr><td class="capa">Resultados numéricos</td><td><span class="est e-wip">Preliminares</span></td><td class="qtxt">La unidad ya está declarada en todas las preguntas de horas. Falta que los bordes de las bandas sean contiguos: hoy 1–2 horas, 5,5 y 8,5 no caen en ninguna.</td><td class="quien"><b>Emily</b> · bordes de las bandas</td></tr>
-<tr><td class="capa">Definir qué cuenta como «consenso»</td><td><span class="est e-wip">Provisional</span></td><td class="qtxt">Los umbrales actuales se fijaron mirando los datos. Hay que fijarlos con la literatura Delphi (acuerdo + estabilidad) <b>antes</b> de volver a mirar resultados.</td><td class="quien">Pancho · 1 semana</td></tr>
+<tr><td class="capa">Resultados numéricos</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Unidades declaradas y bandas contiguas (acordadas el 15-10-2026). El consenso se mide sobre la banda, con el mismo criterio que las preguntas de opción.</td><td class="quien">—</td></tr>
+<tr><td class="capa">Definir qué cuenta como «consenso»</td><td><span class="est e-ok">Listo</span></td><td class="qtxt">Fijado a priori el 15-10-2026 con la literatura Delphi: acuerdo alto (≥ 70 %) y estable (cambio neto ≤ 15 % entre las dos últimas rondas). Se reporta también con 75 y 80 %.</td><td class="quien">—</td></tr>
 <tr><td class="capa">Saber si el sistema codifica tan bien como una persona</td><td><span class="est e-wip">A medias</span></td><td class="qtxt">44 respuestas etiquetadas por una sola persona, repartidas entre los cuatro paneles: unas 11 por panel, y contra las opciones anteriores a la v4. Las hojas para la validación formal ya están generadas: 244 respuestas estratificadas por pregunta y ronda, ciegas, una por codificador. Falta que dos personas las etiqueten.</td><td class="quien">Emily + 2.º codificador</td></tr>
 <tr><td class="capa">Las razones que dan los panelistas</td><td><span class="est e-todo">Sin empezar</span></td><td class="qtxt">Hay que construir una lista de argumentos —el porqué de cada postura— igual que se hizo con las opciones.</td><td class="quien">Emily + Pancho · taxonomía de argumentos</td></tr>
     </tbody>
   </table></div>
   <div class="callout">
     <span class="ct">Qué hay que hacer ahora, en orden</span>
-    <p><b>1. Una sesión con Emily</b> para cerrar las decisiones de taxonomía que quedan,
-    empezando por la número 1 (bordes de las bandas), que es lo que falta
-    para poder reportar los resultados numéricos.
-    <br><b>2. Conseguir un segundo codificador.</b> La validación del método necesita 200–300
-    respuestas etiquetadas por dos personas, repartidas entre los cuatro paneles; hoy hay 44 y
-    las etiqueta una sola.
-    <br><b>3. Fijar los umbrales de consenso</b> con la literatura Delphi, antes de volver a mirar
-    los resultados.</p>
+    <p><b>1. Etiquetar a ciegas</b> la muestra de validación (Emily y una segunda persona). La
+    validación del método necesita 200–300 respuestas etiquetadas por dos personas, repartidas
+    entre los cuatro paneles; hoy hay 44 y las etiqueta una sola.
+    <br><b>2. Revisar P3_Q7 y P4_Q6</b> (Emily), después de la hoja ciega.
+    <br><b>3. Poner el veredicto</b> a la hoja de contraste con las síntesis de los
+    facilitadores.</p>
   </div>
 </section>
 
@@ -305,7 +304,7 @@ footer p{max-width:46rem}
   <h3>Qué es estable y qué no</h3>
   <p>Tres corridas completas del mismo código sobre los mismos datos, a temperatura 0 y con semilla fija, difieren en <b>entre el 2,8 y el 4,1 % de las etiquetas</b> según el par que se compare, en proporciones parecidas en las categóricas y en las numéricas; 41 de las 775 respuestas no reciben la misma etiqueta en las tres. No es un fallo del pipeline — el servidor agrupa peticiones en lotes de composición variable y la aritmética en coma flotante no es asociativa, así que el mismo texto puede recibir distinta etiqueta según con qué otras respuestas le tocó viajar.</p>
   <p>Por eso <b>una corrida sola no es una medición</b>, sino una muestra de un clasificador estocástico. Lo que se publica aquí es el voto mayoritario de varias corridas, y cada respuesta lleva su grado de acuerdo entre ellas.</p>
-  <p><b>Lo que importa es si cambian las conclusiones.</b> <b>3 de 43</b> conclusiones de ronda final cambian según qué corrida suelta se mire (P1_Q4, P1_Q6, P3_Q5), y en todas el voto coincide con lo que dice la mayoría de las corridas. Las respuestas en las que las 3 corridas no forman mayoría quedan sin clasificar en vez de resolverse por el orden de las corridas.</p>
+  <p><b>Lo que importa es si cambian las conclusiones.</b> <b>4 de 75</b> conclusiones de ronda final cambian según qué corrida suelta se mire (P1_Q4, P1_Q6, P3_Q1), y en todas el voto coincide con lo que dice la mayoría de las corridas. Las respuestas en las que las 3 corridas no forman mayoría quedan sin clasificar en vez de resolverse por el orden de las corridas.</p>
 
   <h3>Sobre los números anteriores</h3>
   <p>Si alguien recuerda conclusiones distintas de una versión previa: el análisis anterior tenía
@@ -316,7 +315,7 @@ footer p{max-width:46rem}
 </main>
 <footer>
   <div class="wrap">
-    <p>Documento de trabajo interno · 28 de septiembre de 2026. 
+    <p>Documento de trabajo interno · 16 de octubre de 2026. 
     Generado desde la salida del pipeline; ningún número está escrito a mano.</p>
   </div>
 </footer>

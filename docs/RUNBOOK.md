@@ -235,6 +235,10 @@ manifiesto y extracción de cada corrida, el consolidado con sus `03_*`, la taxo
 commit (`COMMIT`) y `SHA256SUMS` para comprobar que nada cambió (`sha256sum -c SHA256SUMS`).
 Para una referencia nueva, repetir el mismo esquema con otra fecha; no tocar la anterior.
 
+Referencia vigente desde el 16-10-2026: `Resultados_referencia_v4r_2026-10-16/`, con los criterios
+de consenso fijados el 15-10-2026 (`docs/criterios_consenso.md`) y la taxonomía acordada ese día.
+Las corridas k se lanzan con `tools/correr_k.sh <origen> <destino> 3`.
+
 ---
 
 ## 8. Lo que esta corrida NO resuelve

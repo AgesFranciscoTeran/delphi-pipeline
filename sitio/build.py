@@ -44,9 +44,22 @@ def esc(t):
 
 
 def clase_etiqueta(e):
-    return {"Consenso fuerte": "e-fuerte", "Mayoría clara": "e-clara",
-            "Opción dominante": "e-dom", "Convergencia moderada": "e-clara",
-            "Sin consenso": "e-sin", "Insuficiente": "e-insuf"}.get(e, "")
+    return {"Acuerdo alto": "e-fuerte", "Acuerdo moderado": "e-clara", "Acuerdo bajo": "e-dom",
+            "Sin acuerdo": "e-sin", "Insuficiente": "e-insuf",
+            "Consenso": "e-fuerte", "Consenso no consolidado": "e-clara",
+            "Disenso estable": "e-dom", "Sin estabilizar": "e-sin"}.get(e, "")
+
+
+def tag(e):
+    return f'<span class="tag {clase_etiqueta(e)}">{esc(e)}</span>' if e else "—"
+
+
+def celda_resultado(r):
+    """El resultado (acuerdo × estabilidad) y, debajo, el nivel de acuerdo de la ronda final."""
+    if r.get("por_postura"):
+        return '<span class="sec">ver «Consenso por postura»</span>'
+    return (f'{tag(r.get("resultado"))}<div class="sec" style="margin-top:4px">'
+            f'{esc(r["etiqueta"])}</div>')
 
 
 def barra_postura(r):
@@ -85,8 +98,7 @@ def num_decision(clave):
     return "?"
 
 
-SUP = ('<sup title="Unidad asumida por nosotros, no declarada en la taxonomía '
-       f'(decisión {num_decision("Bordes")})">*</sup>')
+SUP = '<sup title="Unidad asumida por nosotros, no declarada en la taxonomía">*</sup>'
 
 
 def tabla_postura(filas):
@@ -95,7 +107,7 @@ def tabla_postura(filas):
     cuerpo = "\n".join(
         f'<tr><td class="qid">{r["qid"]}</td><td class="qtxt">{esc(r["texto"])}</td>'
         f'<td class="cbar">{barra_postura(r)}</td><td class="n">{r["n"]}/{r["total"]}</td>'
-        f'<td><span class="tag {clase_etiqueta(r["etiqueta"])}">{r["etiqueta"]}</span></td></tr>'
+        f'<td>{celda_resultado(r)}</td></tr>'
         for r in filas)
     return f'''
   <h3>Consenso por postura</h3>
@@ -120,13 +132,14 @@ def tabla_categ(filas):
     cuerpo = "\n".join(
         f'<tr><td class="qid">{r["qid"]}</td><td class="qtxt">{esc(r["texto"])}</td>'
         f'<td class="opt">{esc(r["opcion"])}</td><td class="n">{r["n"]}/{r["total"]}</td>'
-        f'<td><span class="tag {clase_etiqueta(r["etiqueta"])}">{r["etiqueta"]}</span></td></tr>'
+        f'<td>{celda_resultado(r)}</td></tr>'
         for r in filas)
     return f'''
   <h3>Preguntas de opción</h3>
   <div class="scroll"><table>
     <caption>Ronda final, con la opción más votada y cuántas respuestas se pudieron clasificar
-    sobre el total del panel.</caption>
+    sobre el total del panel. En las preguntas de sí / no el consenso se mide sobre la postura
+    (tabla de arriba); aquí la opción muestra el matiz.</caption>
     <thead><tr><th>Id</th><th>Pregunta</th><th>Opción mayoritaria</th><th>n</th><th>Resultado</th></tr></thead>
     <tbody>
 {cuerpo}
@@ -139,30 +152,29 @@ def tabla_cuant(filas):
         return ""
     cuerpo = "\n".join(
         f'<tr><td class="qid">{r["qid"]}</td><td class="qtxt">{esc(r["texto"])}</td>'
+        f'<td class="opt">{esc(r["banda"])}</td>'
         f'<td class="num">{r["mediana"]}</td><td class="num sec">{r["iqr"]}</td>'
         f'<td class="num sec">{esc(r["unidad"])}{SUP if r["asumida"] else ""}</td>'
         f'<td class="n">{r["n"]}/{r["total"]}</td>'
         f'<td class="n{" alerta" if r["n_asumidas"] and r["n"] and r["n_asumidas"]/r["n"] >= .4 else ""}">'
         f'{r["n_asumidas"] or "—"}</td>'
-        f'<td><span class="tag {clase_etiqueta(r["etiqueta"])}">{r["etiqueta"]}</span></td></tr>'
+        f'<td>{celda_resultado(r)}</td></tr>'
         for r in filas)
     asumidas = sum(r["n_asumidas"] for r in filas)
     aviso = f'''
   <div class="callout warn">
-    <span class="ct">Estos números todavía no son reportables</span>
+    <span class="ct">Respuestas sin periodo</span>
     <p>La columna «unidad asumida» cuenta las respuestas en las que el panelista no escribió el
     periodo: {asumidas} en este panel. Se les aplica la unidad que declara la pregunta; cuando
     alguien escribe «8 horas al día» en una pregunta medida por semana, se convierte —
     <b>×5</b>.</p>
-    <p>{contenido.ESTABILIDAD} Hasta que se cierre la decisión {num_decision("Bordes")}
-    (bordes de las bandas), esta tabla es diagnóstico, no resultado.</p>
   </div>''' if asumidas else ""
     return f'''
   <h3>Preguntas numéricas</h3>
   <div class="scroll"><table>
-    <caption>Ronda final. La mediana y el rango intercuartílico son más robustos que el promedio
-    con paneles de este tamaño.</caption>
-    <thead><tr><th>Id</th><th>Pregunta</th><th>Mediana</th><th>RIC</th><th>Unidad</th><th>n</th>
+    <caption>Ronda final. El consenso se mide sobre la banda; la mediana y el rango
+    intercuartílico describen los valores.</caption>
+    <thead><tr><th>Id</th><th>Pregunta</th><th>Banda mayoritaria</th><th>Mediana</th><th>RIC</th><th>Unidad</th><th>n</th>
     <th title="Respuestas contadas cuya unidad se asumió">Unidad<br>asumida</th><th>Resultado</th></tr></thead>
     <tbody>
 {cuerpo}
@@ -265,12 +277,13 @@ def pagina_panel(panel):
   {c['n_rondas']} rondas · {c['n_respuestas']} respuestas. Todo lo de esta página es de este
   panel: no se mezcla con los otros tres.</p>
   <div class="tiles">
-    <div class="tile"><div class="v">{c['resueltas']} <span class="de">de {c['n_cat']}</span></div>
-      <div class="k">preguntas de opción <b>resueltas</b>: consenso fuerte o mayoría clara</div></div>
-    <div class="tile"><div class="v">{c['convergieron']}</div>
-      <div class="k">preguntas donde el panel se acercó entre la primera ronda y la última</div></div>
+    <div class="tile"><div class="v">{c['consenso']} <span class="de">de {c['n_eval']}</span></div>
+      <div class="k">preguntas con <b>consenso</b>: acuerdo alto (≥ 70 %) y estable entre las dos
+      últimas rondas</div></div>
+    <div class="tile"><div class="v">{c['disenso']}</div>
+      <div class="k">con <b>disenso estable</b>: el panel no se pone de acuerdo, y no se mueve</div></div>
     <div class="tile"><div class="v">{c['n_cuant']}</div>
-      <div class="k">preguntas numéricas, {'todas preliminares' if c['n_cuant'] else '—'}</div></div>
+      <div class="k">preguntas numéricas, medidas sobre la banda</div></div>
     <div class="tile"><div class="v">{n_decs}</div>
       <div class="k">decisiones de taxonomía que afectan a este panel</div></div>
   </div>
@@ -352,10 +365,12 @@ def portada():
             f'<a class="panelcard" href="panel{p}.html"><h3>Panel {p}</h3>'
             f'<p class="pc-meta">{c["n_panelistas"]} panelistas · {c["n_preguntas"]} preguntas · '
             f'{c["n_rondas"]} rondas</p>'
-            f'<p class="pc-res"><b>{c["resueltas"]} de {c["n_cat"]}</b> preguntas de opción '
-            f'resueltas · <b>{c["convergieron"]}</b> convergieron</p>'
-            f'<p class="pc-pend">{n_decs} decisiones pendientes · {c["n_cuant"]} preguntas '
-            f'numéricas preliminares</p></a>')
+            f'<p class="pc-res"><b>{c["consenso"]} de {c["n_eval"]}</b> preguntas con consenso · '
+            f'<b>{c["disenso"]}</b> con disenso estable</p>'
+            f'<p class="pc-pend">{n_decs} decisi{"ón" if n_decs == 1 else "ones"} '
+            f'pendiente{"" if n_decs == 1 else "s"} · {c["n_cuant"]} '
+            f'pregunta{"" if c["n_cuant"] == 1 else "s"} numérica{"" if c["n_cuant"] == 1 else "s"}'
+            f'</p></a>')
     nav = ('<li><a href="#paneles">Los paneles</a></li>'
            '<li><a href="#metodo">Cómo funciona</a></li>'
            '<li><a href="#estado">Estado</a></li>'
@@ -384,6 +399,7 @@ def portada():
   respuesta a una de esas opciones; y se mide, ronda por ronda, cuánto se concentra el panel.
   El sistema no inventa categorías: si una respuesta no encaja en ninguna opción, queda marcada
   como tal en vez de forzarse.</p>
+  <p>{contenido.CRITERIOS}</p>
 </section>
 
 <section id="estado">
@@ -397,14 +413,12 @@ def portada():
   </table></div>
   <div class="callout">
     <span class="ct">Qué hay que hacer ahora, en orden</span>
-    <p><b>1. Una sesión con Emily</b> para cerrar las decisiones de taxonomía que quedan,
-    empezando por la número {num_decision("Bordes")} (bordes de las bandas), que es lo que falta
-    para poder reportar los resultados numéricos.
-    <br><b>2. Conseguir un segundo codificador.</b> La validación del método necesita 200–300
-    respuestas etiquetadas por dos personas, repartidas entre los cuatro paneles; hoy hay 44 y
-    las etiqueta una sola.
-    <br><b>3. Fijar los umbrales de consenso</b> con la literatura Delphi, antes de volver a mirar
-    los resultados.</p>
+    <p><b>1. Etiquetar a ciegas</b> la muestra de validación (Emily y una segunda persona). La
+    validación del método necesita 200–300 respuestas etiquetadas por dos personas, repartidas
+    entre los cuatro paneles; hoy hay 44 y las etiqueta una sola.
+    <br><b>2. Revisar P3_Q7 y P4_Q6</b> (Emily), después de la hoja ciega.
+    <br><b>3. Poner el veredicto</b> a la hoja de contraste con las síntesis de los
+    facilitadores.</p>
   </div>
 </section>
 

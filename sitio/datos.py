@@ -26,8 +26,13 @@ from config import OFF_TOPIC_LABEL  # noqa: E402
 # Etiquetas que no son una opción: no se pintan ni cuentan en lo categórico.
 SIN_OPCION = ("Unclassified", OFF_TOPIC_LABEL)
 
-ORDEN_ETIQUETAS = ["Consenso fuerte", "Mayoría clara", "Convergencia moderada",
-                   "Opción dominante", "Sin consenso", "Insuficiente"]
+from consensus_metrics import RESULTADOS, agreement_label  # noqa: E402
+
+# Niveles de acuerdo y resultados: los fija el pipeline (config.py, 15-10-2026); el sitio no
+# recalcula umbrales, sólo los ordena para mostrarlos.
+ORDEN_ETIQUETAS = ["Acuerdo alto", "Acuerdo moderado", "Acuerdo bajo", "Sin acuerdo",
+                   "Insuficiente"]
+ORDEN_RESULTADOS = list(RESULTADOS)
 
 TEXTOS = {
  "P1_Q1": "¿Cuántos semestres de cirugía deberían recibir los estudiantes?",
@@ -106,45 +111,66 @@ def clasificadas(d=None):
 
 # ── tablas del sitio ──────────────────────────────────────────────────────────
 
+def _resultados():
+    """{qid: fila de 03_convergence.csv}: el resultado de cada pregunta."""
+    c = convergencia()
+    return {r.qid: r for _, r in c.iterrows()}
+
+
+def _orden(resultado, share):
+    return (ORDEN_RESULTADOS.index(resultado) if resultado in ORDEN_RESULTADOS else 99,
+            -(share if share == share else 0))
+
+
 def categoricas_ronda_final():
     c = pd.read_csv(_ruta("03_categorical_consensus.csv"))
     c = c[c.Round == c.Round.max()].copy()
     c["qid"] = [qid(p, q) for p, q in zip(c.Panel, c.Question)]
-    c["orden"] = c.consensus_label.map(lambda x: ORDEN_ETIQUETAS.index(x)
-                                       if x in ORDEN_ETIQUETAS else 99)
-    c = c.sort_values(["orden", "modal_share"], ascending=[True, False])
-    return [{"qid": r.qid, "texto": texto(r.qid, r["Question Text"]),
-             "opcion": "(sin datos suficientes)" if r.consensus_label == "Insuficiente"
-                       else str(r.modal_option),
-             "n": int(r.n_classified), "total": int(r.n_responses),
-             "etiqueta": r.consensus_label, "empate": bool(r.is_tie)}
-            for _, r in c.iterrows()]
+    res = _resultados()
+    filas = []
+    for _, r in c.iterrows():
+        rr = res.get(r.qid)
+        # En las preguntas de sí / no el consenso se mide sobre la postura (criterio 1.2); aquí
+        # la opción concreta queda como descripción de los calificadores.
+        por_postura = rr is not None and rr.base == "postura"
+        filas.append({"qid": r.qid, "texto": texto(r.qid, r["Question Text"]),
+                      "opcion": "(sin datos suficientes)" if r.consensus_label == "Insuficiente"
+                                else str(r.modal_option),
+                      "n": int(r.n_classified), "total": int(r.n_responses),
+                      "share": r.modal_share,
+                      "etiqueta": r.consensus_label, "empate": bool(r.is_tie),
+                      "resultado": None if por_postura or rr is None else rr.resultado,
+                      "por_postura": por_postura})
+    filas.sort(key=lambda f: (f["por_postura"],) + _orden(f["resultado"], f["share"]))
+    return filas
 
 
 def cuantitativas_ronda_final():
     q = pd.read_csv(_ruta("03_quantitative_consensus.csv"))
     q = q[q.Round == q.Round.max()].copy()
     q["qid"] = [qid(p, qq) for p, qq in zip(q.Panel, q.Question)]
-    q["orden"] = q.consensus_label.map(lambda x: ORDEN_ETIQUETAS.index(x)
-                                       if x in ORDEN_ETIQUETAS else 99)
-    q = q.sort_values(["orden", "qid"])
+    res = _resultados()
 
     def num(v):
         if pd.isna(v):
             return "—"
         return f"{v:g}".replace(".", ",")
 
-    return [{"qid": r.qid, "texto": texto(r.qid, r["Question Text"]),
-             "unidad": r.question_unit, "asumida": bool(r.unit_assumed),
-             # cuántas de las respuestas contadas descansan en un supuesto de unidad:
-             # el panelista dijo "8 horas" sin periodo y se tomó la unidad de la pregunta.
-             # Es la fuente principal de inestabilidad entre corridas.
-             "n_asumidas": int(r.get("n_unit_assumed", 0) or 0),
-             "mediana": num(r["median"]),
-             "iqr": "—" if pd.isna(r.q1) or pd.isna(r.q3) else f"{num(r.q1)}–{num(r.q3)}",
-             "n": int(r.n_numeric), "total": int(r.n_responses),
-             "etiqueta": r.consensus_label}
-            for _, r in q.iterrows()]
+    filas = [{"qid": r.qid, "texto": texto(r.qid, r["Question Text"]),
+              "unidad": r.question_unit, "asumida": bool(r.unit_assumed),
+              # cuántas de las respuestas contadas descansan en un supuesto de unidad:
+              # el panelista dijo "8 horas" sin periodo y se tomó la unidad de la pregunta.
+              "n_asumidas": int(r.get("n_unit_assumed", 0) or 0),
+              "mediana": num(r["median"]),
+              "iqr": "—" if pd.isna(r.q1) or pd.isna(r.q3) else f"{num(r.q1)}–{num(r.q3)}",
+              "banda": "—" if pd.isna(r.get("modal_band")) else str(r.modal_band),
+              "share": r.get("band_share"),
+              "n": int(r.get("n_banded", r.n_numeric)), "total": int(r.n_responses),
+              "etiqueta": r.consensus_label,
+              "resultado": res[r.qid].resultado if r.qid in res else None}
+             for _, r in q.iterrows()]
+    filas.sort(key=lambda f: _orden(f["resultado"], f["share"] if f["share"] == f["share"] else 0))
+    return filas
 
 
 def posturas_ronda_final():
@@ -162,6 +188,7 @@ def posturas_ronda_final():
     n_panel = todas.groupby("qid").size().to_dict()
     d = clasificadas()
     d = d[d.Round == d.Round.max()]
+    res = _resultados()
     filas = []
     for q, g in d.groupby("qid"):
         if q not in STANCE_MAP:
@@ -178,26 +205,14 @@ def posturas_ronda_final():
         share = mx / n if n else 0
         ordenados = sorted([f, co, ag], reverse=True)
         empate = mx > 0 and ordenados[0] == ordenados[1]
+        pct = (tot - n) / tot * 100 if tot else 0
+        rr = res.get(q)
         filas.append({"qid": q, "texto": texto(q), "favor": f, "condicional": co,
                       "contra": ag, "n": n, "total": tot, "share": share,
-                      "etiqueta": etiqueta_consenso(share, n, empate)})
-    filas.sort(key=lambda r: (ORDEN_ETIQUETAS.index(r["etiqueta"]), -r["share"]))
+                      "etiqueta": agreement_label(share, n, pct, empate),
+                      "resultado": rr.resultado if rr is not None else None})
+    filas.sort(key=lambda r: _orden(r["resultado"], r["share"]))
     return filas
-
-
-def etiqueta_consenso(share, n, empate=False, min_n=5):
-    """Mismos umbrales que config.py del pipeline. Son provisionales (Fase 2)."""
-    if n < min_n:
-        return "Insuficiente"
-    if empate:
-        return "Sin consenso"
-    if share >= 0.75:
-        return "Consenso fuerte"
-    if share >= 0.60:
-        return "Mayoría clara"
-    if share >= 0.40:
-        return "Opción dominante"
-    return "Sin consenso"
 
 
 def convergencia():
@@ -207,9 +222,7 @@ def convergencia():
 
 
 def resumen_convergencia():
-    c = convergencia()
-    cat = c[c.type == "categorical"]
-    return collections.Counter(cat.convergence.dropna())
+    return collections.Counter(convergencia().resultado.dropna())
 
 
 def movimiento():
@@ -255,16 +268,15 @@ def contexto_panel(panel):
     cua = por_panel(cuantitativas_ronda_final(), panel)
     pos = por_panel(posturas_ronda_final(), panel)
     c = convergencia()
-    cv = c[(c.qid.map(panel_de) == panel) & (c.type == "categorical")]
-    resueltas = sum(1 for r in cat if r["etiqueta"] in ("Consenso fuerte", "Mayoría clara"))
+    cv = c[c.qid.map(panel_de) == panel]
     return {"panel": panel,
             "n_panelistas": g.Panelist.nunique(), "n_preguntas": g.qid.nunique(),
             "n_respuestas": len(g), "n_rondas": g.Round.nunique(),
             "cat": cat, "cuant": cua, "postura": pos,
             "n_cat": len(cat), "n_cuant": len(cua), "n_pos": len(pos),
-            "resueltas": resueltas,
-            "convergieron": int((cv.convergence == "Convergió").sum()),
-            "dispersaron": int((cv.convergence == "Se dispersó").sum()),
+            "n_eval": len(cv),
+            "consenso": int((cv.resultado == "Consenso").sum()),
+            "disenso": int((cv.resultado == "Disenso estable").sum()),
             "n_asumidas": sum(r["n_asumidas"] for r in cua)}
 
 
@@ -274,15 +286,13 @@ def contexto():
     cat = categoricas_ronda_final()
     cua = cuantitativas_ronda_final()
     pos = posturas_ronda_final()
-    resueltas_pos = sum(1 for r in pos if r["etiqueta"] in ("Consenso fuerte", "Mayoría clara"))
-    con_modal = sum(1 for r in cat if r["etiqueta"] not in ("Sin consenso", "Insuficiente"))
+    res = convergencia()
     return {"n_respuestas": len(d), "n_validas": int(d.is_valid_response.sum()),
             "n_preguntas": d.qid.nunique(), "n_paneles": d.Panel.nunique(),
             "n_rondas": d.Round.nunique(), "n_panelistas": d.Panelist.nunique(),
-            "pos_resueltas": resueltas_pos, "pos_total": len(pos),
-            "cat_con_modal": con_modal, "cat_total": len(cat),
-            "cuant_fuerte": sum(1 for r in cua if r["etiqueta"] == "Consenso fuerte"),
-            "cuant_total": len(cua)}
+            "n_eval": len(res), "consenso": int((res.resultado == "Consenso").sum()),
+            "disenso": int((res.resultado == "Disenso estable").sum()),
+            "cat_total": len(cat), "cuant_total": len(cua), "pos_total": len(pos)}
 
 
 def _conclusiones(carpeta):
@@ -298,6 +308,11 @@ def _conclusiones(carpeta):
         t = t.loc[t.groupby("question_id").Round.idxmax()]
         for _, r in t.iterrows():
             out[(nombre, r.question_id)] = (r.consensus_label, r[col] if col else None)
+    p = os.path.join(carpeta, "03_convergence.csv")
+    if os.path.exists(p):
+        for _, r in pd.read_csv(p).iterrows():
+            if "resultado" in r:
+                out[("03_convergence.csv", r.question_id)] = (r.resultado, None)
     return out
 
 

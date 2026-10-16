@@ -168,17 +168,36 @@ def test_nan_is_not_a_category():
 
 
 def test_small_n_never_gets_a_consensus_label():
-    assert cm.categorical_label(1.0, 1, 87.5) == "Insuficiente"
-    assert cm.categorical_label(1.0, 7, 0.0) == "Consenso fuerte"
-    assert cm.quantitative_label(0.0, 0.0, 0.0, 1) == "Insuficiente"
-    assert cm.quantitative_label(0.0, 0.0, 0.0, 8) == "Consenso fuerte"
+    assert cm.agreement_label(1.0, 1, 87.5) == "Insuficiente"
+    assert cm.agreement_label(1.0, 4, 0.0, min_n=5) == "Insuficiente"
+    assert cm.agreement_label(1.0, 7, 0.0) == "Acuerdo alto"
 
 
-def test_convergence_has_four_classes():
-    assert cm.convergence_class(0.0, 1.0) == "Estable en acuerdo"
-    assert cm.convergence_class(0.0, 0.4) == "Estable sin acuerdo"
-    assert cm.convergence_class(-0.3, 0.9) == "Convergió"
-    assert cm.convergence_class(+0.3, 0.4) == "Se dispersó"
+def test_niveles_de_acuerdo_fijados_el_15_10_2026():
+    assert cm.agreement_label(5 / 7, 7, 0.0) == "Acuerdo alto"        # 71 % >= 70 %
+    assert cm.agreement_label(0.625, 8, 0.0) == "Acuerdo moderado"
+    assert cm.agreement_label(0.5, 8, 0.0) == "Acuerdo bajo"
+    assert cm.agreement_label(3 / 7, 7, 0.0) == "Sin acuerdo"
+    assert cm.agreement_label(0.5, 8, 0.0, is_tie=True) == "Sin acuerdo"
+
+
+def test_cambio_neto_de_scheibe():
+    from collections import Counter
+    assert cm.cambio_neto(Counter(A=7), Counter(A=7)) == 0
+    assert cm.cambio_neto(Counter(A=7), Counter(A=6, B=1)) == pytest.approx(1 / 7)
+    assert cm.cambio_neto(Counter(A=8), Counter(A=6, B=2)) == pytest.approx(0.25)
+    assert cm.cambio_neto(Counter(A=8), Counter(A=4, B=4)) == pytest.approx(0.5)
+
+
+def test_resultado_tiene_cuatro_clases_y_sensibilidad():
+    assert cm.resultado(0.86, False, 0.0) == "Consenso"
+    assert cm.resultado(0.86, False, 0.3) == "Consenso no consolidado"
+    assert cm.resultado(0.43, False, 0.14) == "Disenso estable"
+    assert cm.resultado(0.43, False, 0.3) == "Sin estabilizar"
+    assert cm.resultado(0.86, True, 0.0) == "Disenso estable"       # empate: no hay acuerdo
+    assert cm.resultado(5 / 7, False, 1 / 7) == "Consenso"           # una persona cambia: estable
+    assert cm.resultado(5 / 7, False, 0.0, 0.75) == "Disenso estable"
+    assert cm.resultado(float("nan"), False, 0.0) == "Insuficiente"
 
 
 def test_categorical_consensus_counts_failed_extractions_as_unclassified(tmp_path):
@@ -204,7 +223,7 @@ def test_tie_is_not_a_dominant_option():
     })
     r = cm.categorical_consensus(df).iloc[0]
     assert bool(r["is_tie"]) is True
-    assert r["consensus_label"] == "Sin consenso"
+    assert r["consensus_label"] == "Sin acuerdo"
     assert r["modal_option"] == "Empate: No / Yes"
 
 
@@ -228,14 +247,16 @@ def test_parse_band_range_admits_the_equal_operators():
 
 
 def test_derive_band_from_converted_value():
-    b = get_taxonomy(1, 6)["bands"]          # Minimal 1-2 / Moderate 3-5 / Intensive >=6 (por semana)
+    b = get_taxonomy(1, 6)["bands"]          # acordadas: <=2 / >2 y <=5 / >5 (por semana)
     assert cm.derive_band(7.5, b) == "Intensive"        # "30 h/módulo" -> 7.5 h/semana (Emily: Intensive)
-    b7 = get_taxonomy(1, 7)["bands"]         # Minimal 3-5 / Moderate 6-8 / Intensive >=9
+    b7 = get_taxonomy(1, 7)["bands"]         # acordadas: <=5 / >5 y <=8 / >8
     assert cm.derive_band(4, b7) == "Minimal"
-    assert cm.derive_band(5.5, b7) == "Minimal" and cm.derive_band.last_gap is True
-    # El piso de banda de la v2 empieza en 3: 1 y 2 horas no caen en ninguna banda.
-    assert cm.derive_band(2, b7) == "Minimal" and cm.derive_band.last_gap is True
-    bh = get_taxonomy(3, 2)["bands"]         # v2: Few <50 / More >=50
+    assert cm.derive_band(5.5, b7) == "Moderate" and cm.derive_band.last_gap is False
+    assert cm.derive_band(2, b7) == "Minimal" and cm.derive_band.last_gap is False
+    # Con bandas con huecos (las de la v2) se sigue asignando por el borde más cercano, marcado.
+    viejas = {"Minimal": "3-5", "Moderate": "6-8", "Intensive": ">=9"}
+    assert cm.derive_band(5.5, viejas) == "Minimal" and cm.derive_band.last_gap is True
+    bh = get_taxonomy(3, 2)["bands"]         # acordadas: Few <50 / More 50-80 / Many >80
     assert cm.derive_band(40, bh) == "Few"
     assert cm.derive_band(50, bh) == "More"
     assert cm.derive_band(70, bh) == "More"
@@ -750,3 +771,60 @@ def test_muestra_estratificada_cubre_todas_las_preguntas():
     assert list(a.index) == list(b.index)        # semilla fija: misma muestra
     assert a.qid.nunique() == 32
     assert a.groupby("qid")["Round"].nunique().min() >= 2 or len(a) < 64
+
+
+
+# ── criterios y bandas acordados el 15-10-2026 ───────────────────────────────
+
+def test_banda_con_dos_bordes_explicitos():
+    assert cm._parse_band_range(">5 and <=8") == (5.0, 8.0, True, False)
+    assert cm._parse_band_range(">=2 y <3") == (2.0, 3.0, False, True)
+
+
+def test_bandas_acordadas_no_dejan_huecos():
+    for q in ("P1_Q6", "P1_Q7", "P2_Q3", "P3_Q1", "P3_Q5", "P4_Q1", "P4_Q2", "P3_Q2", "P4_Q7"):
+        b = EMILY_TAXONOMY[q]["bands"]
+        for v in (0.5, 2, 2.25, 5, 5.5, 8, 8.5, 9, 30, 50, 80, 81, 120):
+            cm.derive_band(v, b)
+            assert cm.derive_band.last_gap is False, (q, v)
+    assert cm.derive_band(5.5, EMILY_TAXONOMY["P3_Q1"]["bands"]) == "Moderate"
+    assert cm.derive_band(9, EMILY_TAXONOMY["P4_Q2"]["bands"]) == "Intensive"
+    adm = EMILY_TAXONOMY["P4_Q7"]["bands"]
+    assert [cm.derive_band(v, adm) for v in (49, 50, 80, 81)] == ["Few", "More", "More", "Many"]
+
+
+def test_p1_q7_mide_las_horas_de_abp_y_el_total_aparte():
+    t = EMILY_TAXONOMY["P1_Q7"]
+    prompt = ea.build_prompt_for_type(t, "q", "r", 1)
+    assert "What is measured here" in prompt and "value_secondary" in prompt
+    otro = ea.build_prompt_for_type(EMILY_TAXONOMY["P3_Q1"], "q", "r", 1)
+    assert "What is measured here" not in otro and "value_secondary" not in otro
+    out = ea.postprocess({"value": 6, "unit": "hours/week", "value_raw": "6 hours",
+                          "value_secondary": 25}, t)
+    assert out["numeric_value"] == 6 and out["value_secondary"] == 25
+
+
+def test_resultados_por_postura_en_preguntas_si_no():
+    """Criterio 1.2: en una pregunta de sí / no, dos «sí» con distinto matiz son acuerdo."""
+    filas = []
+    for rnd in (1, 2):
+        for i, o in enumerate(["Yes, only in practical activities", "Yes, only in laboratories",
+                               "Yes", "Yes, only in practical activities", "No", "Yes", "Yes"]):
+            filas.append({"Panel": 2, "Question": 4, "Round": rnd, "Panelist": 200 + i,
+                          "question_type": "nominal", "is_valid_response": True,
+                          "Question Text": "q", "selected_option": o})
+    df = pd.DataFrame(filas)
+    quant = pd.DataFrame(columns=["Panel", "Question", "Round", "band_final", "Question Text"])
+    r = cm.resultados(df, quant).iloc[0]
+    assert r["base"] == "postura" and r["modal_final"] == "A favor"
+    assert r["share_final"] == pytest.approx(6 / 7) and r["resultado"] == "Consenso"
+
+
+def test_p1_q7_sin_abp_el_numero_es_el_total():
+    kw = EMILY_TAXONOMY["P1_Q7"]["measure_keywords"]
+    v, s = cm.separar_medida("20 hours aproximately", 20.0, np.nan, kw)
+    assert np.isnan(v) and s == 20.0
+    assert cm.separar_medida("6 hours of ABP and 25 in total", 6.0, 25.0, kw) == (6.0, 25.0)
+    v, s = cm.separar_medida("We need from 25-30 hours per week", 27.5, 22.0, kw)
+    assert np.isnan(v) and s == 22.0          # si el modelo ya dio el total, se conserva
+    assert cm.separar_medida("8 horas", 8.0, np.nan, None)[0] == 8.0   # otras preguntas: nada

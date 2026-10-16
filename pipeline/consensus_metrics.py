@@ -14,8 +14,8 @@ Cambios respecto a la v1:
   * Cuantitativas: la unidad del panelista se compara con la unidad de la pregunta; sólo se
     convierte con UNIT_CONVERSIONS (día<->semana); el resto se reporta como "otra unidad" y no
     entra en el cálculo. Se añaden mediana e IQR (más robustos que media/CV con n=7-10).
-  * Convergencia en cuatro categorías: convergió / se dispersó / estable en acuerdo /
-    estable sin acuerdo (la v1 pintaba de rojo a las preguntas unánimes en todas las rondas).
+  * Resultado por pregunta en cuatro categorías (acuerdo × estabilidad), con los criterios
+    fijados a priori el 15-10-2026: ver config.py y docs/criterios_consenso.md.
 """
 import os
 import re
@@ -55,18 +55,20 @@ def modal_share(labels):
     return max(counts.values()) / total if total else np.nan
 
 
-def categorical_label(share, n_classified, pct_unclassified, is_tie=False):
-    if pd.isna(share) or n_classified < MIN_N_CLASSIFIED or pct_unclassified > MAX_UNCLASSIFIED_PCT:
+def agreement_label(share, n_classified, pct_unclassified, is_tie=False, min_n=None):
+    """Nivel de acuerdo de una distribución (AGREEMENT_LEVELS en config.py).
+
+    Un empate en el primer puesto es «Sin acuerdo»: dos opciones empatadas no son una mayoría.
+    """
+    min_n = MIN_N_CLASSIFIED if min_n is None else min_n
+    if pd.isna(share) or n_classified < min_n or pct_unclassified > MAX_UNCLASSIFIED_PCT:
         return "Insuficiente"
     if is_tie:
-        return "Sin consenso"          # dos opciones empatadas en el máximo no son una opción dominante
-    if share >= STRONG_AGREEMENT:
-        return "Consenso fuerte"
-    if share >= CLEAR_MAJORITY:
-        return "Mayoría clara"
-    if share >= DOMINANT_OPTION:
-        return "Opción dominante"
-    return "Sin consenso"
+        return "Sin acuerdo"
+    for nombre, umbral in AGREEMENT_LEVELS:
+        if share >= umbral - 1e-9:
+            return nombre
+    return "Sin acuerdo"
 
 
 def categorical_consensus(df):
@@ -112,7 +114,7 @@ def categorical_consensus(df):
             "norm_entropy": normalized_entropy(labels, len(options)),
             "n_distinct_options": len(counts),
             "k_options": len(options),
-            "consensus_label": categorical_label(share, n_cls, pct_unc, is_tie),
+            "consensus_label": agreement_label(share, n_cls, pct_unc, is_tie),
             "option_counts": json.dumps({opt: counts.get(opt, 0) for opt in options}, ensure_ascii=False),
         }
         records.append(rec)
@@ -191,6 +193,10 @@ def _parse_band_range(rng):
     m = _re.match(r"^(\d+\.?\d*)\s*[-–]\s*(\d+\.?\d*)", rng)
     if m:
         return float(m.group(1)), float(m.group(2)), False, False
+    # «>5 and <=8»: intervalo con los dos bordes explícitos (bandas contiguas, 15-10-2026)
+    m = _re.match(r"^(>=?)\s*(\d+\.?\d*)\s*(?:and|y|&|,)\s*(<=?)\s*(\d+\.?\d*)$", rng)
+    if m:
+        return float(m.group(2)), float(m.group(4)), m.group(1) == ">", m.group(3) == "<"
     m = _re.match(r"^(>=?)\s*(\d+\.?\d*)", rng)
     if m:
         return float(m.group(2)), float("inf"), m.group(1) == ">", False
@@ -228,15 +234,41 @@ def derive_band(value, bands):
     return name
 
 
-def quantitative_label(cv, rel_range, rel_iqr, n):
-    if n < MIN_N_NUMERIC or pd.isna(cv):
-        return "Insuficiente"
-    s, m = QUANT_STRONG, QUANT_MODERATE
-    if cv <= s["cv"] and rel_range <= s["rel_range"] and rel_iqr <= s["rel_iqr"]:
-        return "Consenso fuerte"
-    if cv <= m["cv"] and rel_range <= m["rel_range"] and rel_iqr <= m["rel_iqr"]:
-        return "Convergencia moderada"
-    return "Sin consenso"
+def separar_medida(response, value, secondary, keywords):
+    """(valor, secundario) aplicando la regla de la cantidad medida (P1_Q7).
+
+    Aunque el prompt lo pide, el modelo pone a veces un total («20 hours») como horas de ABP.
+    Regla fija sobre el texto crudo, igual que unit_from_raw: si la respuesta no nombra la
+    cantidad medida, el número no es esa cantidad y pasa a ser el secundario.
+    """
+    if not keywords or value is None or (isinstance(value, float) and pd.isna(value)):
+        return value, secondary
+    texto = str(response or "")
+    if any(re.search(r"\b%s\b" % re.escape(k), texto, re.I) for k in keywords):
+        return value, secondary
+    sec = secondary if secondary is not None and not (isinstance(secondary, float)
+                                                      and pd.isna(secondary)) else value
+    return np.nan, sec
+
+
+def _modal(cuenta):
+    """(etiqueta modal, proporción, empate) de un Counter; (None, nan, False) si está vacío."""
+    n = sum(cuenta.values())
+    if not n:
+        return None, np.nan, False
+    top = cuenta.most_common()
+    tie = len(top) > 1 and top[0][1] == top[1][1]
+    modal = top[0][0] if not tie else "Empate: " + " / ".join(
+        sorted(o for o, c in top if c == top[0][1]))
+    return modal, top[0][1] / n, tie
+
+
+def _distribucion_bandas(grp, tax):
+    """(Counter de bandas, n con banda, % sin banda) de un grupo de respuestas numéricas."""
+    bandas = list(tax.get("bands", {}))
+    b = grp["band_final"].where(grp["band_final"].isin(bandas)).dropna()
+    total = len(grp)
+    return Counter(b), len(b), ((total - len(b)) / total * 100 if total else np.nan)
 
 
 def quantitative_consensus(df):
@@ -244,6 +276,15 @@ def quantitative_consensus(df):
     for col in ("value_unit", "band"):          # tolerar CSVs de la v1
         if col not in quant.columns:
             quant[col] = None
+    if "value_secondary" not in quant.columns:
+        quant["value_secondary"] = np.nan
+    for i, r in quant.iterrows():
+        kw = (get_taxonomy(r[COL_PANEL], r[COL_QUESTION]) or {}).get("measure_keywords")
+        if kw:
+            v, s2 = separar_medida(r.get(COL_RESPONSE), r["numeric_value"], r["value_secondary"], kw)
+            if pd.isna(v) and not pd.isna(r["numeric_value"]):
+                quant.at[i, "band"] = None      # la banda del modelo era la del total
+            quant.at[i, "numeric_value"], quant.at[i, "value_secondary"] = v, s2
     conv, resolved, sources = [], [], []
     for _, r in quant.iterrows():
         tax = get_taxonomy(r[COL_PANEL], r[COL_QUESTION]) or {}
@@ -291,10 +332,20 @@ def quantitative_consensus(df):
             rel_iqr = (q3 - q1) / med if med else np.nan
             rec.update({"mean": mean, "median": med, "std": std, "q1": q1, "q3": q3, "iqr": q3 - q1,
                         "min": vals.min(), "max": vals.max(), "cv": cv,
-                        "rel_range": rel_range, "rel_iqr": rel_iqr,
-                        "consensus_label": quantitative_label(cv, rel_range, rel_iqr, n)})
-        else:
-            rec["consensus_label"] = "Insuficiente"
+                        "rel_range": rel_range, "rel_iqr": rel_iqr})
+        # El consenso numérico se mide igual que el categórico, sobre la BANDA (criterio del
+        # 15-10-2026); mediana y RIC quedan como descripción.
+        cuenta, n_b, pct_b = _distribucion_bandas(grp, tax)
+        modal, share_b, tie_b = _modal(cuenta)
+        rec.update({"n_banded": n_b, "modal_band": modal, "band_share": share_b, "band_tie": tie_b,
+                    "pct_unclassified": pct_b,
+                    "consensus_label": agreement_label(share_b, n_b, pct_b, tie_b,
+                                                       min_n=MIN_N_NUMERIC)})
+        if "value_secondary" in grp:
+            sec = pd.to_numeric(grp["value_secondary"], errors="coerce").dropna()
+            if len(sec):
+                rec.update({"secondary_n": len(sec), "secondary_median": sec.median(),
+                            "secondary_q1": sec.quantile(.25), "secondary_q3": sec.quantile(.75)})
         records.append(rec)
     return pd.DataFrame(records).sort_values([COL_PANEL, COL_QUESTION, COL_ROUND]), quant
 
@@ -340,61 +391,98 @@ def quantitative_trajectories(quant):
     return pd.DataFrame(records)
 
 
-# ── convergencia ──────────────────────────────────────────────────────────────
+# ── resultado por pregunta: acuerdo × estabilidad ─────────────────────────────
 
-def convergence_class(delta, final_share):
-    """delta = cambio de dispersión (entropía o rel_iqr): negativo = se concentró."""
-    if pd.isna(delta):
+RESULTADOS = ("Consenso", "Consenso no consolidado", "Disenso estable", "Sin estabilizar",
+              "Insuficiente")
+
+
+def cambio_neto(antes, despues):
+    """Cambio neto entre dos distribuciones (Scheibe, Skutsch y Schofer, 1975).
+
+    La mitad de la suma de las diferencias absolutas entre proporciones: la fracción del panel
+    que, en neto, cambió de opción. Proporciones y no conteos, porque el número de respuestas
+    clasificadas puede cambiar de una ronda a otra.
+    """
+    n1, n2 = sum(antes.values()), sum(despues.values())
+    if not n1 or not n2:
+        return np.nan
+    return 0.5 * sum(abs(antes.get(k, 0) / n1 - despues.get(k, 0) / n2)
+                     for k in set(antes) | set(despues))
+
+
+def resultado(share, tie, cambio, umbral=None):
+    """Una de cuatro categorías (Dajani et al., 1979; ACCORD, 2024), o «Insuficiente»."""
+    umbral = CONSENSUS_THRESHOLD if umbral is None else umbral
+    if pd.isna(share) or pd.isna(cambio):
         return "Insuficiente"
-    if delta <= -ENTROPY_DELTA:
-        return "Convergió"
-    if delta >= ENTROPY_DELTA:
-        return "Se dispersó"
-    if not pd.isna(final_share) and final_share >= STRONG_AGREEMENT:
-        return "Estable en acuerdo"
-    return "Estable sin acuerdo"
+    acuerdo = (not tie) and share >= umbral - 1e-9
+    estable = cambio <= STABILITY_MAX_CHANGE + 1e-9
+    return {(True, True): "Consenso", (True, False): "Consenso no consolidado",
+            (False, True): "Disenso estable", (False, False): "Sin estabilizar"}[(acuerdo, estable)]
 
 
-def convergence_summary(cat_df, quant_df):
+def _etiquetas_base(qid, opciones):
+    """Sobre qué se mide el consenso (criterio 1.2): la postura en las preguntas de sí / no,
+    la opción en las demás. None = sin clasificar."""
+    from stance_map import STANCE_MAP, STANCE_ES, stance_of
+    if qid in STANCE_MAP:
+        return "postura", [STANCE_ES.get(stance_of(qid, o)[0]) if isinstance(o, str) else None
+                           for o in opciones]
+    return "opción", [o if isinstance(o, str) and o not in ("Unclassified", OFF_TOPIC_LABEL)
+                      else None for o in opciones]
+
+
+def _por_ronda(grp, min_n):
+    rondas = {}
+    for rnd, g in grp.groupby(COL_ROUND):
+        cuenta = Counter(x for x in g["_e"] if isinstance(x, str) and x)
+        n_cls, total = sum(cuenta.values()), len(g)
+        pct = (total - n_cls) / total * 100 if total else np.nan
+        modal, share, tie = _modal(cuenta)
+        rondas[int(rnd)] = {"cuenta": cuenta, "n": n_cls, "total": total, "modal": modal,
+                            "share": share, "tie": tie,
+                            "label": agreement_label(share, n_cls, pct, tie, min_n=min_n)}
+    return rondas
+
+
+def _registro(panel, q, tipo, base, texto, rondas):
+    orden = sorted(rondas)
+    fin = rondas[orden[-1]]
+    prev = rondas[orden[-2]] if len(orden) > 1 else None
+    # Hacen falta dos rondas con datos suficientes: sin la anterior no hay estabilidad que medir.
+    ok = fin["label"] != "Insuficiente" and prev is not None and prev["label"] != "Insuficiente"
+    cambio = cambio_neto(prev["cuenta"], fin["cuenta"]) if ok else np.nan
+    share = fin["share"] if ok else np.nan
+    rec = {COL_PANEL: panel, COL_QUESTION: q, "question_id": f"P{panel}_Q{q}", "type": tipo,
+           "base": base, COL_QUESTION_TEXT: texto, "rounds": json.dumps(orden),
+           "shares": json.dumps({str(r): (None if pd.isna(rondas[r]["share"])
+                                          else round(float(rondas[r]["share"]), 4)) for r in orden}),
+           "modal_final": fin["modal"], "share_final": fin["share"], "n_final": fin["n"],
+           "total_final": fin["total"], "agreement_final": fin["label"], "change_last": cambio,
+           "stable": (bool(cambio <= STABILITY_MAX_CHANGE + 1e-9) if not pd.isna(cambio) else None),
+           "resultado": resultado(share, fin["tie"], cambio)}
+    for u in SENSITIVITY_THRESHOLDS:
+        rec[f"resultado_{int(round(u * 100))}"] = resultado(share, fin["tie"], cambio, u)
+    return rec
+
+
+def resultados(df, quant):
+    """Una fila por pregunta con el resultado de la ronda final (acuerdo × estabilidad)."""
     records = []
-    for (panel, q), grp in cat_df.groupby([COL_PANEL, COL_QUESTION]):
-        grp = grp.sort_values(COL_ROUND)
-        ok = grp[grp["consensus_label"] != "Insuficiente"]
-        if len(ok) >= 2:
-            e0, e1 = ok["norm_entropy"].iloc[0], ok["norm_entropy"].iloc[-1]
-            records.append({
-                COL_PANEL: panel, COL_QUESTION: q, "question_id": f"P{panel}_Q{q}", "type": "categorical",
-                COL_QUESTION_TEXT: grp[COL_QUESTION_TEXT].iloc[0], "metric": "norm_entropy_K",
-                "initial": e0, "final": e1, "delta": e1 - e0,
-                "initial_modal_share": ok["modal_share"].iloc[0], "final_modal_share": ok["modal_share"].iloc[-1],
-                "rounds_used": json.dumps([int(r) for r in ok[COL_ROUND]]),
-                "final_label": ok["consensus_label"].iloc[-1],
-                "convergence": convergence_class(e1 - e0, ok["modal_share"].iloc[-1]),
-            })
-        else:
-            records.append({COL_PANEL: panel, COL_QUESTION: q, "question_id": f"P{panel}_Q{q}",
-                            "type": "categorical", COL_QUESTION_TEXT: grp[COL_QUESTION_TEXT].iloc[0],
-                            "metric": "norm_entropy_K", "convergence": "Insuficiente",
-                            "final_label": grp["consensus_label"].iloc[-1]})
-    for (panel, q), grp in quant_df.groupby([COL_PANEL, COL_QUESTION]):
-        grp = grp.sort_values(COL_ROUND)
-        ok = grp[grp["consensus_label"] != "Insuficiente"] if "consensus_label" in grp else grp.iloc[0:0]
-        if len(ok) >= 2 and "rel_iqr" in ok:
-            d0, d1 = ok["rel_iqr"].iloc[0], ok["rel_iqr"].iloc[-1]
-            strong = 1.0 if ok["consensus_label"].iloc[-1] == "Consenso fuerte" else 0.0
-            records.append({
-                COL_PANEL: panel, COL_QUESTION: q, "question_id": f"P{panel}_Q{q}", "type": "quantitative",
-                COL_QUESTION_TEXT: grp[COL_QUESTION_TEXT].iloc[0], "metric": "rel_iqr",
-                "initial": d0, "final": d1, "delta": d1 - d0,
-                "rounds_used": json.dumps([int(r) for r in ok[COL_ROUND]]),
-                "final_label": ok["consensus_label"].iloc[-1],
-                "convergence": convergence_class(d1 - d0, strong),
-            })
-        else:
-            records.append({COL_PANEL: panel, COL_QUESTION: q, "question_id": f"P{panel}_Q{q}",
-                            "type": "quantitative", COL_QUESTION_TEXT: grp[COL_QUESTION_TEXT].iloc[0],
-                            "metric": "rel_iqr", "convergence": "Insuficiente",
-                            "final_label": grp["consensus_label"].iloc[-1]})
+    cat = df[df["question_type"].isin(CATEGORICAL) & df["is_valid_response"]]
+    cat = cat[cat["selected_option"] != OFF_TOPIC_LABEL]      # fuera de tema: fuera del denominador
+    for (panel, q), grp in cat.groupby([COL_PANEL, COL_QUESTION]):
+        base, et = _etiquetas_base(f"P{panel}_Q{q}", grp["selected_option"].tolist())
+        rondas = _por_ronda(grp.assign(_e=et), MIN_N_CLASSIFIED)
+        records.append(_registro(panel, q, "categorical", base,
+                                 grp[COL_QUESTION_TEXT].iloc[0], rondas))
+    for (panel, q), grp in quant.groupby([COL_PANEL, COL_QUESTION]):
+        bandas = list((get_taxonomy(panel, q) or {}).get("bands", {}))
+        et = [b if b in bandas else None for b in grp["band_final"]]
+        rondas = _por_ronda(grp.assign(_e=et), MIN_N_NUMERIC)
+        records.append(_registro(panel, q, "quantitative", "banda",
+                                 grp[COL_QUESTION_TEXT].iloc[0], rondas))
     return pd.DataFrame(records)
 
 
@@ -422,13 +510,13 @@ def main():
     quant_traj.to_csv(os.path.join(OUTPUT_DIR, "03_quantitative_trajectories.csv"), index=False)
     print(f"Trajectories: {len(cat_traj)} categorical + {len(quant_traj)} quantitative")
 
-    conv = convergence_summary(cat_df, quant_df)
+    conv = resultados(df, quant_responses)
     conv.to_csv(os.path.join(OUTPUT_DIR, "03_convergence.csv"), index=False)
 
-    print("\n── Convergence Summary ─────────────────────────────")
+    print("\n── Resultado por pregunta (acuerdo × estabilidad) ──")
     if len(conv):
         for t, grp in conv.groupby("type"):
-            print(f"   {t}: " + ", ".join(f"{k} {v}" for k, v in grp["convergence"].value_counts().items()))
+            print(f"   {t}: " + ", ".join(f"{k} {v}" for k, v in grp["resultado"].value_counts().items()))
     print("\n── Final-round labels ──────────────────────────────")
     fin = cat_df.loc[cat_df.groupby("question_id")[COL_ROUND].idxmax()]
     print("   categorical: " + ", ".join(f"{k} {v}" for k, v in fin["consensus_label"].value_counts().items()))
