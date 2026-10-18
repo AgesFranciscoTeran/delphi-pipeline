@@ -319,6 +319,7 @@ def pagina_panel(panel):
   las dos últimas rondas, cambió de opción más del 15 % del panel.</p>
   <figure class="fig">{figuras.inline(f['trayectoria'])}</figure>
   {significado_resultados()}
+{seccion_movimiento(f)}
 
   {'<h3>Quién cambió de opinión, y hacia dónde</h3><p>El color de cada cinta es la postura u '
    'opción <b>de origen</b>, así que se puede seguir a dónde fue a parar cada bloque inicial; '
@@ -396,6 +397,12 @@ def seccion_argumentos(f):
     if not f.get("argumentos"):
         return ""
     perfiles = f'<figure class="fig">{figuras.inline(f["perfiles"])}</figure>' if f.get("perfiles") else ""
+    panelistas = (f'<h4>Cómo razona cada panelista</h4><p>En cuántas preguntas (ronda final) dio '
+                  f'cada panelista cada tipo de argumento. Si una fila se concentra en una columna, '
+                  f'esa persona razona siempre desde el mismo lugar; si se reparte, cambia según la '
+                  f'pregunta. Más oscuro = más preguntas.</p>'
+                  f'<figure class="fig">{figuras.inline(f["perfil_panelistas"])}</figure>'
+                  if f.get("perfil_panelistas") else "")
     grafo = (f'<h4>El mapa de argumentos del panel</h4><p>Cada pregunta, con su postura u opción '
              f'en la ronda final (izquierda), unida a los perfiles de argumento que la sostienen '
              f'(derecha). Los perfiles son los mismos para todas las preguntas, así que se ve qué '
@@ -408,9 +415,24 @@ def seccion_argumentos(f):
   <p>{contenido.NOTA_ARGUMENTOS}</p>
   {perfiles}
   {grafo}
+  {panelistas}
   <p>Pregunta por pregunta: a la izquierda, la postura (u opción) de cada panelista en la
   ronda final; a la derecha, el argumento que da. Cada cinta son panelistas.</p>
   <figure class="fig">{figuras.inline(f["argumentos"])}</figure>'''
+
+
+def seccion_movimiento(f):
+    if not f.get("movimiento"):
+        return ""
+    return f'''
+  <h3>Hacia dónde se movió la gente</h3>
+  <p>Entre dos rondas seguidas, cada panelista en cada pregunta se mantuvo, se movió hacia la
+  postura u opción mayoritaria de la ronda anterior (la que vio en la síntesis), se alejó de
+  ella, o cambió entre opciones que no eran la mayoría. Es la pregunta de fondo del Delphi: si
+  la retroalimentación produce convergencia. Muchos movimientos «hacia la mayoría» indican que
+  el panel se alinea con lo que se le muestra; muchos «se alejó» o «otro cambio», que la
+  retroalimentación no lo arrastra.</p>
+  <figure class="fig">{figuras.inline(f["movimiento"])}</figure>'''
 
 
 def significado_resultados():
@@ -471,6 +493,7 @@ def portada():
   respuesta a una de esas opciones; y se mide, ronda por ronda, cuánto se concentra el panel.
   El sistema no inventa categorías: si una respuesta no encaja en ninguna opción, queda marcada
   como tal en vez de forzarse.</p>
+  <figure class="fig">{figuras.inline(figuras.fig_metodo())}</figure>
   <p>{contenido.CRITERIOS}</p>
 </section>
 

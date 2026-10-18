@@ -757,6 +757,188 @@ def fig_perfiles(panel, png=False):
     return _guardar(fig, f"fig_perfiles_panel{panel}", png)
 
 
+# ── 6. Hacia dónde se mueve la gente ─────────────────────────────────────────
+
+TIPOS_MOV = ["Hacia la mayoría", "Otro cambio", "Se alejó de la mayoría", "Se mantuvo"]
+COL_MOV = {"Hacia la mayoría": AZUL, "Otro cambio": GRIS, "Se alejó de la mayoría": "#eb6834",
+           "Se mantuvo": LINEA}
+
+
+def movimientos(panel):
+    """Una fila por panelista × pregunta × par de rondas seguidas, con el tipo de movimiento.
+
+    La referencia es la mayoría de la ronda ANTERIOR, que es lo que el panelista vio en la
+    síntesis antes de volver a responder. Se compara la postura en las preguntas de sí / no y
+    la opción en las demás (la misma base que el consenso). Si en la ronda anterior había empate
+    en el primer puesto, «la mayoría» son todas las empatadas.
+    """
+    d = datos.clasificadas()
+    d = d[d.Panel == panel]
+    filas = []
+    for q, g in d.groupby("qid"):
+        cat, _, _, _ = esquema(q, g.selected_option)
+        g = g.assign(c=g.selected_option.map(cat)).dropna(subset=["c"])
+        piv = g.pivot_table(index="Panelist", columns="Round", values="c", aggfunc="first")
+        rondas = sorted(piv.columns)
+        for r0, r1 in zip(rondas, rondas[1:]):
+            cuenta = piv[r0].value_counts()
+            if cuenta.empty:
+                continue
+            mayoria = set(cuenta[cuenta == cuenta.max()].index)
+            for p_ in piv.index:
+                a, b = piv.loc[p_, r0], piv.loc[p_, r1]
+                if pd.isna(a) or pd.isna(b):
+                    continue
+                if a == b:
+                    tipo = "Se mantuvo"
+                elif b in mayoria and a not in mayoria:
+                    tipo = "Hacia la mayoría"
+                elif a in mayoria and b not in mayoria:
+                    tipo = "Se alejó de la mayoría"
+                else:
+                    tipo = "Otro cambio"
+                filas.append({"qid": q, "transicion": f"Ronda {r0} → {r1}", "panelista": p_,
+                              "tipo": tipo})
+    return pd.DataFrame(filas)
+
+
+def fig_movimiento(panel, png=False):
+    """Barras apiladas por par de rondas: cómo se movieron los panelistas respecto de la mayoría."""
+    m = movimientos(panel)
+    if m.empty:
+        return None
+    trans = sorted(m.transicion.unique())
+    fig, ax = plt.subplots(figsize=(7.2, .62 * len(trans) + 1.3))
+    for i, t_ in enumerate(trans):
+        sub_ = m[m.transicion == t_]
+        total, x = len(sub_), 0
+        for tipo in TIPOS_MOV:
+            n = int((sub_.tipo == tipo).sum())
+            if not n:
+                continue
+            ax.barh(i, n / total * 100, left=x, height=.56, color=COL_MOV[tipo],
+                    edgecolor=PANEL, linewidth=2)
+            if n / total > .035:
+                ax.text(x + n / total * 50, i, str(n), ha="center", va="center", fontsize=8.5,
+                        fontweight="bold", color=_tinta_sobre(COL_MOV[tipo]))
+            x += n / total * 100
+        cambian = int((sub_.tipo != "Se mantuvo").sum())
+        hacia = int((sub_.tipo == "Hacia la mayoría").sum())
+        ax.text(101.5, i, f"{cambian} de {total} cambian;\n{hacia} hacia la mayoría",
+                va="center", fontsize=7.8, color=TINTA2)
+    ax.set_yticks(range(len(trans)))
+    ax.set_yticklabels(trans, fontsize=8.5)
+    ax.invert_yaxis()
+    ax.set_xlim(0, 100)
+    ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xticklabels([f"{v} %" for v in (0, 25, 50, 75, 100)])
+    ax.set_xlabel("Respuestas (panelista × pregunta) entre dos rondas seguidas")
+    for s_ in ("left",):
+        ax.spines[s_].set_visible(False)
+    ax.tick_params(length=0)
+    manijas = [plt.Rectangle((0, 0), 1, 1, color=COL_MOV[t_]) for t_ in TIPOS_MOV]
+    ax.legend(manijas, TIPOS_MOV, frameon=False, fontsize=8, ncol=4, loc="upper center",
+              bbox_to_anchor=(.45, -.32 if len(trans) < 3 else -.22))
+    fig.tight_layout()
+    return _guardar(fig, f"fig_movimiento_panel{panel}", png)
+
+
+# ── 7. Perfil de argumento de cada panelista ──────────────────────────────────
+
+RAMPA = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95"]   # azul 100→600
+
+
+def fig_perfil_panelistas(panel, png=False):
+    """
+    Panelista × perfil de argumento: en cuántas preguntas (ronda final) cada panelista dio cada
+    tipo de razón. Muestra si cada persona razona siempre desde el mismo lugar o cambia según
+    la pregunta. Escala secuencial de un solo azul, con el número en cada celda.
+    """
+    from argumentos import ARGUMENTOS, NINGUNO
+    a = _argumentos(panel)
+    if a is None or a.empty:
+        return None
+    fin = a[a.Round == a.groupby("question_id").Round.transform("max")]
+    cols = [x for x in list(ARGUMENTOS) + [NINGUNO] if (fin.argumento == x).any()]
+    piv = (fin.assign(v=1).pivot_table(index="Panelist", columns="argumento", values="v",
+                                        aggfunc="sum", fill_value=0).reindex(columns=cols, fill_value=0))
+    reales = [c for c in cols if c != NINGUNO]
+    piv = piv.loc[sorted(piv.index, key=lambda p_: (reales.index(piv.loc[p_, reales].idxmax())
+                                                    if piv.loc[p_, reales].sum() else 99, p_))]
+    fig, ax = plt.subplots(figsize=(.78 * len(cols) + 2.0, .4 * len(piv) + 2.2))
+    for i, p_ in enumerate(piv.index):
+        for j, c in enumerate(cols):
+            n = int(piv.loc[p_, c])
+            col = (VACIO if n == 0 else OTRAS if c == NINGUNO
+                   else RAMPA[min(n, len(RAMPA)) - 1])
+            ax.add_patch(plt.Rectangle((j + .05, i + .05), .9, .9, facecolor=col, edgecolor=PANEL))
+            if n:
+                ax.text(j + .5, i + .52, str(n), ha="center", va="center", fontsize=8,
+                        color=_tinta_sobre(col), fontweight="bold")
+    ax.set_xlim(0, len(cols)); ax.set_ylim(len(piv), 0)
+    ax.set_xticks([j + .5 for j in range(len(cols))])
+    ax.set_xticklabels([_envuelve(c, 14, 3) for c in cols], fontsize=7.4, rotation=0)
+    ax.xaxis.tick_top()
+    ax.set_yticks([i + .5 for i in range(len(piv))])
+    ax.set_yticklabels([str(p_) for p_ in piv.index], fontsize=8)
+    ax.set_ylabel("Panelista", fontsize=8.5)
+    for s_ in ax.spines.values():
+        s_.set_visible(False)
+    ax.tick_params(length=0)
+    fig.tight_layout()
+    return _guardar(fig, f"fig_perfil_panelistas_panel{panel}", png)
+
+
+# ── 8. Diagrama del método ────────────────────────────────────────────────────
+
+def fig_metodo(png=False):
+    """De la respuesta en texto libre a la conclusión por pregunta, con las cifras del estudio."""
+    from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+    from config import CONSENSUS_THRESHOLD, STABILITY_MAX_CHANGE
+    ctx = datos.contexto()
+    k = next((x.get("k_corridas") for x in reversed(datos.manifiesto())
+              if x.get("step") == "consolidar"), 3)
+    pasos = [
+        ("Respuestas en texto libre", f"{ctx['n_validas']} válidas · {ctx['n_paneles']} paneles\n"
+                                      f"{ctx['n_rondas']} rondas · {ctx['n_preguntas']} preguntas"),
+        ("Taxonomía de la experta", "posturas, opciones, bandas\ny perfiles de argumento"),
+        ("Clasificación automática", f"modelo de lenguaje en el\nservidor universitario,\n{k} corridas independientes"),
+        ("Voto mayoritario", "sin mayoría entre corridas:\nsin clasificar"),
+        ("Resultado por pregunta", f"acuerdo ≥ {int(CONSENSUS_THRESHOLD * 100)} %\n× estabilidad "
+                                   f"≤ {int(STABILITY_MAX_CHANGE * 100)} %"),
+    ]
+    fig, ax = plt.subplots(figsize=(11.2, 2.9))
+    W, H, GAP = 2.0, 1.25, .38
+    for i, (titulo, det) in enumerate(pasos):
+        x = i * (W + GAP)
+        ax.add_patch(FancyBboxPatch((x, 0), W, H, boxstyle="round,pad=0.02,rounding_size=0.08",
+                                    facecolor="#f4f7fc" if i != 1 else "#fdf6e7",
+                                    edgecolor=AZUL if i != 1 else "#c9a227", linewidth=1.2))
+        ax.text(x + W / 2, H - .24, titulo, ha="center", va="center", fontsize=8.6,
+                fontweight="bold", color=TINTA)
+        ax.text(x + W / 2, H / 2 - .12, det, ha="center", va="center", fontsize=7.6,
+                color=TINTA2, linespacing=1.25)
+        if i < len(pasos) - 1:
+            ax.add_patch(FancyArrowPatch((x + W + .04, H / 2), (x + W + GAP - .04, H / 2),
+                                         arrowstyle="-|>", mutation_scale=11, color=TINTA3, lw=1.2))
+    # validación: debajo, contra la clasificación
+    xv = 2 * (W + GAP)
+    ax.add_patch(FancyBboxPatch((xv - .05, -1.15), W + .1, .72,
+                                boxstyle="round,pad=0.02,rounding_size=0.08", facecolor=PANEL,
+                                edgecolor=TINTA3, linewidth=1.0, linestyle=(0, (3, 2))))
+    ax.text(xv + W / 2, -.79, "Validación contra personas\n(dos codificadores, en curso)",
+            ha="center", va="center", fontsize=7.6, color=TINTA2, linespacing=1.25)
+    ax.add_patch(FancyArrowPatch((xv + W / 2, -.43), (xv + W / 2, -.03), arrowstyle="-|>",
+                                 mutation_scale=10, color=TINTA3, lw=1.0, linestyle=(0, (3, 2))))
+    ax.text(1 * (W + GAP) + W / 2, -.32, "definida por Emily", ha="center", fontsize=7.2,
+            color="#8a6d10")
+    ax.set_xlim(-.1, len(pasos) * (W + GAP) - GAP + .1)
+    ax.set_ylim(-1.3, H + .1)
+    ax.axis("off")
+    fig.tight_layout()
+    return _guardar(fig, "fig_metodo", png)
+
+
 def construir_todo(png=False):
     """Genera las figuras de cada panel por separado. No hay figuras entre paneles."""
     d = datos.clasificadas()
@@ -778,6 +960,8 @@ def construir_todo(png=False):
             "argumentos": fig_argumentos(panel, png),
             "perfiles": fig_perfiles(panel, png),
             "grafo": fig_grafo(panel, png),
+            "movimiento": fig_movimiento(panel, png),
+            "perfil_panelistas": fig_perfil_panelistas(panel, png),
             "flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
         }
     return salida
