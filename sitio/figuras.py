@@ -641,6 +641,91 @@ def fig_argumentos(panel, png=False):
     return _guardar(fig, f"fig_argumentos_panel{panel}", png)
 
 
+def fig_grafo(panel, png=False):
+    """
+    Grafo de ontología del panel: cada pregunta·postura (ronda final) unida a los perfiles de
+    argumento de Emily que la sostienen. A diferencia del árbol y de los grafos por pregunta,
+    aquí los perfiles se COMPARTEN: un mismo argumento puede sostener posturas de preguntas
+    distintas, y eso es lo que el grafo deja ver. No se junta con otros paneles: son estudios
+    independientes.
+
+    Nodo izquierdo: tamaño = panelistas en esa postura u opción; color = postura (o la opción en
+    las preguntas que no son de sí / no). Nodo derecho: perfil. Arista: panelistas que dan esa
+    razón para esa postura. «Sin argumento» no se dibuja; queda en la etiqueta de cada nodo.
+    Orden: perfiles por peso total; posturas por baricentro de sus perfiles (menos cruces).
+    """
+    from argumentos import ARGUMENTOS, NINGUNO
+    a = _argumentos(panel)
+    if a is None or a.empty:
+        return None
+    fin = a[a.Round == a.groupby("question_id").Round.transform("max")]
+    nodos, aristas = {}, collections.Counter()
+    for q, g in fin.groupby("question_id"):
+        cat, pal, _, marcas = esquema(q, a[a.question_id == q].selected_option)
+        for o, arg in zip(g.selected_option, g.argumento):
+            c = cat(o)
+            if c is None:
+                continue
+            k = (q, c)
+            # color sólo para la postura: las opciones van en gris con su letra y su nombre
+            # (en un mismo grafo, el azul de «opción A» se confundiría con «a favor»)
+            n = nodos.setdefault(k, {"n": 0, "sin": 0,
+                                     "col": pal.get(c, OTRAS) if pal is COL_POSTURA else OTRAS,
+                                     "marca": marcas.get(c, "")})
+            n["n"] += 1
+            if arg == NINGUNO or not isinstance(arg, str):
+                n["sin"] += 1
+            else:
+                aristas[(k, arg)] += 1
+    if not aristas:
+        return None
+    peso = collections.Counter()
+    for (_, arg), w in aristas.items():
+        peso[arg] += w
+    perfiles = sorted(peso, key=lambda x: -peso[x])
+    ydch = {x: i for i, x in enumerate(perfiles)}
+    def baricentro(k):
+        ws = [(ydch[arg], w) for (kk, arg), w in aristas.items() if kk == k]
+        return sum(y * w for y, w in ws) / sum(w for _, w in ws) if ws else len(perfiles)
+    izq = sorted(nodos, key=lambda k: (baricentro(k), k))
+    H = max(len(izq), len(perfiles))
+    yi = {k: i * (H - 1) / max(1, len(izq) - 1) for i, k in enumerate(izq)}
+    yd = {x: i * (H - 1) / max(1, len(perfiles) - 1) for i, x in enumerate(perfiles)}
+
+    fig, ax = plt.subplots(figsize=(8.2, .36 * H + 1.0))
+    XI, XD = 0.0, 4.0
+    wmax = max(aristas.values())
+    for (k, arg), w in sorted(aristas.items(), key=lambda kv: kv[1]):
+        y0, y1 = yi[k], yd[arg]
+        xs = np.linspace(XI, XD, 40)
+        t_ = (xs - XI) / (XD - XI)
+        ys = y0 + (y1 - y0) * (3 * t_ ** 2 - 2 * t_ ** 3)       # curva suave
+        ax.plot(xs, ys, color=nodos[k]["col"], lw=1.2 + 5.5 * w / wmax, alpha=.45,
+                solid_capstyle="butt", zorder=1)
+    nmax = max(v["n"] for v in nodos.values())
+    for k in izq:
+        v = nodos[k]
+        ax.scatter([XI], [yi[k]], s=40 + 260 * v["n"] / nmax, color=v["col"], edgecolor=PANEL,
+                   linewidth=1.5, zorder=3)
+        nombre = k[1] if k[1] in ("A favor", "En contra", "Condicional", "Sin postura") else _corta(k[1], 28)
+        extra = f", {v['sin']} sin arg." if v["sin"] else ""
+        ax.text(XI - .14, yi[k], f"{k[0]}  {v['marca']} {nombre}  ({v['n']}{extra})",
+                ha="right", va="center", fontsize=7.6, color=TINTA2)
+    pmax = max(peso.values())
+    for x in perfiles:
+        ax.scatter([XD], [yd[x]], s=40 + 260 * peso[x] / pmax, color=TINTA2, edgecolor=PANEL,
+                   linewidth=1.5, zorder=3, marker="s")
+        ax.text(XD + .3, yd[x], f"{x}  ({peso[x]})", ha="left", va="center", fontsize=8,
+                color=TINTA)
+    ax.text(XI, -1.1, "Pregunta · postura (ronda final)", ha="center", fontsize=8, color=TINTA3)
+    ax.text(XD, -1.1, "Perfil de argumento (Emily)", ha="center", fontsize=8, color=TINTA3)
+    ax.set_xlim(XI - 3.6, XD + 3.4)
+    ax.set_ylim(H - .3, -1.6)
+    ax.axis("off")
+    fig.tight_layout()
+    return _guardar(fig, f"fig_grafo_panel{panel}", png)
+
+
 def fig_perfiles(panel, png=False):
     """Qué argumentos predominan en el panel: respuestas de la ronda final por argumento."""
     from argumentos import ARGUMENTOS, NINGUNO
@@ -692,6 +777,7 @@ def construir_todo(png=False):
             "arbol": fig_arbol(panel, png),
             "argumentos": fig_argumentos(panel, png),
             "perfiles": fig_perfiles(panel, png),
+            "grafo": fig_grafo(panel, png),
             "flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
         }
     return salida
