@@ -396,10 +396,18 @@ def seccion_argumentos(f):
     if not f.get("argumentos"):
         return ""
     perfiles = f'<figure class="fig">{figuras.inline(f["perfiles"])}</figure>' if f.get("perfiles") else ""
+    grafo = (f'<h4>El mapa de argumentos del panel</h4><p>Cada pregunta, con su postura u opción '
+             f'en la ronda final (izquierda), unida a los perfiles de argumento que la sostienen '
+             f'(derecha). Los perfiles son los mismos para todas las preguntas, así que se ve qué '
+             f'razones atraviesan varias preguntas del panel. El tamaño de cada nodo y el grosor de '
+             f'cada línea son panelistas; las respuestas sin argumento se cuentan en la etiqueta y '
+             f'no se dibujan.</p><figure class="fig">{figuras.inline(f["grafo"])}</figure>'
+             if f.get("grafo") else "")
     return f'''
   <h3>Por qué: los argumentos</h3>
   <p>{contenido.NOTA_ARGUMENTOS}</p>
   {perfiles}
+  {grafo}
   <p>Pregunta por pregunta: a la izquierda, la postura (u opción) de cada panelista en la
   ronda final; a la derecha, el argumento que da. Cada cinta son panelistas.</p>
   <figure class="fig">{figuras.inline(f["argumentos"])}</figure>'''

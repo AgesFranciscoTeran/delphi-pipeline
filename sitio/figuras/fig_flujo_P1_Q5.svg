@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-16T22:02:10.498881</dc:date>
+    <dc:date>2026-10-18T04:31:55.718538</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -43,7 +43,7 @@ C 193.087059 262.058838 193.087059 262.058838 248.853176 262.058838
 L 248.853176 48.513384 
 C 193.087059 48.513384 193.087059 48.513384 137.320941 48.513384 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #2a78d6; opacity: 0.22"/>
+" clip-path="url(#p662363e06c)" style="fill: #2a78d6; opacity: 0.22"/>
    </g>
    <g id="patch_4">
     <path d="M 264.506824 262.058838 
@@ -51,7 +51,7 @@ C 320.272941 262.058838 320.272941 262.058838 376.039059 262.058838
 L 376.039059 118.678319 
 C 320.272941 118.678319 320.272941 109.526371 264.506824 109.526371 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #2a78d6; opacity: 0.22"/>
+" clip-path="url(#p662363e06c)" style="fill: #2a78d6; opacity: 0.22"/>
    </g>
    <g id="patch_5">
     <path d="M 264.506824 109.526371 
@@ -59,7 +59,7 @@ C 320.272941 109.526371 320.272941 105.865591 376.039059 105.865591
 L 376.039059 48.513384 
 C 320.272941 48.513384 320.272941 48.513384 264.506824 48.513384 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #2a78d6; opacity: 0.6"/>
+" clip-path="url(#p662363e06c)" style="fill: #2a78d6; opacity: 0.6"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
@@ -88,7 +88,7 @@ L 137.320941 262.058838
 L 137.320941 48.513384 
 L 121.667294 48.513384 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#p662363e06c)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_7">
     <path d="M 248.853176 262.058838 
@@ -96,7 +96,7 @@ L 264.506824 262.058838
 L 264.506824 48.513384 
 L 248.853176 48.513384 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#p662363e06c)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_8">
     <path d="M 376.039059 262.058838 
@@ -104,7 +104,7 @@ L 391.692706 262.058838
 L 391.692706 118.678319 
 L 376.039059 118.678319 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#p662363e06c)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_9">
     <path d="M 376.039059 105.865591 
@@ -112,7 +112,7 @@ L 391.692706 105.865591
 L 391.692706 48.513384 
 L 376.039059 48.513384 
 z
-" clip-path="url(#pa5714249b7)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#p662363e06c)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="text_4">
     <text style="font-size: 9.5px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; fill: #0b0b0b" transform="translate(7.2 14.798516)">P1_Q5 — ¿Debería existir un organismo regulador imparcial?</text>
@@ -142,7 +142,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="pa5714249b7">
+  <clipPath id="p662363e06c">
    <rect x="7.2" y="35.700656" width="498.96" height="234.9"/>
   </clipPath>
  </defs>
