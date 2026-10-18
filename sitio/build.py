@@ -297,6 +297,7 @@ def pagina_panel(panel):
   la ronda final. Las que nadie eligió también aparecen, en gris y con 0: muestran qué parte de
   la taxonomía usó el panel y cuál no. A la derecha de cada pregunta, su resultado.</p>
   <figure class="fig">{figuras.inline(f['arbol'])}</figure>
+{seccion_argumentos(f)}
 </section>
 
 <section id="evolucion">
@@ -389,6 +390,19 @@ def cuadricula_opciones(f, panel):
             f'ver con la A de otra, y el azul aquí no significa «a favor».</p>'
             f'<figure class="fig">{figuras.inline(ruta)}</figure>'
             f'{figuras.leyenda_opciones(panel)}{NOTA_HUECOS}')
+
+
+def seccion_argumentos(f):
+    if not f.get("argumentos"):
+        return ""
+    perfiles = f'<figure class="fig">{figuras.inline(f["perfiles"])}</figure>' if f.get("perfiles") else ""
+    return f'''
+  <h3>Por qué: los argumentos</h3>
+  <p>{contenido.NOTA_ARGUMENTOS}</p>
+  {perfiles}
+  <p>Pregunta por pregunta: a la izquierda, la postura (u opción) de cada panelista en la
+  ronda final; a la derecha, el argumento que da. Cada cinta son panelistas.</p>
+  <figure class="fig">{figuras.inline(f["argumentos"])}</figure>'''
 
 
 def significado_resultados():

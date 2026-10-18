@@ -49,7 +49,8 @@ ESTABILIDAD_CONSECUENCIA = (
 # Gemma; con GLM es falsa. Queda anotado para no volver a copiarla.
 
 CERRADAS = (
- "El 15-10-2026, con Emily, se cerraron los criterios de consenso (ver «Cómo funciona» en la "
+ "La taxonomía de argumentos es la lista de nueve perfiles de razonamiento de Emily, adoptada "
+ "el 16-10-2026. El 15-10-2026, con Emily, se cerraron los criterios de consenso (ver «Cómo funciona» en la "
  "portada) y la taxonomía numérica: bandas contiguas en todas las preguntas de horas (antes 15 "
  "respuestas caían en huecos), una tercera banda en admisión (más de 80) con el 50 dentro de "
  "«More», y en <b>P1_Q7</b> se separan las horas de ABP, sobre las que se mide el consenso, del "
@@ -72,11 +73,6 @@ DECISIONES = [
   'hoy': 'Las dos ya no dejan respuestas sin clasificar y terminan con consenso fuerte, pero quedar clasificada no es quedar bien clasificada.',
   'evidencia': 'Cuando alguien escribe «PBL 50 %, examen 20 %, práctica 20 %» y el sistema lo mete en una sola opción de prioridad, se perdió una distribución entera. En P4_Q6, «socrática sólo en ciencias básicas» encaja en «Yes, only in basic sciences», que puede ser un sí que el panelista no dijo — y es justo la opción que gana la ronda final.',
   'decision': 'Revisar a mano las ~40 respuestas afectadas. Es lo que decide si estas dos preguntas se pueden reportar.'},
- {'titulo': 'Taxonomía de argumentos',
-  'paneles': [1, 2, 3, 4],
-  'hoy': 'Se clasifica <b>qué</b> responde cada panelista, pero todavía no <b>por qué</b>. Ya hay un prototipo del grafo que une cada postura con sus razones, pero sus temas los propuso el modelo, no tú.',
-  'evidencia': 'Con temas propuestos por el modelo ya se ven cosas: en P4_Q8 el empate 4 a 4 tiene razones distintas a cada lado (a favor, «refleja interés y compromiso»; en contra, «subjetividad del docente»). Para el artículo, esas categorías tienen que ser tuyas.',
-  'decision': 'Definir la taxonomía de argumentos. Tu lista de perfiles (formación clínica intensiva, científica, equilibrio, ABP, estructura tradicional, bienestar, exigencia, evaluación orientada al aprendizaje, formación integral) puede ser esa taxonomía: hay que confirmar si sirve para clasificar cada respuesta o a cada panelista.'},
 ]
 
 CAPAS = [
@@ -102,10 +98,10 @@ CAPAS = [
   "codificador. Falta que dos personas las etiqueten.",
   "Emily + 2.º codificador"),
  ("Las razones que dan los panelistas", "A medias", "wip",
-  "Hay un prototipo del grafo postura → razón, con temas propuestos por el modelo en una sola "
-  "corrida; no se publica porque no está validado. Falta la taxonomía de argumentos: la define "
-  "Emily, y su lista de perfiles es el punto de partida.",
-  "<b>Emily</b> · taxonomía de argumentos"),
+  "Taxonomía de argumentos de Emily (nueve perfiles) adoptada el 16-10-2026; cada respuesta se "
+  "clasifica con voto de tres corridas y el grafo postura → argumento está en cada panel. Falta "
+  "validar la clasificación contra una persona.",
+  "Emily + 2.º codificador"),
 ]
 
 # Lectura de la cuadrícula de cada panel. Descripciones internas: no comparan un panel con
@@ -172,3 +168,15 @@ SIGNIFICADO_RESULTADOS = [
   "No hay datos suficientes para juzgar: menos de 5 respuestas clasificadas en alguna de las dos "
   "últimas rondas, o más del 40 % sin clasificar."),
 ]
+
+
+# Argumentos (el porqué): taxonomía de Emily, clasificación automática.
+NOTA_ARGUMENTOS = (
+ "Además de qué responde cada panelista, el sistema clasifica <b>por qué</b>: el argumento de "
+ "cada respuesta se asigna a uno de los nueve perfiles de razonamiento que definió Emily "
+ "(formación clínica intensiva, científica, equilibrio, ABP, estructura tradicional, bienestar, "
+ "exigencia, evaluación orientada al aprendizaje y formación integral), o a «sin argumento» "
+ "si la respuesta no da una razón. Como con las posturas, es el voto de tres corridas. La "
+ "taxonomía es de Emily; la clasificación es automática y <b>todavía no está validada</b> "
+ "contra una persona."
+)

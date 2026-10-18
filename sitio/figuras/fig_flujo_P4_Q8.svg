@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-16T03:57:06.162383</dc:date>
+    <dc:date>2026-10-16T22:02:13.237829</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -43,7 +43,7 @@ C 193.087059 262.058838 193.087059 262.058838 248.853176 262.058838
 L 248.853176 147.354422 
 C 193.087059 147.354422 193.087059 161.692474 137.320941 161.692474 
 z
-" clip-path="url(#p89607466a6)" style="fill: #2a78d6; opacity: 0.22"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #2a78d6; opacity: 0.22"/>
    </g>
    <g id="patch_4">
     <path d="M 137.320941 148.879747 
@@ -51,7 +51,7 @@ C 193.087059 148.879747 193.087059 134.541695 248.853176 134.541695
 L 248.853176 48.513384 
 C 193.087059 48.513384 193.087059 73.604974 137.320941 73.604974 
 z
-" clip-path="url(#p89607466a6)" style="fill: #e34948; opacity: 0.22"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #e34948; opacity: 0.22"/>
    </g>
    <g id="patch_5">
     <path d="M 264.506824 262.058838 
@@ -59,7 +59,7 @@ C 320.272941 262.058838 320.272941 262.058838 376.039059 262.058838
 L 376.039059 161.692474 
 C 320.272941 161.692474 320.272941 147.354422 264.506824 147.354422 
 z
-" clip-path="url(#p89607466a6)" style="fill: #2a78d6; opacity: 0.22"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #2a78d6; opacity: 0.22"/>
    </g>
    <g id="patch_6">
     <path d="M 264.506824 134.541695 
@@ -67,7 +67,7 @@ C 320.272941 134.541695 320.272941 148.879747 376.039059 148.879747
 L 376.039059 73.604974 
 C 320.272941 73.604974 320.272941 48.513384 264.506824 48.513384 
 z
-" clip-path="url(#p89607466a6)" style="fill: #e34948; opacity: 0.22"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #e34948; opacity: 0.22"/>
    </g>
    <g id="matplotlib.axis_1">
     <g id="xtick_1">
@@ -96,7 +96,7 @@ L 137.320941 262.058838
 L 137.320941 161.692474 
 L 121.667294 161.692474 
 z
-" clip-path="url(#p89607466a6)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_8">
     <path d="M 121.667294 148.879747 
@@ -104,7 +104,7 @@ L 137.320941 148.879747
 L 137.320941 48.513384 
 L 121.667294 48.513384 
 z
-" clip-path="url(#p89607466a6)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_9">
     <path d="M 248.853176 262.058838 
@@ -112,7 +112,7 @@ L 264.506824 262.058838
 L 264.506824 147.354422 
 L 248.853176 147.354422 
 z
-" clip-path="url(#p89607466a6)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_10">
     <path d="M 248.853176 134.541695 
@@ -120,7 +120,7 @@ L 264.506824 134.541695
 L 264.506824 48.513384 
 L 248.853176 48.513384 
 z
-" clip-path="url(#p89607466a6)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_11">
     <path d="M 376.039059 262.058838 
@@ -128,7 +128,7 @@ L 391.692706 262.058838
 L 391.692706 161.692474 
 L 376.039059 161.692474 
 z
-" clip-path="url(#p89607466a6)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #2a78d6; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="patch_12">
     <path d="M 376.039059 148.879747 
@@ -136,7 +136,7 @@ L 391.692706 148.879747
 L 391.692706 48.513384 
 L 376.039059 48.513384 
 z
-" clip-path="url(#p89607466a6)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
+" clip-path="url(#pa3ebd88269)" style="fill: #e34948; stroke: #ffffff; stroke-width: 1.5; stroke-linejoin: miter"/>
    </g>
    <g id="text_4">
     <text style="font-size: 9.5px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; fill: #0b0b0b" transform="translate(7.2 14.798516)">P4_Q8 — ¿Debería la participación ser parte de la evaluación?</text>
@@ -175,7 +175,7 @@ z
   </g>
  </g>
  <defs>
-  <clipPath id="p89607466a6">
+  <clipPath id="pa3ebd88269">
    <rect x="7.2" y="35.700656" width="498.96" height="234.9"/>
   </clipPath>
  </defs>
