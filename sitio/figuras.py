@@ -559,6 +559,119 @@ def fig_arbol(panel, png=False):
     return _guardar(fig, f"fig_arbol_panel{panel}", png)
 
 
+# ── 5. Argumentos: por qué (taxonomía de Emily) ───────────────────────────────
+
+def _argumentos(panel):
+    """Respuestas del panel con su argumento (04_argumentos.csv), o None si no existe."""
+    p = os.path.join(datos.RUTA_RESULTADOS, "04_argumentos.csv")
+    if not os.path.exists(p):
+        return None
+    a = pd.read_csv(p)
+    return a[a.Panel == panel]
+
+
+def fig_argumentos(panel, png=False):
+    """
+    Por qué responde el panel lo que responde: de la postura (u opción) de cada panelista en la
+    ronda final al argumento que da, en la taxonomía de Emily. Cada cinta son panelistas.
+    Los argumentos van en gris neutro y con su nombre: el color queda para la postura.
+    """
+    from argumentos import ARGUMENTOS, NINGUNO
+    a = _argumentos(panel)
+    if a is None or a.empty:
+        return None
+    orden_arg = list(ARGUMENTOS) + [NINGUNO]
+    preguntas = sorted(a.question_id.unique(), key=lambda q: int(q.split("_Q")[1]))
+    alto = []
+    bloques = []
+    for q in preguntas:
+        g = a[a.question_id == q]
+        fin = g[g.Round == g.Round.max()]
+        cat, pal, orden, marcas = esquema(q, g.selected_option)
+        pares = collections.Counter((cat(o), arg) for o, arg in zip(fin.selected_option, fin.argumento))
+        pares = {k: v for k, v in pares.items() if k[0] is not None}
+        if not pares:
+            continue
+        izq = [c for c in orden if any(a_ == c for a_, _ in pares)]
+        der = [x for x in orden_arg if any(b == x for _, b in pares)]
+        bloques.append((q, pares, izq, der, pal, marcas))
+        alto.append(max(len(izq), len(der)))
+    if not bloques:
+        return None
+    fig, axes = plt.subplots(len(bloques), 1, figsize=(7.6, sum(.42 * h + 1.0 for h in alto)),
+                             gridspec_kw={"height_ratios": [.42 * h + 1.0 for h in alto]})
+    axes = np.atleast_1d(axes)
+    GAP = .06
+    for ax, (q, pares, izq, der, pal, marcas) in zip(axes, bloques):
+        total = sum(pares.values())
+
+        def apilar(claves, lado):
+            pos, y = {}, 0.0
+            for k in claves:
+                n = sum(v for (x, b), v in pares.items() if (x if lado == 0 else b) == k)
+                h = n / total * (1 - GAP * (len(claves) - 1))
+                pos[k] = [y, y + h, n, 0.0]
+                y += h + GAP
+            return pos
+        pi, pd_ = apilar(izq, 0), apilar(der, 1)
+        for (x, b), n in sorted(pares.items(), key=lambda kv: (izq.index(kv[0][0]), der.index(kv[0][1]))):
+            h0 = (pi[x][1] - pi[x][0]) * n / pi[x][2]
+            h1 = (pd_[b][1] - pd_[b][0]) * n / pd_[b][2]
+            y0, y1 = pi[x][0] + pi[x][3], pd_[b][0] + pd_[b][3]
+            _cinta(ax, .12, 1.88, y0, y0 + h0, y1, y1 + h1, pal.get(x, OTRAS), .5)
+            pi[x][3] += h0
+            pd_[b][3] += h1
+        for k, (y0, y1, n, _) in pi.items():
+            ax.add_patch(plt.Rectangle((0, y0), .12, y1 - y0, facecolor=pal.get(k, OTRAS),
+                                       edgecolor=PANEL, lw=1.5))
+            ax.text(-.06, (y0 + y1) / 2, f"{marcas.get(k, '')}  {_corta(k, 30)}  ({n})",
+                    ha="right", va="center", fontsize=7.8, color=TINTA2)
+        for k, (y0, y1, n, _) in pd_.items():
+            ax.add_patch(plt.Rectangle((1.88, y0), .12, y1 - y0, facecolor=OTRAS,
+                                       edgecolor=PANEL, lw=1.5))
+            ax.text(2.08, (y0 + y1) / 2, f"{_envuelve(k, 30, 2)}  ({n})", ha="left",
+                    va="center", fontsize=7.8, color=TINTA2 if k != "Sin argumento" else TINTA3,
+                    linespacing=1.1)
+        ax.set_title(f"{q} — {_corta(datos.texto(q), 66)}   (ronda final, n = {total})",
+                     fontsize=8.8, color=TINTA, loc="left")
+        ax.set_xlim(-2.1, 4.2)
+        ax.set_ylim(1.03, -.04)
+        ax.axis("off")
+    fig.tight_layout()
+    return _guardar(fig, f"fig_argumentos_panel{panel}", png)
+
+
+def fig_perfiles(panel, png=False):
+    """Qué argumentos predominan en el panel: respuestas de la ronda final por argumento."""
+    from argumentos import ARGUMENTOS, NINGUNO
+    a = _argumentos(panel)
+    if a is None or a.empty:
+        return None
+    fin = a[a.Round == a.groupby("question_id").Round.transform("max")]
+    cuenta = fin.argumento.value_counts()
+    orden = [x for x in list(ARGUMENTOS) + [NINGUNO] if cuenta.get(x, 0)]
+    orden.sort(key=lambda x: (x == NINGUNO, -cuenta[x]))
+    fig, ax = plt.subplots(figsize=(6.8, .34 * len(orden) + .7))
+    total = cuenta.sum()
+    for i, x in enumerate(orden):
+        n = int(cuenta[x])
+        ax.barh(i, n, height=.62, color=AZUL if x != NINGUNO else OTRAS)
+        ax.text(n + total * .01, i, f"{n}  ({n / total * 100:.0f} %)", va="center",
+                fontsize=8, color=TINTA2)
+    ax.set_yticks(range(len(orden)))
+    ax.set_yticklabels(orden, fontsize=8.2)
+    ax.invert_yaxis()
+    ax.set_xticks([])
+    for s in ("left", "bottom"):
+        ax.spines[s].set_visible(False)
+    ax.tick_params(length=0)
+    ax.set_xlim(0, cuenta.max() * 1.25)
+    ax.set_title(f"Respuestas de la ronda final por argumento (n = {total}, todas las preguntas de opción)",
+                 fontsize=8.8, color=TINTA, loc="left")
+    fig.tight_layout()
+    return _guardar(fig, f"fig_perfiles_panel{panel}", png)
+
+
 def construir_todo(png=False):
     """Genera las figuras de cada panel por separado. No hay figuras entre paneles."""
     d = datos.clasificadas()
@@ -577,6 +690,8 @@ def construir_todo(png=False):
             "cuadricula": fig_cuadricula(panel, png),        # {"postura", "opciones"}
             "trayectoria": fig_trayectoria(panel, png),
             "arbol": fig_arbol(panel, png),
+            "argumentos": fig_argumentos(panel, png),
+            "perfiles": fig_perfiles(panel, png),
             "flujos": [(q, fig_flujo([q], png, f"fig_flujo_{q}")) for q in elegidas],
         }
     return salida

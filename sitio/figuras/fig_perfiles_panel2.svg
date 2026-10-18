@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="539.128062pt" height="241.038625pt" viewBox="0 0 539.128062 241.038625" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-16T22:02:11.347376</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 241.038625 
+L 539.128062 241.038625 
+L 539.128062 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 160.865062 233.838625 
+L 477.045062 233.838625 
+L 477.045062 20.238625 
+L 160.865062 20.238625 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 160.865062 29.947716 
+L 413.809062 29.947716 
+L 413.809062 45.747286 
+L 160.865062 45.747286 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 160.865062 55.430894 
+L 305.404491 55.430894 
+L 305.404491 71.230465 
+L 160.865062 71.230465 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 160.865062 80.914072 
+L 233.134777 80.914072 
+L 233.134777 96.713643 
+L 160.865062 96.713643 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 160.865062 106.397251 
+L 196.99992 106.397251 
+L 196.99992 122.196821 
+L 160.865062 122.196821 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 160.865062 131.880429 
+L 196.99992 131.880429 
+L 196.99992 147.679999 
+L 160.865062 147.679999 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 160.865062 157.363607 
+L 178.932491 157.363607 
+L 178.932491 173.163178 
+L 160.865062 173.163178 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 160.865062 182.846785 
+L 178.932491 182.846785 
+L 178.932491 198.646356 
+L 160.865062 198.646356 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 160.865062 208.329964 
+L 323.47192 208.329964 
+L 323.47192 224.129534 
+L 160.865062 224.129534 
+z
+" clip-path="url(#p48b95900e5)" style="fill: #c3c2b7"/>
+   </g>
+   <g id="matplotlib.axis_1"/>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_1"/>
+     <g id="text_1">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="40.962861" transform="rotate(-0 157.365062 40.962861)">Flexibilidad y bienestar estudiantil</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_2"/>
+     <g id="text_2">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="66.446039" transform="rotate(-0 157.365062 66.446039)">Defensores ABP</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_3"/>
+     <g id="text_3">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="92.093217" transform="rotate(-0 157.365062 92.093217)">Equilibrio clínica-científica</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_4"/>
+     <g id="text_4">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="117.412395" transform="rotate(-0 157.365062 117.412395)">Formación clínica intensiva</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_5"/>
+     <g id="text_5">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="142.895573" transform="rotate(-0 157.365062 142.895573)">Formación científica intensiva</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_6"/>
+     <g id="text_6">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="168.378752" transform="rotate(-0 157.365062 168.378752)">Defensores de estructura tradicional</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_7"/>
+     <g id="text_7">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="194.02593" transform="rotate(-0 157.365062 194.02593)">Exigencia y excelencia académica</text>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_8"/>
+     <g id="text_8">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="219.345108" transform="rotate(-0 157.365062 219.345108)">Sin argumento</text>
+     </g>
+    </g>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="421.216708" y="40.055001" transform="rotate(-0 421.216708 40.055001)">14  (34 %)</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="312.812137" y="65.538179" transform="rotate(-0 312.812137 65.538179)">8  (20 %)</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="240.542422" y="91.021358" transform="rotate(-0 240.542422 91.021358)">4  (10 %)</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="204.407565" y="116.504536" transform="rotate(-0 204.407565 116.504536)">2  (5 %)</text>
+   </g>
+   <g id="text_13">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="204.407565" y="141.987714" transform="rotate(-0 204.407565 141.987714)">2  (5 %)</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="186.340137" y="167.470892" transform="rotate(-0 186.340137 167.470892)">1  (2 %)</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="186.340137" y="192.954071" transform="rotate(-0 186.340137 192.954071)">1  (2 %)</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="330.879565" y="218.437249" transform="rotate(-0 330.879565 218.437249)">9  (22 %)</text>
+   </g>
+   <g id="text_17">
+    <text style="font-size: 8.8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #0b0b0b" x="160.865062" y="14.238625" transform="rotate(-0 160.865062 14.238625)">Respuestas de la ronda final por argumento (n = 41, todas las preguntas de opción)</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p48b95900e5">
+   <rect x="160.865062" y="20.238625" width="316.18" height="213.6"/>
+  </clipPath>
+ </defs>
+</svg>

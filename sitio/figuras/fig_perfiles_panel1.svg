@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="539.128062pt" height="216.558625pt" viewBox="0 0 539.128062 216.558625" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-10-16T22:02:10.453572</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.10.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 216.558625 
+L 539.128062 216.558625 
+L 539.128062 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 160.865062 209.358625 
+L 477.045062 209.358625 
+L 477.045062 20.238625 
+L 160.865062 20.238625 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 160.865062 28.834989 
+L 413.809062 28.834989 
+L 413.809062 44.936939 
+L 160.865062 44.936939 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 160.865062 54.805876 
+L 301.389507 54.805876 
+L 301.389507 70.907826 
+L 160.865062 70.907826 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 160.865062 80.776763 
+L 217.07484 80.776763 
+L 217.07484 96.878713 
+L 160.865062 96.878713 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 160.865062 106.74765 
+L 217.07484 106.74765 
+L 217.07484 122.8496 
+L 160.865062 122.8496 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 160.865062 132.718537 
+L 217.07484 132.718537 
+L 217.07484 148.820487 
+L 160.865062 148.820487 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 160.865062 158.689424 
+L 188.969951 158.689424 
+L 188.969951 174.791374 
+L 160.865062 174.791374 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #2a78d6"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 160.865062 184.660311 
+L 357.599285 184.660311 
+L 357.599285 200.762261 
+L 160.865062 200.762261 
+z
+" clip-path="url(#pa5235ee3a3)" style="fill: #c3c2b7"/>
+   </g>
+   <g id="matplotlib.axis_1"/>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_1"/>
+     <g id="text_1">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="40.165323" transform="rotate(-0 157.365062 40.165323)">Exigencia y excelencia académica</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_2"/>
+     <g id="text_2">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="65.97221" transform="rotate(-0 157.365062 65.97221)">Flexibilidad y bienestar estudiantil</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_3"/>
+     <g id="text_3">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="91.943097" transform="rotate(-0 157.365062 91.943097)">Formación científica intensiva</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_4"/>
+     <g id="text_4">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="117.913984" transform="rotate(-0 157.365062 117.913984)">Defensores de estructura tradicional</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_5"/>
+     <g id="text_5">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="144.048871" transform="rotate(-0 157.365062 144.048871)">Formación integral del médico</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_6"/>
+     <g id="text_6">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="170.019759" transform="rotate(-0 157.365062 170.019759)">Equilibrio clínica-científica</text>
+     </g>
+    </g>
+    <g id="ytick_7">
+     <g id="line2d_7"/>
+     <g id="text_7">
+      <text style="font-size: 8.2px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: end; fill: #898781" x="157.365062" y="195.826646" transform="rotate(-0 157.365062 195.826646)">Sin argumento</text>
+     </g>
+    </g>
+   </g>
+   <g id="text_8">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="421.678431" y="39.093464" transform="rotate(-0 421.678431 39.093464)">9  (32 %)</text>
+   </g>
+   <g id="text_9">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="309.258876" y="65.064351" transform="rotate(-0 309.258876 65.064351)">5  (18 %)</text>
+   </g>
+   <g id="text_10">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="224.944209" y="91.035238" transform="rotate(-0 224.944209 91.035238)">2  (7 %)</text>
+   </g>
+   <g id="text_11">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="224.944209" y="117.006125" transform="rotate(-0 224.944209 117.006125)">2  (7 %)</text>
+   </g>
+   <g id="text_12">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="224.944209" y="142.977012" transform="rotate(-0 224.944209 142.977012)">2  (7 %)</text>
+   </g>
+   <g id="text_13">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="196.83932" y="168.947899" transform="rotate(-0 196.83932 168.947899)">1  (4 %)</text>
+   </g>
+   <g id="text_14">
+    <text style="font-size: 8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #52514e" x="365.468654" y="194.918786" transform="rotate(-0 365.468654 194.918786)">7  (25 %)</text>
+   </g>
+   <g id="text_15">
+    <text style="font-size: 8.8px; font-family: 'DejaVu Sans', 'Helvetica', 'Arial', sans-serif; text-anchor: start; fill: #0b0b0b" x="160.865062" y="14.238625" transform="rotate(-0 160.865062 14.238625)">Respuestas de la ronda final por argumento (n = 28, todas las preguntas de opción)</text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="pa5235ee3a3">
+   <rect x="160.865062" y="20.238625" width="316.18" height="189.12"/>
+  </clipPath>
+ </defs>
+</svg>
