@@ -40,18 +40,19 @@ EMILY_TAXONOMY = {
             "Moderate": "3-5",
             "Intensive": ">=6",
         },
-        "extra_axes": [
+        "unit": "semesters",
+        "unit_assumed": True,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Each semester",
                     "Depending on ABP",
                     "Follow international standard",
                 ],
             },
         ],
-        "unit": "semesters",
-        "unit_assumed": True,
     },
     "P1_Q2": {
         "emily_num": 2,
@@ -70,19 +71,27 @@ EMILY_TAXONOMY = {
         "text": "How should Integral Community Development (DCI) be delivered to medical students?",
         "type": "nominal",
         "options": [
-            "To have DCI should be optional",
-            "Should be able to decide what to do",
-            "Should be various activities",
-            "Should contain work with kids",
-            "Should contain work with elderly",
-            "Should be in rural areas",
-            "Only with students with prior experience",
-            "Only if it does not affect follow up",
-            "Should implement public health strategies",
-            "Should be beneficial for communities overall",
             "4 semesters or less",
             "More than 4 semesters",
             "Does not answer the question",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
+                    "To have DCI should be optional",
+                    "Should be able to decide what to do",
+                    "Should be various activities",
+                    "Should contain work with kids",
+                    "Should contain work with elderly",
+                    "Should be in rural areas",
+                    "Only with students with prior experience",
+                    "Only if it does not affect follow up",
+                    "Should implement public health strategies",
+                    "Should be beneficial for communities overall",
+                ],
+            },
         ],
     },
     "P1_Q4": {
@@ -125,17 +134,18 @@ EMILY_TAXONOMY = {
             "Moderate": ">2 and <=5",
             "Intensive": ">5",
         },
-        "extra_axes": [
+        "unit": "hours/week",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the module",
                     "Depends on the practice",
                 ],
             },
         ],
-        "unit": "hours/week",
-        "unit_assumed": False,
     },
     "P1_Q7": {
         "emily_num": 7,
@@ -146,17 +156,18 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/week",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the number of practical hours",
                     "Depends on the schedule of the semester",
                 ],
             },
         ],
-        "unit": "hours/week",
-        "unit_assumed": False,
         "measure": "hours of PBL/ABP sessions per week only, not the total teaching hours",
         "secondary": "total weekly teaching hours, if the panelist states them",
         "measure_keywords": [
@@ -203,18 +214,19 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/day",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the semester",
                     "Depends on the year",
                     "Depends on the clinical practice",
                 ],
             },
         ],
-        "unit": "hours/day",
-        "unit_assumed": False,
     },
     "P2_Q4": {
         "emily_num": 11,
@@ -238,12 +250,26 @@ EMILY_TAXONOMY = {
         "options": [
             "Yes",
             "No",
-            "Obligatory",
             "Depends on the availability of the student",
-            "After practices",
-            "Minimal: 1",
-            "Moderate: 2-3",
-            "Intensive: >=4",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
+                    "Obligatory",
+                    "After practices",
+                ],
+            },
+            {
+                "id": "eje_3",
+                "name": "Numerical sessions per month",
+                "options": [
+                    "Minimal: 1",
+                    "Moderate: 2-3",
+                    "Intensive: >=4",
+                ],
+            },
         ],
     },
     "P2_Q6": {
@@ -260,9 +286,17 @@ EMILY_TAXONOMY = {
             "No",
             "No, respect free time",
             "No, physical / mental rest",
-            "Yes, once a month",
-            "Yes, once a week",
-            "Yes, once in the semester",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Numerical",
+                "options": [
+                    "Once a month",
+                    "Once a week",
+                    "Once in the semester",
+                ],
+            },
         ],
     },
     "P2_Q7": {
@@ -279,9 +313,17 @@ EMILY_TAXONOMY = {
             "No, only in certain modules",
             "No, according to learning objectives",
             "No, replaced by clinical cases",
-            "Yes, only once",
-            "Yes, only twice",
-            "Yes, 4 / Every week",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Numerical",
+                "options": [
+                    "Only once",
+                    "Only twice",
+                    "4 / Every week",
+                ],
+            },
         ],
     },
     "P3_Q1": {
@@ -293,18 +335,19 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/day",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the hours of practice",
                     "Depends in the year",
                     "Depends on the subject",
                 ],
             },
         ],
-        "unit": "hours/day",
-        "unit_assumed": False,
     },
     "P3_Q2": {
         "emily_num": 16,
@@ -315,42 +358,52 @@ EMILY_TAXONOMY = {
             "More": "50-80",
             "Many": ">80",
         },
-        "extra_axes": [
+        "unit": "students",
+        "unit_assumed": True,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on admission exam",
                     "Depends on exam + high school grades",
                     "Depends on availability of classes",
                 ],
             },
             {
-                "tipo": "Numerical (exam grade)",
-                "opciones": [
+                "id": "eje_3",
+                "name": "Numerical (exam grade)",
+                "options": [
                     "More than 85/100",
                     "More than 90/100",
                     "More than 95/100",
                 ],
             },
         ],
-        "unit": "students",
-        "unit_assumed": True,
     },
     "P3_Q3": {
         "emily_num": 17,
         "text": "How many students should be rejected in first year?",
         "type": "nominal",
         "options": [
-            "Depend on grades",
-            "Depends on passing all subjects",
-            "Depends on overall GPA",
-            "Should be rejected before first year",
-            "Depends on infrastructure capacity",
-            "As minimal as possible",
-            "No specific number",
             "<=10 - 19%",
             "20 - 29%",
             ">=30%",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
+                    "Depend on grades",
+                    "Depends on passing all subjects",
+                    "Depends on overall GPA",
+                    "Should be rejected before first year",
+                    "Depends on infrastructure capacity",
+                    "As minimal as possible",
+                    "No specific number",
+                ],
+            },
         ],
     },
     "P3_Q4": {
@@ -375,18 +428,19 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/week",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the credits",
                     "Depends on clinical hours",
                     "Depends on the subject",
                 ],
             },
         ],
-        "unit": "hours/week",
-        "unit_assumed": False,
     },
     "P3_Q6": {
         "emily_num": 20,
@@ -397,17 +451,18 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/week",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the subject",
                     "Depends on the availability of tutors",
                 ],
             },
         ],
-        "unit": "hours/week",
-        "unit_assumed": False,
     },
     "P3_Q7": {
         "emily_num": 21,
@@ -421,9 +476,17 @@ EMILY_TAXONOMY = {
             "Priority to PBL",
             "Depends on number of hours",
             "Priority to medicine subjects rather than general college",
-            "Less than 6 credits",
-            "PBL only 30%",
             "Does not answer the question",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Numerical",
+                "options": [
+                    "Less than 6 credits",
+                    "PBL only 30%",
+                ],
+            },
         ],
     },
     "P3_Q8": {
@@ -435,18 +498,19 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/week",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Should be online",
                     "Should be optional",
                     "Same priority as medicine subjects",
                 ],
             },
         ],
-        "unit": "hours/week",
-        "unit_assumed": False,
     },
     "P3_Q9": {
         "emily_num": 23,
@@ -457,9 +521,9 @@ EMILY_TAXONOMY = {
             "Yes, only with fewer class hours",
             "Yes, only specific courses",
             "Yes, only at the beginning of the program",
+            "No",
             "Depends on the course content",
             "Depends on the relation it has with medicine",
-            "No",
         ],
     },
     "P3_Q10": {
@@ -470,13 +534,27 @@ EMILY_TAXONOMY = {
             "First years (1-3)",
             "Final years (4-6)",
             "In all the career (1-6)",
-            "Should be mandatory",
-            "Should not happen before graduating",
-            "Should be optional",
-            "Once per week",
-            "Once per month",
-            "Once per module",
-            "Once per semester",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
+                    "Should be mandatory",
+                    "Should not happen before graduating",
+                    "Should be optional",
+                ],
+            },
+            {
+                "id": "eje_3",
+                "name": "Numerical",
+                "options": [
+                    "Once per week",
+                    "Once per month",
+                    "Once per module",
+                    "Once per semester",
+                ],
+            },
         ],
     },
     "P4_Q1": {
@@ -488,16 +566,17 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/day",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the subject",
                 ],
             },
         ],
-        "unit": "hours/day",
-        "unit_assumed": False,
     },
     "P4_Q2": {
         "emily_num": 26,
@@ -508,16 +587,17 @@ EMILY_TAXONOMY = {
             "Moderate": ">5 and <=8",
             "Intensive": ">8",
         },
-        "extra_axes": [
+        "unit": "hours/day",
+        "unit_assumed": False,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on the tutors",
                 ],
             },
         ],
-        "unit": "hours/day",
-        "unit_assumed": False,
     },
     "P4_Q3": {
         "emily_num": 27,
@@ -542,12 +622,20 @@ EMILY_TAXONOMY = {
             "Daily",
             "Weekly",
             "Once in the semester",
-            "Scheduled continuous evaluation",
-            "Surprise continuous evaluation",
-            "Limited evaluation",
-            "Minimal evaluation",
-            "Depends on the subject",
-            "Depends on the credits",
+        ],
+        "secondary_axes": [
+            {
+                "id": "eje_2",
+                "name": "Nominal type of evaluation",
+                "options": [
+                    "Scheduled continuous evaluation",
+                    "Surprise continuous evaluation",
+                    "Limited evaluation",
+                    "Minimal evaluation",
+                    "Depends on the subject",
+                    "Depends on the credits",
+                ],
+            },
         ],
     },
     "P4_Q5": {
@@ -589,26 +677,28 @@ EMILY_TAXONOMY = {
             "More": "50-80",
             "Many": ">80",
         },
-        "extra_axes": [
+        "unit": "students",
+        "unit_assumed": True,
+        "secondary_axes": [
             {
-                "tipo": "Nominal",
-                "opciones": [
+                "id": "eje_2",
+                "name": "Nominal",
+                "options": [
                     "Depends on admission exam",
                     "Depends on exam + high school grades",
                     "Depends on availability of classes",
                 ],
             },
             {
-                "tipo": "Numerical (exam)",
-                "opciones": [
+                "id": "eje_3",
+                "name": "Numerical (exam)",
+                "options": [
                     "More than 85/100",
                     "More than 90/100",
                     "More than 95/100",
                 ],
             },
         ],
-        "unit": "students",
-        "unit_assumed": True,
     },
     "P4_Q8": {
         "emily_num": 32,

@@ -18,7 +18,10 @@ DATA_PATH = _os.environ.get("DELPHI_DATOS", _os.path.join(RAIZ, "datos", "datase
 OUTPUT_DIR = _os.environ.get("DELPHI_RESULTADOS", _os.path.join(RAIZ, "Resultados"))
 FIGURES_DIR = _os.path.join(OUTPUT_DIR, "figures")
 
-API_KEY = "local"
+# Desde noviembre de 2026 TI sirve los modelos por una API con clave personal (ai.usfq.edu.ec).
+# La clave NUNCA va en el repo: se lee de DELPHI_API_KEY, que se carga desde un archivo fuera
+# de git (~/.delphi_env en el servidor, con permisos 600).
+API_KEY = _os.environ.get("DELPHI_API_KEY", "local")
 
 # ── Endpoints (verificar antes de cada corrida; la universidad cambia modelos sin aviso) ──
 # Se pueden sobrescribir por entorno para no tener que editar (ni versionar) este archivo
@@ -29,7 +32,7 @@ API_KEY = "local"
 # 14-09-2026: la universidad dejó de servir google/gemma-4-12B-it en este puerto y no lo va a
 # reponer. GLM pasa a ser el modelo de trabajo. Todo lo anterior a esta fecha —incluida la
 # validación contra las etiquetas de Emily, κ = 0,72— se midió con Gemma y no es comparable.
-URL_LLM = _os.environ.get("DELPHI_LLM_URL", "http://172.28.230.10:12559/v1")
+URL_LLM = _os.environ.get("DELPHI_LLM_URL", "https://ai.usfq.edu.ec/api/agents/llm/main/v1")
 MODEL_LLM = _os.environ.get("DELPHI_MODELO", "zai-org/GLM-5.3-Flash")
 
 URL_EMBEDDINGS = "http://172.28.230.10:12556/v1"
@@ -57,8 +60,10 @@ MAX_TOKENS_TECHO = int(_os.environ.get("DELPHI_MAX_TOKENS_TECHO", "16000"))
 # con el JSON por el mismo presupuesto. Empeora el truncado en vez de evitarlo.
 # Queda como interruptor por si otro modelo se comporta distinto.
 SIN_RAZONAMIENTO = _os.environ.get("DELPHI_SIN_RAZONAMIENTO", "0") == "1"
-MAX_WORKERS = 8            # peticiones concurrentes al LLM (vLLM batchea; 8-16 es razonable)
-REQUEST_TIMEOUT = 120      # segundos por petición
+# Peticiones concurrentes. Con el vLLM propio eran 8; la API de TI puede limitar por estudiante,
+# así que se ajusta con DELPHI_WORKERS después de medir.
+MAX_WORKERS = int(_os.environ.get("DELPHI_WORKERS", "8"))
+REQUEST_TIMEOUT = int(_os.environ.get("DELPHI_TIMEOUT", "300"))   # segundos por petición
 RETRIES = 3
 
 # Tasa de fallos por encima de la cual la extracción se considera rota y NO se sobrescribe
@@ -96,6 +101,13 @@ RESPONSE_TYPE_SYNTHESIS = "Synthesis"
 # y sale del denominador del consenso. Si contara, un «no responde» colgado de la celda «- No»
 # sumaría como un voto en contra.
 OFF_TOPIC_OPTION = "Does not answer the question"
+
+# Ejes secundarios (19-10-2026): una respuesta puede hablar de más de una dimensión de la misma
+# pregunta (p. ej. cuántos semestres Y de qué depende). Cada eje secundario recibe UNA opción o
+# «No aplica» si la respuesta no dice nada de esa dimensión. Columnas eje_2, eje_3.
+EJE_NA = "No aplica"
+EJE_SIN_MAYORIA = "Sin mayoría"
+EJES_COLS = ("eje_2", "eje_3")
 OFF_TOPIC_LABEL = "Off-topic"
 
 EMPTY_MARKERS = {"nan", "n.a.", "na", "n/a", "-", "--", "."}

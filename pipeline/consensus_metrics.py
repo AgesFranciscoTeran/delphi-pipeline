@@ -55,6 +55,27 @@ def modal_share(labels):
     return max(counts.values()) / total if total else np.nan
 
 
+def solo_otro_eje(df):
+    """Respuestas que no tienen valor en el eje principal pero sí en otro (10-11-2026).
+
+    Contestan la pregunta, sólo que en otra dimensión (en P1_Q3, las actividades y no los
+    semestres): no son «sin clasificar» ni «fuera de tema». Como con los ejes secundarios, no
+    cuentan en el denominador del eje principal.
+    """
+    cols = [c for c in EJES_COLS if c in df.columns]
+    if not cols or df.empty:
+        return pd.Series(False, index=df.index)
+    otro = pd.Series(False, index=df.index)
+    for c in cols:
+        otro |= df[c].notna() & ~df[c].isin([EJE_NA, EJE_SIN_MAYORIA])
+    categ = df["question_type"].isin(CATEGORICAL) if "question_type" in df.columns else False
+    sin_cat = (df["selected_option"].isna() | df["selected_option"].isin(["Unclassified", OFF_TOPIC_LABEL])
+               if "selected_option" in df.columns else True)
+    sin_num = ((df["numeric_value"].isna() if "numeric_value" in df.columns else True)
+               & (df["band"].isna() if "band" in df.columns else True))
+    return otro & pd.Series(np.where(categ, sin_cat, sin_num), index=df.index).astype(bool)
+
+
 def agreement_label(share, n_classified, pct_unclassified, is_tie=False, min_n=None):
     """Nivel de acuerdo de una distribución (AGREEMENT_LEVELS en config.py).
 
@@ -75,10 +96,12 @@ def categorical_consensus(df):
     cat = df[df["question_type"].isin(CATEGORICAL) & df["is_valid_response"]]
     records = []
     for (panel, q, rnd), grp in cat.groupby([COL_PANEL, COL_QUESTION, COL_ROUND]):
-        # Las fuera de tema no entran en ningún denominador: no son ni postura ni fallo.
-        fuera = grp["selected_option"].eq(OFF_TOPIC_LABEL)
-        n_off = int(fuera.sum())
-        grp = grp[~fuera]
+        # Las fuera de tema no entran en ningún denominador: no son ni postura ni fallo. Tampoco
+        # las que sólo hablan de otro eje de la pregunta.
+        otro_eje = solo_otro_eje(grp)
+        fuera = grp["selected_option"].eq(OFF_TOPIC_LABEL) & ~otro_eje
+        n_off, n_otro = int(fuera.sum()), int(otro_eje.sum())
+        grp = grp[~fuera & ~otro_eje]
         if grp.empty:
             continue
         labels = grp["selected_option"].tolist()
@@ -106,6 +129,7 @@ def categorical_consensus(df):
             "n_unclassified": n_total - n_cls,
             "n_extraction_failed": n_failed,
             "n_off_topic": n_off,
+            "n_otro_eje": n_otro,
             "pct_unclassified": pct_unc,
             "modal_option": modal,
             "is_tie": is_tie,
@@ -335,7 +359,9 @@ def quantitative_consensus(df):
                         "rel_range": rel_range, "rel_iqr": rel_iqr})
         # El consenso numérico se mide igual que el categórico, sobre la BANDA (criterio del
         # 15-10-2026); mediana y RIC quedan como descripción.
-        cuenta, n_b, pct_b = _distribucion_bandas(grp, tax)
+        otro_eje = solo_otro_eje(grp)
+        rec["n_otro_eje"] = int(otro_eje.sum())
+        cuenta, n_b, pct_b = _distribucion_bandas(grp[~otro_eje], tax)
         modal, share_b, tie_b = _modal(cuenta)
         rec.update({"n_banded": n_b, "modal_band": modal, "band_share": share_b, "band_tie": tie_b,
                     "pct_unclassified": pct_b,
@@ -467,17 +493,44 @@ def _registro(panel, q, tipo, base, texto, rondas):
     return rec
 
 
+def resultados_ejes(df):
+    """Una fila por pregunta × eje secundario, con el mismo criterio que el eje principal.
+
+    El denominador son quienes hablaron de ese eje: «No aplica» no cuenta (no decir nada de
+    una dimensión no es estar en desacuerdo). «Sin mayoría» cuenta como sin clasificar.
+    """
+    records = []
+    v = df[df["is_valid_response"]]
+    for (panel, q), grp in v.groupby([COL_PANEL, COL_QUESTION]):
+        tax = get_taxonomy(panel, q) or {}
+        for e in tax.get("secondary_axes") or []:
+            if e["id"] not in grp:
+                continue
+            g = grp[grp[e["id"]].notna() & (grp[e["id"]] != EJE_NA)]
+            if g.empty:
+                continue
+            et = [x if x in e["options"] else None for x in g[e["id"]]]
+            rondas = _por_ronda(g.assign(_e=et), MIN_N_CLASSIFIED)
+            rec = _registro(panel, q, "secondary", e["name"], grp[COL_QUESTION_TEXT].iloc[0], rondas)
+            rec.update({"axis_id": e["id"], "axis_name": e["name"],
+                        "n_mencionan": len(g), "n_total": len(grp)})
+            records.append(rec)
+    return pd.DataFrame(records)
+
+
 def resultados(df, quant):
     """Una fila por pregunta con el resultado de la ronda final (acuerdo × estabilidad)."""
     records = []
     cat = df[df["question_type"].isin(CATEGORICAL) & df["is_valid_response"]]
-    cat = cat[cat["selected_option"] != OFF_TOPIC_LABEL]      # fuera de tema: fuera del denominador
+    # fuera de tema, y respuestas que sólo hablan de otro eje: fuera del denominador
+    cat = cat[(cat["selected_option"] != OFF_TOPIC_LABEL) & ~solo_otro_eje(cat)]
     for (panel, q), grp in cat.groupby([COL_PANEL, COL_QUESTION]):
         base, et = _etiquetas_base(f"P{panel}_Q{q}", grp["selected_option"].tolist())
         rondas = _por_ronda(grp.assign(_e=et), MIN_N_CLASSIFIED)
         records.append(_registro(panel, q, "categorical", base,
                                  grp[COL_QUESTION_TEXT].iloc[0], rondas))
     for (panel, q), grp in quant.groupby([COL_PANEL, COL_QUESTION]):
+        grp = grp[~solo_otro_eje(grp)]
         bandas = list((get_taxonomy(panel, q) or {}).get("bands", {}))
         et = [b if b in bandas else None for b in grp["band_final"]]
         rondas = _por_ronda(grp.assign(_e=et), MIN_N_NUMERIC)
@@ -512,6 +565,11 @@ def main():
 
     conv = resultados(df, quant_responses)
     conv.to_csv(os.path.join(OUTPUT_DIR, "03_convergence.csv"), index=False)
+    ejes = resultados_ejes(df)
+    ejes.to_csv(os.path.join(OUTPUT_DIR, "03_ejes_secundarios.csv"), index=False)
+    if len(ejes):
+        print("   ejes secundarios: " + ", ".join(
+            f"{k} {v}" for k, v in ejes["resultado"].value_counts().items()))
 
     print("\n── Resultado por pregunta (acuerdo × estabilidad) ──")
     if len(conv):

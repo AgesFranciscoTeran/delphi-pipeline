@@ -62,9 +62,6 @@ STANCE_MAP = {
         "No": (A, None),
         "No, respect free time": (A, "Respect free time"),
         "No, physical / mental rest": (A, "Physical / mental rest"),
-        "Yes, once a month": (F, "Once a month"),
-        "Yes, once a week": (F, "Once a week"),
-        "Yes, once in the semester": (F, "Once in the semester"),
     },
     "P2_Q7": {
         "Yes": (F, None),
@@ -76,9 +73,6 @@ STANCE_MAP = {
         "No, only in certain modules": (A, "Only in certain modules"),
         "No, according to learning objectives": (A, "According to learning objectives"),
         "No, replaced by clinical cases": (A, "Replaced by clinical cases"),
-        "Yes, only once": (F, "Only once"),
-        "Yes, only twice": (F, "Only twice"),
-        "Yes, 4 / Every week": (F, "4 / Every week"),
     },
     "P3_Q4": {
         "Yes": (F, None),

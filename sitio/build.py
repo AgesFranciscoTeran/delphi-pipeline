@@ -290,6 +290,7 @@ def pagina_panel(panel):
 {tabla_postura(c['postura'])}
 {tabla_categ(c['cat'])}
 {tabla_cuant(c['cuant'])}
+{tabla_ejes(panel)}
 
   <h3>La taxonomía y cómo la usó el panel</h3>
   <p>Cada pregunta de opción con su taxonomía completa: en las de sí / no, la postura y debajo
@@ -433,6 +434,30 @@ def seccion_movimiento(f):
   el panel se alinea con lo que se le muestra; muchos «se alejó» o «otro cambio», que la
   retroalimentación no lo arrastra.</p>
   <figure class="fig">{figuras.inline(f["movimiento"])}</figure>'''
+
+
+def tabla_ejes(panel):
+    filas = datos.ejes_secundarios(panel)
+    if not filas:
+        return ""
+    cuerpo = "\n".join(
+        f'<tr><td class="qid">{r["qid"]}</td><td class="qtxt">{esc(r["texto"])}</td>'
+        f'<td class="sec">{esc(r["eje"])}</td><td class="opt">{esc(r["opcion"])}</td>'
+        f'<td class="n">{r["n"]}</td><td class="n sec">{r["mencionan"]} de {r["total"]}</td>'
+        f'<td>{celda_resultado(r)}</td></tr>' for r in filas)
+    return f'''
+  <h3>Otros ejes de las preguntas</h3>
+  <div class="scroll"><table>
+    <caption>Varias preguntas tienen más de una dimensión (por ejemplo, cuántas horas <i>y</i> de
+    qué depende). Cada eje se mide aparte, con el mismo criterio, entre quienes hablaron de él
+    («lo mencionan», sobre todas las respuestas de la pregunta en todas las rondas): no decir
+    nada de una dimensión no es estar en desacuerdo. Ronda final.</caption>
+    <thead><tr><th>Id</th><th>Pregunta</th><th>Eje</th><th>Opción mayoritaria</th><th>n</th>
+    <th>Lo mencionan</th><th>Resultado</th></tr></thead>
+    <tbody>
+{cuerpo}
+    </tbody>
+  </table></div>'''
 
 
 def significado_resultados():

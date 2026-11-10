@@ -137,10 +137,22 @@ def main():
         modal, n_acuerdo = votar(votos)
         if modal is None:
             _, representante = next(iter(filas.values()))
-            salida.append(sin_mayoria(representante).rename(rid))
+            fila_out = sin_mayoria(representante)
         else:
             _, representante = filas[modal]   # fila completa de una corrida que votó con la mayoría
-            salida.append(representante.rename(rid))
+            fila_out = representante.copy()
+        # Los ejes secundarios se votan aparte: la fila representante ganó en el eje
+        # principal, no necesariamente en los demás.
+        for col in ("eje_2", "eje_3"):
+            if col not in fila_out.index:
+                continue
+            vs = [d.loc[rid][col] for d in filas_por_id.values()
+                  if rid in d.index and d.loc[rid].get("extraction_status") == "ok"
+                  and isinstance(d.loc[rid][col], str)]
+            if vs:
+                m, _ = votar(vs)
+                fila_out[col] = m if m is not None else "Sin mayoría"
+        salida.append(fila_out.rename(rid))
         estab.append((len(votos), n_acuerdo, n_acuerdo / len(votos), modal is None))
 
     df = pd.DataFrame(salida).reset_index(drop=True)

@@ -18,6 +18,12 @@ for k in $(seq 1 "$K"); do
     (python3 $P/stance_view.py || echo "stance_view falló")
     echo "== fin $D rc=$?  $(date -Is)"
   } > "$D/run.log" 2>&1
+  # Si la extracción abortó (p. ej. el servidor del modelo no responde), el destino es una
+  # copia sin cambios del origen: consolidarla publicaría datos viejos con la taxonomía nueva.
+  if ! grep -q "rc=0" "$D/run.log"; then
+    echo "ABORTADO: $D falló (ver $D/run.log); no se consolida nada" >&2
+    exit 1
+  fi
 done
 CARPETAS=$(for k in $(seq 1 "$K"); do printf "%s_k%s " "$DESTINO" "$k"; done)
 python3 tools/consolidar.py $CARPETAS --salida "$DESTINO" > "$DESTINO.consolidar.log" 2>&1

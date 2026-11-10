@@ -47,6 +47,9 @@ INSTRUCCIONES = [
     "Preguntas numéricas: la letra de la banda, y el número con su unidad en «notes».",
     "Etiqueta a ciegas: no mires la salida del sistema ni la hoja de la otra persona.",
     "Si dudas entre dos opciones, elige una y anota la otra en «notes».",
+    "Algunas preguntas tienen más de un eje (por ejemplo, cuántas horas Y de qué depende). "
+    "Para cada eje hay una columna: escribe la letra de la opción de ESE eje, o NA si la "
+    "respuesta no dice nada de él. Una respuesta puede tener letra en varios ejes a la vez.",
 ]
 
 
@@ -90,9 +93,18 @@ def hoja(muestra, semilla):
             "response": r[COL_RESPONSE],
             "options": "\n".join(f"{LETTERS[i]}. {o}" for i, o in enumerate(opciones_de(tax))),
             "human_label": "",
+            **{f"options_{c}": "" for c in ("eje_2", "eje_3")},
+            **{f"human_label_{c}": "" for c in ("eje_2", "eje_3")},
             "notes": "",
         })
-    return pd.DataFrame(filas)
+        for e in tax.get("secondary_axes") or []:
+            filas[-1][f"options_{e['id']}"] = (f"{e['name']}\n" + "\n".join(
+                f"{LETTERS[i]}. {o}" for i, o in enumerate(e["options"])) + "\nNA. no dice nada")
+            filas[-1][f"human_label_{e['id']}"] = ""
+    orden = ["response_id", "panel", "question_type", "question", "response", "options",
+             "human_label", "options_eje_2", "human_label_eje_2", "options_eje_3",
+             "human_label_eje_3", "notes"]
+    return pd.DataFrame(filas)[orden]      # cada eje al lado de su casilla
 
 
 def main():

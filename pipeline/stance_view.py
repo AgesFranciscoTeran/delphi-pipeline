@@ -28,7 +28,8 @@ def stance_consensus(df):
     cat["question_id"] = "P" + cat[COL_PANEL].astype(str) + "_Q" + cat[COL_QUESTION].astype(str)
     cat = cat[cat["question_id"].isin(STANCE_MAP)]
     # Fuera de tema: ni postura ni sin clasificar; se cuenta aparte y sale del denominador.
-    cat["off_topic"] = cat["selected_option"].eq(OFF_TOPIC_LABEL)
+    from consensus_metrics import solo_otro_eje
+    cat["off_topic"] = cat["selected_option"].eq(OFF_TOPIC_LABEL) | solo_otro_eje(cat)
     n_off = cat.groupby(["question_id", COL_ROUND])["off_topic"].sum()
     cat = cat[~cat["off_topic"]]
     mapped = [stance_of(q, o) for q, o in zip(cat["question_id"], cat["selected_option"])]

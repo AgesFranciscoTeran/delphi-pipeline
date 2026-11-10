@@ -153,7 +153,45 @@ Respond ONLY with valid JSON (no preamble, no markdown):
 """
 
 
+def _con_ejes(prompt, tax):
+    """Añade los ejes secundarios al prompt (sólo si la pregunta los tiene: para el resto el
+    prompt queda idéntico y su caché sigue valiendo)."""
+    ejes = tax.get("secondary_axes") or []
+    if not ejes:
+        return prompt
+    bloque = ["The question has other dimensions. For EACH one, choose the single option the "
+              "response supports, or \"NA\" if the response says nothing about that dimension. "
+              "These are independent of the main answer above."]
+    if tax.get("type") in ("quantitative", "hybrid"):
+        # 09-11-2026: con un eje «Depends on…» al lado, el modelo a veces dejaba «value» vacío
+        # aunque la respuesta daba la cifra (P1_Q6, P102 R3: 10 h -> nada).
+        bloque.append("If the response gives a number AND says what it depends on, report BOTH: "
+                      "the number in \"value\" and the dependency in its dimension. A dependency "
+                      "never replaces the number.")
+    campos = []
+    for e in ejes:
+        bloque.append(f"Dimension {e['id']} ({e['name']}):")
+        bloque += [f"  {LETTERS[i]}. {o}" for i, o in enumerate(e["options"])]
+        campos.append(f'  "{e["id"]}": "<one letter from A to {LETTERS[len(e["options"]) - 1]}, or NA>",')
+    marca = "Respond ONLY with valid JSON"
+    assert marca in prompt and '  "core_argument":' in prompt
+    prompt = prompt.replace(marca, "\n".join(bloque) + "\n\n" + marca, 1)
+    return prompt.replace('  "core_argument":', "\n".join(campos) + '\n  "core_argument":', 1)
+
+
+def resolve_axis(letra, opciones):
+    """Letra de un eje secundario -> opción, o EJE_NA (también si la letra no es válida)."""
+    letra = str(letra or "").strip().upper()
+    if letra and letra[0] in LETTERS[:len(opciones)] and letra not in ("NA", "N/A", NONE_TOKEN):
+        return opciones[LETTERS.index(letra[0])]
+    return EJE_NA
+
+
 def build_prompt_for_type(tax, question_text, response_text, round_num):
+    return _con_ejes(_build_prompt_base(tax, question_text, response_text, round_num), tax)
+
+
+def _build_prompt_base(tax, question_text, response_text, round_num):
     qtype = tax["type"]
     if qtype in ("quantitative", "hybrid"):
         return build_quantitative_prompt(question_text, response_text, round_num,
@@ -171,12 +209,17 @@ def guided_schema_for(tax):
         "core_argument": {"type": "string"},
         "key_phrases": {"type": "array", "items": {"type": "string"}, "maxItems": 3},
     }
+    for e in tax.get("secondary_axes") or []:
+        common[e["id"]] = {"type": "string",
+                           "enum": [LETTERS[i] for i in range(len(e["options"]))] + ["NA"]}
+    req_ejes = [e["id"] for e in tax.get("secondary_axes") or []]
     if qtype in ("nominal", "binary"):
         letters = [LETTERS[i] for i in range(len(tax["options"]))] + [NONE_TOKEN]
         return {"type": "object",
                 "properties": {"option_letter": {"type": "string", "enum": letters},
                                "option_text": {"type": "string"}, **common},
-                "required": ["option_letter", "option_text", "core_argument", "key_phrases"]}
+                "required": ["option_letter", "option_text", "core_argument", "key_phrases"]
+                            + req_ejes}
     if qtype in ("quantitative", "hybrid"):
         return {"type": "object",
                 "properties": {"value": {"type": ["number", "null"]},
@@ -404,6 +447,8 @@ def postprocess(parsed, tax):
     else:
         out.update(proposed_approach=parsed.get("proposed_approach"),
                    classification_status="classified")
+    for e in tax.get("secondary_axes") or []:
+        out[e["id"]] = resolve_axis(parsed.get(e["id"]), e["options"])
     return out
 
 
@@ -594,7 +639,7 @@ def run_extraction(ind, client=None):
 EXTRACTION_COLUMNS = [
     "question_type", "selected_option", "option_letter", "option_text", "classification_status",
     "letter_text_mismatch", "numeric_value", "value_unit", "unit_source", "value_type", "value_raw", "band",
-    "value_secondary", "band_policy", "proposed_approach", "core_argument", "key_phrases", "extraction_model",
+    "value_secondary", "eje_2", "eje_3", "band_policy", "proposed_approach", "core_argument", "key_phrases", "extraction_model",
     "prompt_hash", "prompt_version", "extraction_status", "max_tokens_usados",
 ]
 

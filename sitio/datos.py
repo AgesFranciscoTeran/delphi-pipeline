@@ -221,6 +221,21 @@ def convergencia():
     return c
 
 
+def ejes_secundarios(panel):
+    """Resultado de cada eje secundario de las preguntas del panel (03_ejes_secundarios.csv)."""
+    p = os.path.join(RUTA_RESULTADOS, "03_ejes_secundarios.csv")
+    if not os.path.exists(p):
+        return []
+    e = pd.read_csv(p)
+    e = e[e.Panel == panel].copy()
+    e["orden"] = [int(q.split("_Q")[1]) for q in e.question_id]
+    return [{"qid": r.question_id, "texto": texto(r.question_id), "eje": r.axis_name,
+             "opcion": "—" if not isinstance(r.modal_final, str) else r.modal_final,
+             "n": int(r.n_final), "mencionan": int(r.n_mencionan), "total": int(r.n_total),
+             "etiqueta": r.agreement_final, "resultado": r.resultado}
+            for _, r in e.sort_values(["orden", "axis_id"]).iterrows()]
+
+
 def resumen_convergencia():
     return collections.Counter(convergencia().resultado.dropna())
 

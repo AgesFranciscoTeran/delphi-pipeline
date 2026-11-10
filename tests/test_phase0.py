@@ -682,18 +682,21 @@ def test_fuera_de_tema_sale_del_denominador_del_consenso():
     assert OFF_TOPIC_LABEL not in json.loads(r["option_counts"])
 
 
-def test_eje_numerico_bajo_la_celda_del_si_califica_al_si():
-    """v4, P2_Q6: la frecuencia («Once a month»…) va entre la celda «- Yes» y la «- No». Suelta
-    y sin postura, un «sí, una vez al mes» se perdía en la vista por postura."""
+def test_la_frecuencia_es_un_eje_secundario_y_la_postura_queda_entera():
+    """Multieje (19-10-2026): en P2_Q6 la frecuencia va entre la celda «- Yes» y la «- No».
+    Ahora es un eje propio; la celda «- No» sigue uniéndose a la postura aunque venga después."""
     from stance_map import stance_of
-    opts = EMILY_TAXONOMY["P2_Q6"]["options"]
-    for o in ("Yes, once a month", "Yes, once a week", "Yes, once in the semester"):
-        assert o in opts, o
-        assert stance_of("P2_Q6", o)[0] == "favor", o
-    assert "Once a month" not in opts
-    # P2_Q5: su eje de sesiones no va bajo ninguna rama y sigue como estaba
-    assert "Minimal: 1" in EMILY_TAXONOMY["P2_Q5"]["options"]
-    assert stance_of("P2_Q5", "Minimal: 1") == (None, None)
+    t = EMILY_TAXONOMY["P2_Q6"]
+    assert "No, respect free time" in t["options"]
+    assert stance_of("P2_Q6", "No, respect free time")[0] == "against"
+    assert not any("once" in o.lower() for o in t["options"])
+    (eje,) = t["secondary_axes"]
+    assert eje["options"] == ["Once a month", "Once a week", "Once in the semester"]
+    # P2_Q5: la postura sale del Sí/No; «Obligatory» y las sesiones son otros ejes
+    p5 = EMILY_TAXONOMY["P2_Q5"]
+    assert "Obligatory" not in p5["options"]
+    assert stance_of("P2_Q5", "Depends on the availability of the student")[0] == "conditional"
+    assert [len(e["options"]) for e in p5["secondary_axes"]] == [2, 3]
 
 
 def test_fuera_de_tema_va_al_final_de_la_lista():
@@ -828,3 +831,89 @@ def test_p1_q7_sin_abp_el_numero_es_el_total():
     v, s = cm.separar_medida("We need from 25-30 hours per week", 27.5, 22.0, kw)
     assert np.isnan(v) and s == 22.0          # si el modelo ya dio el total, se conserva
     assert cm.separar_medida("8 horas", 8.0, np.nan, None)[0] == 8.0   # otras preguntas: nada
+
+
+
+# ── medición multieje (19-10-2026) ───────────────────────────────────────────
+
+def test_las_numericas_miden_ademas_su_eje_nominal():
+    t = EMILY_TAXONOMY["P1_Q1"]
+    assert "bands" in t and "extra_axes" not in t
+    assert t["secondary_axes"][0]["options"] == ["Each semester", "Depending on ABP",
+                                                 "Follow international standard"]
+    adm = EMILY_TAXONOMY["P3_Q2"]["secondary_axes"]
+    assert [e["id"] for e in adm] == ["eje_2", "eje_3"]
+
+
+def test_condicionales_de_otro_eje_van_a_la_postura():
+    """P3_Q9: «Depends on the course content» viene en su propia celda «Nominal», pero es una
+    postura condicional, no otra dimensión."""
+    from stance_map import stance_of
+    assert "secondary_axes" not in EMILY_TAXONOMY["P3_Q9"]
+    assert stance_of("P3_Q9", "Depends on the course content")[0] == "conditional"
+
+
+def test_el_prompt_pide_los_ejes_solo_si_existen():
+    con = ea.build_prompt_for_type(EMILY_TAXONOMY["P1_Q1"], "q", "r", 1)
+    assert '"eje_2"' in con and "NA" in con and "Depending on ABP" in con
+    sin = ea.build_prompt_for_type(EMILY_TAXONOMY["P4_Q3"], "q", "r", 1)
+    assert "eje_2" not in sin
+    out = ea.postprocess({"value": 3, "unit": "semesters", "value_raw": "3", "eje_2": "B"},
+                         EMILY_TAXONOMY["P1_Q1"])
+    assert out["eje_2"] == "Depending on ABP"
+    out = ea.postprocess({"value": 3, "unit": "semesters", "value_raw": "3", "eje_2": "NA"},
+                         EMILY_TAXONOMY["P1_Q1"])
+    from config import EJE_NA
+    assert out["eje_2"] == EJE_NA
+
+
+def test_consenso_de_un_eje_cuenta_solo_a_quienes_lo_mencionan():
+    from config import EJE_NA
+    filas = []
+    for rnd in (1, 2):
+        for i, e2 in enumerate(["Depending on ABP"] * 5 + [EJE_NA] * 3):
+            filas.append({"Panel": 1, "Question": 1, "Round": rnd, "Panelist": 100 + i,
+                          "is_valid_response": True, "Question Text": "q", "eje_2": e2})
+    r = cm.resultados_ejes(pd.DataFrame(filas)).iloc[0]
+    assert r["n_final"] == 5 and r["share_final"] == 1.0 and r["resultado"] == "Consenso"
+
+
+
+def test_eje_principal_acordado_en_p1_q3_y_p3_q3():
+    from config import OFF_TOPIC_OPTION
+    t = EMILY_TAXONOMY["P1_Q3"]
+    assert t["options"][:2] == ["4 semesters or less", "More than 4 semesters"]
+    assert t["options"][-1] == OFF_TOPIC_OPTION
+    assert "Should be various activities" in t["secondary_axes"][0]["options"]
+    t3 = EMILY_TAXONOMY["P3_Q3"]
+    assert t3["options"] == ["<=10 - 19%", "20 - 29%", ">=30%"]
+    assert "No specific number" in t3["secondary_axes"][0]["options"]
+
+
+def test_el_prompt_numerico_no_cambia_el_numero_por_la_dependencia():
+    con = ea.build_prompt_for_type(EMILY_TAXONOMY["P1_Q6"], "q", "r", 1)
+    assert "A dependency never replaces the number" in con
+    nominal = ea.build_prompt_for_type(EMILY_TAXONOMY["P2_Q6"], "q", "r", 1)
+    assert "A dependency never replaces the number" not in nominal
+
+
+
+def test_quien_solo_habla_de_otro_eje_no_cuenta_en_el_principal():
+    """P1_Q3 (v4f): respuestas sobre actividades, sin semestres, salían «fuera de tema» o
+    «sin clasificar» en el eje principal. Contestan la pregunta en otro eje."""
+    from config import EJE_NA, OFF_TOPIC_LABEL
+    filas = []
+    for rnd in (1, 2):
+        for i, (op, e2) in enumerate([("4 semesters or less", EJE_NA)] * 5
+                                     + [(OFF_TOPIC_LABEL, "Should be various activities")] * 2
+                                     + [("Unclassified", "Should be in rural areas")]
+                                     + [(OFF_TOPIC_LABEL, EJE_NA)]):
+            filas.append({"Panel": 1, "Question": 3, "Round": rnd, "Panelist": 100 + i,
+                          "question_type": "nominal", "is_valid_response": True,
+                          "Question Text": "q", "selected_option": op, "eje_2": e2,
+                          "extraction_status": "ok"})
+    df = pd.DataFrame(filas)
+    assert int(cm.solo_otro_eje(df).sum()) == 6
+    r = cm.categorical_consensus(df).iloc[0]
+    assert r["n_otro_eje"] == 3 and r["n_off_topic"] == 1
+    assert r["n_responses"] == 5 and r["pct_unclassified"] == 0

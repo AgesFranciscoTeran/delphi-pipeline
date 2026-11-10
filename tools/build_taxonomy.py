@@ -125,6 +125,12 @@ BANDAS_ACORDADAS = {
 # P1_Q7 mezcla dos cantidades: el total semanal (20-30 h) y las horas de ABP (6-7 h). Acordado
 # el 15-10-2026: se extraen las dos, el consenso se mide sobre las de ABP y el total queda como
 # descripción.
+# Eje principal acordado (09-11-2026). Por defecto el principal es el primer eje del documento,
+# pero en estas dos la mayoría de las respuestas sólo habla del eje numérico (P1_Q3: 15 de 21
+# mencionan los semestres; P3_Q3: 15 de 29, el porcentaje) y con el nominal como principal la
+# pregunta quedaba «Insuficiente». El número de eje sigue el orden del documento (1 = primero).
+EJE_PRINCIPAL_ACORDADO = {"P1_Q3": 2, "P3_Q3": 2}
+
 MEDIDA_ACORDADA = {
     "P1_Q7": ("hours of PBL/ABP sessions per week only, not the total teaching hours",
               "total weekly teaching hours, if the panelist states them",
@@ -189,6 +195,46 @@ def descapitalizar(s):
 # en paralelo al Sí/No, no debajo de ninguno. Sin esta regla el pipeline perdería la postura
 # "conditional", que hoy existe y sostiene buena parte de la capa de posturas.
 PREFIJOS_CONDICIONALES = ("depends", "depending", "according to", "only if", "it depends")
+
+
+def agrupar_ejes(ejes):
+    """Agrupa las celdas del documento en ejes (19-10-2026).
+
+    Una celda con tipo («Nominal», «Numerical per week», «Binary»…) abre un eje. Una celda
+    «(sin etiqueta)» continúa uno: si empieza por «- Yes»/«- No» se une al eje que ya tiene
+    ramas (la postura; en P2_Q6 la celda «- No» viene DESPUÉS del eje de frecuencia), si no, al
+    eje anterior. En las preguntas con ramas, las opciones condicionales («Depends on…») de
+    otros ejes nominales se pasan al eje de la postura: son una postura, no otra dimensión
+    (P3_Q9, y «Depends on the availability» en P2_Q5). El primer eje es el principal.
+    """
+    grupos = []
+    for eje in ejes:
+        ops = [o for o in eje["opciones"] if limpiar(o)]
+        if not ops:
+            continue
+        celda = {"tipo": eje["tipo"], "opciones": ops}
+        if eje["tipo"].startswith("(sin etiqueta)") and grupos:
+            destino = grupos[-1]
+            if es_rama(ops[0]):
+                con_ramas = [g for g in grupos if any(es_rama(o) for c in g for o in c["opciones"])]
+                destino = con_ramas[-1] if con_ramas else grupos[-1]
+            destino.append(celda)
+        else:
+            grupos.append([celda])
+    postura = next((g for g in grupos if any(es_rama(o) for c in g for o in c["opciones"])), None)
+    if postura is not None:
+        for g in grupos:
+            if g is postura or g[0]["tipo"].lower().startswith(("numer", "quantit", "cuantit")):
+                continue
+            for c in g:
+                cond = [o for o in c["opciones"]
+                        if limpiar(o).lower().startswith(PREFIJOS_CONDICIONALES)]
+                if cond:
+                    c["opciones"] = [o for o in c["opciones"] if o not in cond]
+                    postura.append({"tipo": "(condicional)", "opciones": cond})
+        grupos = [[c for c in g if c["opciones"]] for g in grupos]
+        grupos = [g for g in grupos if g]
+    return grupos
 
 
 def aplanar_ejes(ejes):
@@ -300,7 +346,17 @@ def construir():
 
     for qid, item in doc.items():
         tipo = TIPOS[qid]
-        opciones, numericos, ramas, ambiguas = aplanar_ejes(item["ejes"])
+        grupos = agrupar_ejes(item["ejes"])
+        if qid in EJE_PRINCIPAL_ACORDADO:
+            grupos.insert(0, grupos.pop(EJE_PRINCIPAL_ACORDADO[qid] - 1))
+            informe.append("EJE PRINCIPAL %s: el eje %d del documento («%s»)"
+                           % (qid, EJE_PRINCIPAL_ACORDADO[qid], grupos[0][0]["tipo"]))
+        opciones, numericos, ramas, ambiguas = aplanar_ejes(grupos[0])
+        # «Does not answer the question» siempre en el eje principal, aunque en el documento
+        # venga en otro (P1_Q3 lo trae en el eje de actividades, que ahora es secundario)
+        if any(limpiar(o).lower().rstrip(".") == OFF_TOPIC_OPTION.lower()
+               for g in grupos[1:] for c in g for o in c["opciones"]):
+            opciones.append(OFF_TOPIC_OPTION)
         for t in ambiguas:
             informe.append("POSTURA AMBIGUA %s: «%s» tiene forma condicional pero el documento "
                            "la pone bajo «%s»; gana la posición" % (qid, t, ramas[t][0]))
@@ -327,13 +383,6 @@ def construir():
                         "POLITICAS    %s: %d bandas y %d opciones nominales; no se emparejan "
                         "por posicion, el eje nominal pasa a extra_axes"
                         % (qid, len(nombres), len(opciones)))
-            # Lo que la v2 añade y esta corrida NO mide todavía.
-            extra = []
-            if opciones and not politicas_usadas:
-                extra.append({"tipo": "Nominal", "opciones": opciones})
-            extra.extend({"tipo": e["tipo"], "opciones": e["opciones"]} for e in numericos[1:])
-            if extra:
-                entrada["extra_axes"] = extra
             unidad = unidad_declarada(numericos[0]["tipo"])
             if qid in UNIDAD_CORREGIDA:
                 informe.append("UNIDAD CORREGIDA %s: %s -> %s (decisión del equipo, ver "
@@ -370,6 +419,24 @@ def construir():
                 opciones.remove(OFF_TOPIC_OPTION)
                 opciones.append(OFF_TOPIC_OPTION)
             entrada["options"] = opciones
+
+        # Ejes secundarios: cada uno es una lista cerrada de opciones (las numéricas ya vienen
+        # escritas como etiquetas discretas: «Once a month», «20 - 29%», «More than 90/100»).
+        secundarios = []
+        for i, g in enumerate(grupos[1:], 2):
+            ops = []
+            for c in g:
+                for o in c["opciones"]:
+                    t_ = capitalizar(limpiar(o))
+                    if t_.lower() != OFF_TOPIC_OPTION.lower() and t_ not in ops:
+                        ops.append(t_)
+            if ops:
+                secundarios.append(OrderedDict([("id", "eje_%d" % i), ("name", g[0]["tipo"]),
+                                                ("options", ops)]))
+        if secundarios:
+            entrada["secondary_axes"] = secundarios
+            informe.append("EJES         %s: %s" % (qid, " | ".join(
+                "%s (%d)" % (e["name"], len(e["options"])) for e in secundarios)))
 
         if qid in BANDAS_ACORDADAS:
             viejas, nuevas = list(entrada.get("bands", {})), BANDAS_ACORDADAS[qid]

@@ -252,3 +252,32 @@ Las corridas k se lanzan con `tools/correr_k.sh <origen> <destino> 3`.
 - **La validación formal**: 200–300 ítems y un segundo codificador. Fase 3.
 
 El detalle de todo esto está en `docs/diagnostico_v2.md`.
+
+---
+
+## Dos máquinas: H200 y spark-adi (desde el 10-11-2026)
+
+TI pasó el modelo a una API con clave personal (`https://ai.usfq.edu.ec/api/agents/llm/main/v1`,
+mismo modelo `zai-org/GLM-5.3-Flash`) y la red **no deja a la H200 llegar a esa API**. spark-adi
+(`172.21.230.33`) sí llega. Quedan así:
+
+| | H200 (`~/Delphi`, host y contenedor `colab_fteran`) | spark-adi (`~/Delphi`) |
+|---|---|---|
+| Rol | **copia principal**: código, git, sitio, commits y push | corre el GLM (extracción, argumentos) |
+| Python | contenedor (`docker exec -u 4454:4454 -e HOME=/home/fteran colab_fteran …`) | `~/.venvs/delphi` |
+| Clave de la API | — | `~/.delphi_env` (600), `source` antes de correr |
+
+Flujo de una corrida con el GLM:
+
+```bash
+# en el host de la H200
+tools/espejo.sh subir                 # código, git y datos -> spark (no toca Resultados*)
+ssh fteran@172.21.230.33              # en spark: lanzar en tmux (ver tools/lanzar_v4f.sh)
+#   tmux new-session -d -s delphi "bash ~/Delphi/tools/lanzar_<corrida>.sh"
+tools/espejo.sh traer                 # cuando termina: Resultados* -> H200
+# regenerar el sitio en la H200 y hacer commit/push desde el host
+```
+
+Reglas: todo dentro de `/home/fteran` (nada en `/tmp`); procesos largos en `tmux`; los archivos
+del proyecto son del usuario `fteran` (uid 4454) — si se corre algo dentro del contenedor, con
+`-u 4454:4454` para no dejar archivos de root. `tools/espejo.sh … -n` muestra qué haría sin copiar.
