@@ -361,7 +361,8 @@ def cache_key(rid, model, phash):
 
 # ── llamada al modelo ────────────────────────────────────────────────────────
 
-def call_llm(client, prompt, tax, model=None, max_tokens=None):
+def call_llm(client, prompt, tax, model=None, max_tokens=None, con_lp=False):
+    """Texto de la respuesta; con `con_lp`, también los logprobs: (texto, logprobs)."""
     kwargs = dict(
         model=model or MODEL_LLM,
         max_tokens=max_tokens or MAX_TOKENS,
@@ -382,8 +383,49 @@ def call_llm(client, prompt, tax, model=None, max_tokens=None):
         extra["chat_template_kwargs"] = {"enable_thinking": False}
     if extra:
         kwargs["extra_body"] = extra
+    if con_lp:
+        kwargs.update(logprobs=True, top_logprobs=5)
     resp = client.chat.completions.create(**kwargs)
+    if con_lp:
+        return texto_de(resp), getattr(resp.choices[0], "logprobs", None)
     return texto_de(resp)
+
+
+# Experimento de señales (docs/experimento_senales.md). Con DELPHI_SENALES=1 se piden además
+# los logprobs; el prompt, el hash y el caché no cambian, así que la corrida sigue siendo una
+# corrida más del mismo instrumento.
+SENALES = os.environ.get("DELPHI_SENALES", "0") == "1"
+
+
+def senal_s2(lp, tax):
+    """Probabilidad del token que decide la etiqueta y margen sobre la alternativa siguiente.
+
+    Los logprobs incluyen los tokens del razonamiento; el campo que decide se busca en la
+    ÚLTIMA aparición de "option_letter" (categóricas) o "band" (cuantitativas).
+    """
+    campo = ("option_letter" if tax["type"] in ("nominal", "binary")
+             else "band" if tax["type"] in ("quantitative", "hybrid") else None)
+    toks = (getattr(lp, "content", None) or []) if lp is not None else []
+    if campo is None or not toks:
+        return None
+    textos = [t.token for t in toks]
+    completo = "".join(textos)
+    ms = list(re.finditer(r'"%s"\s*:\s*"?' % campo, completo))
+    if not ms:
+        return {"campo": campo, "encontrado": False, "n_tokens": len(toks)}
+    pos, acc = ms[-1].end(), 0
+    for i, t in enumerate(textos):
+        if acc + len(t) > pos:
+            break
+        acc += len(t)
+    else:
+        return {"campo": campo, "encontrado": False, "n_tokens": len(toks)}
+    tok = toks[i]
+    alts = [[a.token, float(a.logprob)] for a in (getattr(tok, "top_logprobs", None) or [])]
+    lps = sorted((a[1] for a in alts), reverse=True)
+    return {"campo": campo, "encontrado": True, "token": tok.token, "logprob": float(tok.logprob),
+            "margen": (lps[0] - lps[1]) if len(lps) > 1 else None, "alternativas": alts,
+            "n_tokens": len(toks)}
 
 
 def texto_de(resp):
@@ -467,13 +509,20 @@ def extract_single(client, response_id, response_text, question_text, round_num,
     while True:
         intento += 1
         try:
-            raw = call_llm(client, prompt, tax, model=model, max_tokens=presupuesto)
+            lp = None
+            if SENALES:
+                raw, lp = call_llm(client, prompt, tax, model=model, max_tokens=presupuesto,
+                                   con_lp=True)
+            else:
+                raw = call_llm(client, prompt, tax, model=model, max_tokens=presupuesto)
             parsed = extract_json(raw)
             out = postprocess(parsed, tax)
             out.update(response_id=response_id, question_type=tax["type"],
                        extraction_model=model or MODEL_LLM, prompt_hash=phash,
                        prompt_version=PROMPT_VERSION, raw_output=str(raw)[:2000],
                        extraction_status="ok", max_tokens_usados=presupuesto)
+            if SENALES:
+                out["s2"] = senal_s2(lp, tax)
             return out
         except (json.JSONDecodeError, ValueError) as e:
             last_error = f"json: {e}"

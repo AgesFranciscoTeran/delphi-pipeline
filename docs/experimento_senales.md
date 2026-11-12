@@ -51,3 +51,64 @@ con el área bajo la curva y la curva de una revisión al azar como referencia.
 La auditabilidad no la da el *embedding*: es otra medición, más pobre, y sólo sirve como alarma.
 La dan tres cosas verificables por cualquiera: (1) cada etiqueta con su cita textual, (2) una
 regla medida que decide qué se revisa, (3) una persona que revisa esos casos.
+
+## Bitácora
+
+**10-11-2026 — etapa 1, sin llamadas al GLM** (`tools/senales.py Resultados_v4f`, salida en
+`Resultados_v4f/senales/`). Cambios al diseño, todos decididos mirando sólo el objetivo 1:
+
+- Las señales se calculan sobre **una sola corrida (k1)**; el objetivo 1 es que la etiqueta del
+  eje principal cambie entre k1, k2 y k3. Así la pregunta es práctica: ¿una corrida más alarmas
+  baratas reemplaza a correr tres veces?
+- **S0** (longitud de la respuesta) como línea base trivial.
+- **S3p**: versión provisional de S3 con las `key_phrases` que ya devuelve la extracción
+  (parecido aproximado, porque el modelo corrige erratas al citar). No es la cita que justifica
+  la etiqueta; S3 completa sigue pendiente.
+- **S4**: bge-m3 (huella `790764642607…`). Ollama devuelve NaN para algunos textos; regla fija:
+  se prueban variantes sin cambio de contenido (sin puntuación final, espacio o salto al final);
+  10 textos quedan sin vector.
+- **R (reglas de código)**, nuevas tras mirar las 42 inestables: R1 = pregunta cuantitativa, el
+  texto tiene un número y la corrida no asignó banda; R2 = la opción elegida tiene una versión
+  general o específica en la taxonomía («No» / «No, subjective…»).
+
+Resultado (775 respuestas, 42 inestables = 5,4 %; AUC y % de inestables detectadas revisando el
+20 %): S0 0,50 / 17 %; S3p 0,53 / 19 %; S4 0,55 / 19 %; R 0,62 / 38 %; combinación con validación
+cruzada 0,57 / 26 %. En categóricas (435, 21 inestables) R llega a 0,66 / 43 % y S4 a 0,57 / 29 %.
+
+Lectura: la mitad de las inestables son números que alguna corrida no lee (problema del
+pipeline, no de interpretación) y la otra mitad, dudas entre una opción general y su versión
+específica (problema de la taxonomía). Los *embeddings* no ven ninguna de las dos. Límite de
+fondo: con una sola corrida sólo se detecta el fallo de esa corrida, no el de las otras.
+
+S2: la API de TI devuelve `logprobs` (con `top_logprobs`), pero incluye los tokens del
+razonamiento; hay que tomar el de la letra dentro del JSON final.
+
+**12-11-2026 — etapa 2, señales del GLM** (corrida `Resultados_v4f_k4`: mismo prompt que v4f,
+con logprobs; S3 y S5 en llamadas aparte, k = 1; `tools/senales.py Resultados_v4f --corrida
+Resultados_v4f_k4`, salida en `Resultados_v4f/senales_Resultados_v4f_k4/`). Terminó el 10-11 sin
+fallos (775/775). Dos objetivos: *inestable* (la etiqueta cambia entre k1..k4; 52 = 6,7 %) y
+*se aparta* (k4 no coincide con el voto de k1..k3; 24 = 3,1 %).
+
+AUC / % detectado revisando el 20 % (todas las respuestas):
+
+| Señal | inestable | se aparta |
+|---|---|---|
+| S0 longitud | 0,51 / 17 % | 0,50 / 12 % |
+| S3p frases clave | 0,52 / 17 % | 0,53 / 21 % |
+| S4 *embeddings* (sólo categóricas) | 0,60 / 41 % | 0,61 / 40 % |
+| R reglas de código | 0,63 / 36 % | 0,60 / 42 % |
+| S2 probabilidades | 0,61 / 36 % | 0,56 / 25 % |
+| S3 cita verificada | 0,59 / 31 % | 0,56 / 29 % |
+| S5 rasgos | 0,59 / 33 % | 0,58 / 29 % |
+| Combinación (VC) | 0,68 / 44 % | 0,52 / 33 % |
+
+- **S2 está saturada**: tras razonar, el margen de logprob nunca baja de 5 (p ≥ 0,99; mediana
+  13). Ordena algo, pero no hay respuestas «dudosas» para el modelo.
+- **S3**: en 36 respuestas el modelo dice que *nada* del texto sostiene la etiqueta asignada;
+  10 son inestables (28 %, cuatro veces la tasa base). Es la alarma más explicable.
+- **S5**: 75 alarmas (9,7 %), 14 inestables (19 %, casi tres veces la tasa base).
+- Ninguna señal de una sola corrida reemplaza a las k corridas: la mejor combinación detecta
+  menos de la mitad de las inestables revisando el 20 %. Con 24 positivos, *se aparta* es muy
+  ruidoso (la combinación con validación cruzada cae a 0,52).
+
+Pendiente: objetivo 2 (error contra las etiquetas de Emily), que es la prueba que cuenta.
