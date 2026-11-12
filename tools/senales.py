@@ -41,12 +41,40 @@ def etiqueta(row):
     return "∅" if pd.isna(s) else str(s)
 
 
+def con_banda_final(d):
+    """Reemplaza `band` por la banda que usa el consenso (`band_final` de consensus_metrics):
+    la del número convertido a la unidad de la pregunta; la del modelo sólo si no hay número.
+
+    12-11-2026: hasta aquí el experimento usaba la banda que escribe el modelo, que a veces
+    queda vacía aunque el número esté extraído ("4 hours" -> 4.0, banda nula). Eso inflaba la
+    inestabilidad con casos que el consenso ya resolvía. La original queda en `band_llm`.
+    """
+    from consensus_metrics import derive_band, separar_medida, to_question_unit, unit_from_raw
+    d = d.copy()
+    d["band_llm"] = d["band"]
+    for i, r in d.iterrows():
+        if str(r.question_type) not in ("quantitative", "hybrid"):
+            continue
+        tax = get_taxonomy(int(r.Panel), int(r.Question)) or {}
+        v, banda = r.numeric_value, r.band
+        kw = tax.get("measure_keywords")
+        if kw:
+            v, _ = separar_medida(r.Response, r.numeric_value, r.get("value_secondary"), kw)
+            if pd.isna(v) and not pd.isna(r.numeric_value):
+                banda = None                       # la banda del modelo era la del total
+        u, _ = unit_from_raw(r.get("value_raw"), r.get("value_unit"))
+        vv, _ = to_question_unit(v, u, tax.get("unit"))
+        b = derive_band(vv, tax.get("bands", {}))
+        d.at[i, "band"] = b if b is not None else banda
+    return d
+
+
 def inestabilidad(res, k):
     """1 si la etiqueta del eje principal no es la misma en las k corridas."""
     etiq = []
     for i in range(1, k + 1):
         d = pd.read_csv(f"{res}_k{i}/02_extracted.csv")
-        d = d[d.is_valid_response.astype(bool)]
+        d = con_banda_final(d[d.is_valid_response.astype(bool)])
         etiq.append(d.set_index("response_id").apply(etiqueta, axis=1).rename(f"k{i}"))
     e = pd.concat(etiq, axis=1)
     return (e.nunique(axis=1, dropna=False) > 1).astype(int).rename("inestable"), e
@@ -272,7 +300,7 @@ def main():
     #   se_aparta  la corrida no coincide con el voto de k1..k (sin mayoría cuenta como 1)
     corrida = a.corrida or f"{a.res}_k1"
     df = pd.read_csv(f"{corrida}/02_extracted.csv")
-    df = df[df.is_valid_response.astype(bool)].set_index("response_id")
+    df = con_banda_final(df[df.is_valid_response.astype(bool)]).set_index("response_id")
     y, etiq = inestabilidad(a.res, a.k)
     df = df.join(etiq)
     objetivos = ["inestable"]

@@ -112,3 +112,22 @@ AUC / % detectado revisando el 20 % (todas las respuestas):
   ruidoso (la combinación con validación cruzada cae a 0,52).
 
 Pendiente: objetivo 2 (error contra las etiquetas de Emily), que es la prueba que cuenta.
+
+**12-11-2026 — corrección del objetivo.** Las etapas 1 y 2 medían la inestabilidad con la banda
+que escribe el modelo (`band`), que a veces queda vacía aunque el número esté extraído («4
+hours» -> 4.0, banda nula). El consenso nunca usó ese campo: usa `band_final`, la banda del
+número convertido a la unidad de la pregunta (`consensus_metrics.quantitative_consensus`). Ahora
+`tools/senales.py` usa la misma banda que el consenso (la del modelo queda en `band_llm`).
+Los «números perdidos» de la etapa 1 eran, en su mayoría, un artefacto de esta medición.
+
+- Inestables k1..k3: 42 -> **32**; k1..k4: 52 -> **39**; se aparta: 24 -> **21**. Las
+  cuantitativas que siguen inestables son ambigüedades reales de unidad (horas por sesión o por
+  día frente a horas por semana: «4 hours into two days», «an hour and a half, three days»).
+- De las 29 categóricas inestables (k1..k4), 17 cambian sólo de calificador dentro de la misma
+  postura (`stance_map.py`), así que no afectan el consenso por postura de las preguntas sí/no;
+  7 son de preguntas sin postura y 5 cambian de postura.
+- Resultados con la banda corregida (todas; AUC / % detectado revisando el 20 %), corrida k4:
+  R 0,67 / 56 %; S5 0,57 / 33 %; S3 0,56 / 33 %; S2 0,46 / 13 %; S4 0,47 / 10 %; combinación
+  0,66 / 36 %. En categóricas: combinación 0,70 / 48 %, R 0,65, S2 0,60, S4 0,60.
+- Límite de S3: se le mostró la banda del modelo; en las respuestas con número pero banda nula
+  vio «no number / no band was assigned». Afecta a pocas respuestas; no se repite la llamada.
