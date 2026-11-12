@@ -493,7 +493,8 @@ def portada():
     nav = ('<li><a href="#paneles">Los paneles</a></li>'
            '<li><a href="#metodo">Cómo funciona</a></li>'
            '<li><a href="#estado">Estado</a></li>'
-           '<li><a href="#confianza">Confiabilidad</a></li>')
+           '<li><a href="#confianza">Confiabilidad</a></li>'
+           '<li><a href="revision.html">Qué revisar a mano</a></li>')
     cuerpo = f'''
 <section id="paneles">
   <h2><span class="sec-n">01</span>Cuatro estudios, cuatro páginas</h2>
@@ -596,6 +597,156 @@ def portada():
                      "y lo que hace falta para cerrar el artículo de método.", nav, cuerpo)
 
 
+def _coma(x, d=2):
+    return f"{x:.{d}f}".replace(".", ",")
+
+
+def pagina_revision():
+    """Experimento de señales: qué respuestas debería revisar una persona.
+
+    Lee la salida de tools/senales.py --corrida y tools/fig_senales.py (ningún número a mano).
+    """
+    import glob
+    import sys
+    carpetas = sorted(glob.glob(os.path.join(datos.RUTA_RESULTADOS, "senales_*")))
+    nav = ('<li><a href="index.html">← Los cuatro paneles</a></li>'
+           '<li><a href="#problema">El problema</a></li>'
+           '<li><a href="#senales">Las señales</a></li>'
+           '<li><a href="#resultados">Resultados</a></li>'
+           '<li><a href="#falta">Qué falta</a></li>')
+    if not carpetas:
+        return envoltura("Qué revisar a mano", "Experimento de señales.", nav,
+                         '<section><p>Esta corrida no tiene el experimento de señales.</p></section>')
+    carpeta = carpetas[-1]
+    raiz = os.path.dirname(AQUI)
+    for sub_ in ("tools", "pipeline"):
+        if os.path.join(raiz, sub_) not in sys.path:
+            sys.path.insert(0, os.path.join(raiz, sub_))
+    import fig_senales as fs
+    from stance_map import STANCE_MAP, stance_of
+
+    t, puntajes, d = fs.calcular(carpeta)
+    ruta_svg = os.path.join(figuras.SALIDA, "fig_senales.svg")
+    fs.dibujar(t, puntajes, [ruta_svg], idioma="es")
+    s = {r.key: r for r in t.itertuples()}
+
+    n, pos = len(d), int(d.inestable.sum())
+    aparta = int(d.se_aparta.sum()) if "se_aparta" in d else 0
+    inest = d[d.inestable == 1]
+    n_num = int(inest.question_type.isin(["quantitative", "hybrid"]).sum())
+    cat = inest[~inest.question_type.isin(["quantitative", "hybrid"])]
+
+    def postura(r):
+        q = f"P{r.Panel}_Q{r.Question}"
+        if q not in STANCE_MAP:
+            return "sin"
+        ks = [c for c in ("k1", "k2", "k3", "kc") if c in r.index]
+        return "misma" if len({stance_of(q, r[k])[0] for k in ks}) == 1 else "cambia"
+    cp = cat.apply(postura, axis=1).value_counts() if len(cat) else {}
+    misma, cambia, sin = (int(cp.get(k, 0)) for k in ("misma", "cambia", "sin"))
+    cita_vacia = d.S3_cita.eq(0)
+    rasgos = d.S5_alarmas.gt(0)
+
+    def auc(k):
+        r = s[k]
+        return f"AUC {_coma(r.auc)}, IC 95 % {_coma(r.ci_low)}–{_coma(r.ci_high)}"
+
+    def det(k):
+        return f"{s[k].detected_at_20:.0f} %"
+
+    cuerpo = f'''
+<section id="problema">
+  <h2><span class="sec-n">01</span>El problema</h2>
+  <p class="lead">El modelo que clasifica las respuestas no es del todo repetible y no explica por
+  qué elige una etiqueta. Revisar a mano las {n} respuestas anularía la ventaja de automatizar.
+  La pregunta es <b>qué señal, calculada con una sola corrida, indica las respuestas que una
+  persona debería revisar</b>.</p>
+  <p>Mientras no estén las etiquetas de Emily, la prueba es la <b>inestabilidad</b>: se corrió
+  cuatro veces el mismo prompt y se marcó cada respuesta cuya etiqueta cambia entre corridas. Una
+  buena señal debería poner esas respuestas al principio de la lista de revisión. El diseño se
+  fijó por escrito el 9-11-2026, antes de calcular nada (docs/experimento_senales.md).</p>
+</section>
+
+<section id="senales">
+  <h2><span class="sec-n">02</span>Las señales</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Señal</th><th>Qué mide</th><th>Llamadas extra al modelo</th></tr></thead>
+    <tbody>
+      <tr><td>Longitud</td><td>respuesta más corta = más sospechosa. Sólo sirve de línea base.</td><td>ninguna</td></tr>
+      <tr><td>Embeddings</td><td>parecido del texto con cada opción (bge-m3, en el servidor de la
+        universidad); sospechosa si la opción asignada no es de las más parecidas. Sólo preguntas de opciones.</td><td>ninguna</td></tr>
+      <tr><td>Reglas de código</td><td>(1) pregunta numérica, el texto tiene un número y no hay
+        banda; (2) la opción asignada tiene una versión general o específica en la taxonomía
+        («No» / «No, subjective…»).</td><td>ninguna</td></tr>
+      <tr><td>Probabilidades del modelo</td><td>qué tan seguro está el modelo del token que decide la
+        etiqueta, frente a la alternativa siguiente.</td><td>ninguna (la misma llamada)</td></tr>
+      <tr><td>Cita verificada</td><td>se le muestra la etiqueta y se le pide el fragmento literal que
+        la sostiene; el código comprueba que exista. Cita vacía = máxima sospecha.</td><td>una por respuesta</td></tr>
+      <tr><td>Rasgos atómicos</td><td>sin ver la etiqueta, el modelo dice si la respuesta es sí / no
+        / condicional, si da un número, si dice «depende» y si habla del tema; reglas fijas marcan
+        las contradicciones con la etiqueta.</td><td>una por respuesta</td></tr>
+      <tr><td>Combinación</td><td>todas juntas, con regresión logística y validación cruzada.</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="resultados">
+  <h2><span class="sec-n">03</span>Resultados</h2>
+  <p class="lead">De {n} respuestas, <b>{pos} cambian de etiqueta</b> entre las cuatro corridas
+  ({_coma(100 * pos / n, 1)} %){f" y en {aparta} la cuarta corrida se aparta del voto de las otras tres" if aparta else ""}.
+  Ninguna señal de una sola corrida las encuentra bien: correr varias veces y votar sigue siendo
+  necesario.</p>
+  <figure class="fig">{figuras.inline(ruta_svg)}
+    <figcaption><b>A.</b> Qué tan bien ordena cada señal las respuestas inestables: 0,5 es el azar
+    y 1 sería perfecto; la línea gris es el intervalo de confianza. <b>B.</b> Si una persona revisa
+    las respuestas de más a menos sospechosas, qué parte de las inestables encuentra; el punto
+    marca el 20 % revisado. La diagonal es revisar al azar.</figcaption></figure>
+  <h3>Qué se encontró</h3>
+  <p><b>Reglas de código</b>: la mejor ({auc("R")}). Revisando el 20 % que marcan como más
+  sospechoso se encuentra el {det("R")} de las inestables. Combinar todas las señales no las mejora
+  ({auc("comb")}; {det("comb")} al 20 %).</p>
+  <p><b>Rasgos atómicos</b> ({auc("S5")}) y <b>cita verificada</b> ({auc("S3")}): débiles, pero
+  se explican solas. En {int(cita_vacia.sum())} respuestas el modelo, viendo su propia etiqueta, no
+  encontró nada en el texto que la sostuviera; {int((cita_vacia & d.inestable.eq(1)).sum())} de ellas
+  son inestables. Los rasgos contradicen la etiqueta en {int(rasgos.sum())} respuestas,
+  {int((rasgos & d.inestable.eq(1)).sum())} inestables.</p>
+  <p><b>Embeddings</b> ({auc("S4")}, sólo preguntas de opciones): el intervalo incluye el azar.
+  Miden de qué habla el texto, no qué postura toma: no distinguen un «sí» de un «no» sobre lo mismo.</p>
+  <p><b>Probabilidades del modelo</b> ({auc("S2")}): no sirven. Después de razonar, el modelo está
+  casi seguro de todas sus etiquetas —el margen nunca baja de {_coma(d.S2_margen.min(), 0)} en
+  logprob—, incluso de las que cambian en otra corrida.</p>
+  <h3>De dónde viene la inestabilidad</h3>
+  <p>Casi toda viene del instrumento, no de cómo lee el modelo:</p>
+  <ul>
+    <li><b>{n_num} respuestas numéricas</b> con el periodo ambiguo («4 hours into two days», «an hour
+    and a half, three days a week»): unas corridas lo leen por sesión y otras por semana.</li>
+    <li><b>{len(cat)} respuestas de opciones</b>: en {misma} sólo cambia el matiz dentro de la misma
+    postura («No» / «No, subjective…»), lo que no afecta el consenso, que en las preguntas sí/no
+    se mide por postura; {cambia} cambian de postura y {sin} son de preguntas sin postura sí/no.</li>
+  </ul>
+  <div class="callout">
+    <span class="ct">Para el artículo</span>
+    <p>La auditabilidad no la da el razonamiento del modelo ni los embeddings. La dan tres cosas
+    que cualquiera puede verificar: cada etiqueta con su cita comprobada por código, una regla
+    medida que decide qué se revisa, y una persona que revisa esos casos.</p>
+  </div>
+</section>
+
+<section id="falta">
+  <h2><span class="sec-n">04</span>Qué falta</h2>
+  <p>La prueba que cuenta es contra personas: <b>qué señales encuentran los errores del modelo
+  frente a las etiquetas de Emily</b> en la muestra de validación. Las señales de las {n}
+  respuestas ya están guardadas; cuando llegue la hoja, el análisis se corre sin volver a llamar
+  al modelo. Los umbrales y la combinación no se ajustan mirando esas etiquetas.</p>
+  <p>Hay que confirmar también si Emily vio las etiquetas del modelo al codificar: cambia cómo se
+  describe la validación.</p>
+</section>
+'''
+    return envoltura("Qué revisar a mano",
+                     "Experimento de señales: cómo elegir las respuestas que una persona debería "
+                     "revisar. Borrador para el artículo de método.", nav, cuerpo)
+
+
 def escribir(nombre, texto):
     ruta = os.path.join(AQUI, nombre)
     with open(ruta, "w", encoding="utf-8") as f:
@@ -608,3 +759,4 @@ if __name__ == "__main__":
     escribir("index.html", portada())
     for p in PANELES:
         escribir(f"panel{p}.html", pagina_panel(p))
+    escribir("revision.html", pagina_revision())
