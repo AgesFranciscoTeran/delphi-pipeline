@@ -1,0 +1,8 @@
+signal,n,positives,auc,ci_low,ci_high,detected_at_10,detected_at_20,detected_at_30
+Response length (baseline),775,39,0.443,0.351,0.539,10.256,15.385,25.641
+"Embeddings, bge-m3*",437,27,0.605,0.492,0.717,18.519,40.741,44.444
+Token probabilities,775,39,0.458,0.371,0.546,10.256,12.821,23.077
+Verified quotation,775,39,0.555,0.504,0.621,20.513,33.333,38.462
+Atomic features,775,39,0.572,0.515,0.636,25.641,33.333,43.590
+Code rules,775,39,0.671,0.592,0.750,19.231,56.410,64.103
+Combined (cross-validated),775,39,0.665,0.573,0.755,20.513,35.897,51.282
